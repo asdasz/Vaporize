@@ -1,6 +1,6 @@
 """FastAPI app: serves the client and the (temporary) dev game API.
 
-Run from the repository root:  uvicorn server.app:app --reload
+Run from the repository root:  uvicorn server.app:app --reload --reload-dir engine --reload-dir server --reload-dir data
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ from server.protocol import ActionRequest, CreateGameRequest
 ROOT = Path(__file__).resolve().parent.parent
 
 catalog = load_catalog(ROOT / "data")
-games = DevGames(catalog)
+games = DevGames(catalog, save_path=ROOT / ".devgames.pkl")  # survives --reload restarts
 app = FastAPI(title="Vaporize")
 
 

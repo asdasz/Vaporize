@@ -2,7 +2,7 @@
 import { t } from "../i18n.js";
 import { icon } from "../icons.js";
 import { handCard, hiddenCard } from "./card.js";
-import { playerName, resourceName, seatColor, winnerNames } from "./util.js";
+import { cardName, playerName, resourceName, seatColor, winnerNames } from "./util.js";
 
 const ELEMENTS = ["fire", "water", "wind", "lightning", "shadow"];
 
@@ -37,12 +37,25 @@ function chips(view, store) {
         ? `<span class="chip">${icon("cards")}${t("ui.panel.plays_left", { count: left })}</span>`
         : `<span class="chip done">${t("ui.panel.no_plays_left", { min: view.rules.min_hand })}</span>`,
     );
+    if (left > 0) out.push(`<span class="chip info">${icon("arrowUp")}${t("ui.panel.drag_hint")}</span>`);
   }
   if (store.error) {
     const params = { ...store.error.params };
     out.push(`<span class="chip error">${t(store.error.key, params)}</span>`);
   }
   return `<div class="chips">${out.join("")}</div>`;
+}
+
+function turnButtons(view, myTurn) {
+  const { can_undo: canUndo, undo_card: undoCard, undo_count: undoCount } = view.legal;
+  const undoHint = undoCard ? t("ui.panel.undo_hint", { card_name: cardName(undoCard) }) : "";
+  const off = (on) => (on ? "" : "disabled");
+  return `
+    <div class="turn-buttons">
+      <button data-action="undo" title="${undoHint}" ${off(myTurn && canUndo)}>${icon("undo")}${t("ui.panel.undo")}</button>
+      <button data-action="cancel-turn" title="${t("ui.panel.cancel_hint")}" ${off(myTurn && undoCount > 0)}>${icon("cancel")}${t("ui.panel.cancel_turn")}</button>
+      <button class="end-turn ${myTurn ? "go" : ""}" data-action="end-turn" title="${t("ui.panel.end_turn_hint")}" ${off(myTurn)}>${icon("check")}${t("ui.panel.end_turn")}</button>
+    </div>`;
 }
 
 export function playerPanel(view, store) {
@@ -57,9 +70,9 @@ export function playerPanel(view, store) {
     <div class="panel" style="--seat-color:${seatColor(me.seat)}">
       ${stats(me)}
       ${chips(view, store)}
-      <div class="hand">
-        ${hand}${filler}
-        <button class="end-turn ${myTurn ? "go" : ""}" data-action="end-turn" ${myTurn ? "" : "disabled"}>${t("ui.panel.end_turn")}</button>
+      <div class="hand-row">
+        <div class="hand">${hand}${filler}</div>
+        ${turnButtons(view, myTurn)}
       </div>
     </div>`;
 }

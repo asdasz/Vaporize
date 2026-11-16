@@ -48,6 +48,14 @@ class PlayerState:
 
 
 @dataclass
+class UndoEntry:
+    """Snapshot of the state before one undoable action in the current turn."""
+
+    state: GameState
+    card_id: str  # card that was played (for the log)
+
+
+@dataclass
 class GameState:
     players: list[PlayerState]
     shared_market: MarketState
@@ -60,6 +68,9 @@ class GameState:
     phase: str = "actions"  # actions | game_over
     winners: list[int] = field(default_factory=list)
     uid_counter: int = 0
+    # Undoable actions of the current turn, oldest first. Cleared at end of turn
+    # and whenever hidden information is revealed (e.g. a card is drawn).
+    undo_stack: list[UndoEntry] = field(default_factory=list)
 
     @property
     def current_player(self) -> PlayerState:

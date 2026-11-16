@@ -18,7 +18,7 @@ Vaporize is an online deck-building card game for 2–4 players. Each player lea
 
 | Layer | Choice | Notes |
 |---|---|---|
-| Language | Python 3.12 (code stays 3.10-compatible) | Type hints everywhere, `from __future__ import annotations` |
+| Language | Python 3.14 (code stays 3.10-compatible) | Type hints everywhere, `from __future__ import annotations` |
 | Server | FastAPI + WebSockets (uvicorn) | Authoritative: all rules run on the server |
 | Data models | stdlib dataclasses in `engine/`, Pydantic v2 in `server/` | Engine stays dependency-free; loader validates YAML |
 | Card / class data | YAML | One file per card, human-editable |
@@ -78,7 +78,8 @@ vaporize/
 │   ├── resolver.py              # runs effect lists (if/then/else)
 │   ├── context.py               # EffectContext passed to effects
 │   ├── loader.py                # loads + validates YAML into CardDef / ClassDef
-│   ├── actions.py               # player actions: play, buy, refresh, remove, develop, attack, end_turn, respond
+│   ├── actions.py               # player actions: play, undo, cancel_turn, end_turn (buy, attack, … to come)
+│   ├── history.py               # undo snapshots for the current turn
 │   ├── turn.py                  # SOT → actions → EOT sequencing, round + game end
 │   ├── combat.py                # attack range, damage, shields, destruction
 │   ├── effects/
@@ -156,6 +157,14 @@ Rule notes the engine must respect:
 - "Played this turn" conditions use `player.played_this_turn`: only cards played **before** the current one, plus the card itself unless the condition has `other: true` (see `docs/DECISIONS.md`).
 - When the deck is empty and a draw/scout is needed, shuffle `discard` into `deck` first.
 - Destroyed units go to the owner's `discard`. Destroyed tokens are deleted.
+
+## Undo
+
+- Every undoable action pushes a snapshot of the state before it onto `state.undo_stack` (`UndoEntry`).
+- `Undo` restores the last snapshot. `CancelTurn` restores the first one (the turn's checkpoint, after start-of-turn effects).
+- `EndTurn` clears the stack: a finished turn is final.
+- Actions that reveal hidden information (events in `engine/history.py: REVEALING_EVENTS`, e.g. drawing a card) clear the stack and become a new checkpoint, so nobody can peek and undo.
+- Snapshots are shared between copies (`copy_state`), never deep-copied again.
 
 ## Cards
 
@@ -335,11 +344,12 @@ Elements are shown as **icons**, never as colours, so they don't clash with play
 - Stats: **inf** (large, prominent), class resource with limit, current removal cost, elements played this turn (counts per element icon), deck / discard counts.
 - Available-actions chips with a green outline (e.g. free refresh, Mage element swap, "N units can attack", affordable develops). Used ones turn grey and get a strikethrough.
 - Hand as cards. The 2-card minimum is shown as a reminder slot.
-- "End turn" button.
+- Turn buttons next to the hand: **Undo** (take back the last card played), **Cancel** (take back the whole turn so far) and **End turn** (commits the turn; can't be undone).
 
 **Interactions.**
 
 - Clicking an own unit that can attack highlights valid targets: same tier or one higher, never lower. Clicking a target attacks.
+- Dragging a hand card **up** and releasing it anywhere on the screen above the hand plays the card. While dragging, a translucent drop zone covers the whole viewport above the hand (green if the card can be played, grey/red if not). Clicking a card doesn't play it.
 - Dragging a hand card left or right moves it to the drop position and the other cards shift to make room (live, animated; e.g. dragging card 1 between 3 and 4 gives 2, 3, 1, 4, …). Hand order is cosmetic and client-side only (kept per game and seat in `sessionStorage`). New cards are added on the right.
 - Hovering a card shows its full text. Hovering the class name shows passives, prepare and invoke.
 - Prompts (targets, order of simultaneous effects, split damage) appear as an inline panel above the hand, not a blocking modal.

@@ -1,10 +1,11 @@
 // Temporary dev "lobby": start a hot-seat game for 2-4 players.
 import { t } from "./i18n.js";
 
-export function renderSetup(root, { onCreate }) {
+export function renderSetup(root, { onCreate, noticeKey = null }) {
   root.innerHTML = `
     <div class="setup">
       <h1>${t("ui.app.title")}</h1>
+      ${noticeKey ? `<div class="chip error" style="margin:10px 0">${t(noticeKey)}</div>` : ""}
       <div class="label">${t("ui.setup.heading")}</div>
       <div class="buttons">
         ${[2, 3, 4].map((n) => `<button data-players="${n}">${t("ui.setup.players", { count: n })}</button>`).join("")}

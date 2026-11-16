@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import copy
 from dataclasses import dataclass
 from typing import Any, Union
 
@@ -10,9 +9,10 @@ from engine.cards import CardInstance
 from engine.catalog import Catalog
 from engine.context import EffectContext
 from engine.events import Event
+from engine.history import copy_state, reveals_information, snapshot
 from engine.resolver import resolve_effects
 from engine.rules import MIN_HAND
-from engine.state import GameState, PlayedCard
+from engine.state import GameState, PlayedCard, UndoEntry
 from engine.turn import end_turn
 
 
@@ -27,7 +27,21 @@ class EndTurn:
     seat: int
 
 
-Action = Union[PlayCard, EndTurn]
+@dataclass(frozen=True)
+class Undo:
+    """Take back the last card played this turn."""
+
+    seat: int
+
+
+@dataclass(frozen=True)
+class CancelTurn:
+    """Take back everything done this turn (back to the last checkpoint)."""
+
+    seat: int
+
+
+Action = Union[PlayCard, EndTurn, Undo, CancelTurn]
 
 
 class IllegalAction(Exception):
@@ -88,13 +102,48 @@ def _play_card(state: GameState, catalog: Catalog, action: PlayCard, events: lis
     resolve_effects(EffectContext(state, catalog, action.seat, card, events), cdef.effects)
 
 
+def _undo(state: GameState, action: Undo, events: list[Event]) -> GameState:
+    _check_turn(state, action.seat)
+    if not state.undo_stack:
+        raise IllegalAction("error.nothing_to_undo")
+    entry = state.undo_stack[-1]
+    new_state = copy_state(entry.state)
+    new_state.undo_stack = list(state.undo_stack[:-1])
+    events.append(Event("log.undo", {"seat": action.seat, "card": entry.card_id}))
+    return new_state
+
+
+def _cancel_turn(state: GameState, action: CancelTurn, events: list[Event]) -> GameState:
+    _check_turn(state, action.seat)
+    if not state.undo_stack:
+        raise IllegalAction("error.nothing_to_undo")
+    new_state = copy_state(state.undo_stack[0].state)
+    new_state.undo_stack = []
+    events.append(Event("log.turn_cancelled", {"seat": action.seat, "count": len(state.undo_stack)}))
+    return new_state
+
+
 def apply_action(state: GameState, catalog: Catalog, action: Action) -> tuple[GameState, list[Event]]:
-    new_state = copy.deepcopy(state)
+    """Validate and apply an action. The input state is never modified."""
     events: list[Event] = []
+    if isinstance(action, Undo):
+        return _undo(state, action, events), events
+    if isinstance(action, CancelTurn):
+        return _cancel_turn(state, action, events), events
+
+    new_state = copy_state(state)
     if isinstance(action, PlayCard):
+        before = snapshot(state)
         _play_card(new_state, catalog, action, events)
+        if reveals_information(events):
+            new_state.undo_stack = []  # new checkpoint: can't undo past revealed information
+        else:
+            card = state.players[action.seat].hand.find(action.card_uid)
+            card_id = card.def_id if card else ""
+            new_state.undo_stack.append(UndoEntry(before, card_id))
     elif isinstance(action, EndTurn):
         _check_turn(new_state, action.seat)
+        new_state.undo_stack = []  # ending the turn commits it; nothing can be undone after this
         end_turn(new_state, catalog, events)
     else:
         raise IllegalAction("error.unknown_action")

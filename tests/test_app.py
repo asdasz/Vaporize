@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import importlib.util
+
 import pytest
 
 pytest.importorskip("fastapi")
-pytest.importorskip("httpx")
+if not (importlib.util.find_spec("httpx2") or importlib.util.find_spec("httpx")):
+    pytest.skip("TestClient needs httpx2 (or legacy httpx)", allow_module_level=True)
 
 from fastapi.testclient import TestClient  # noqa: E402
 

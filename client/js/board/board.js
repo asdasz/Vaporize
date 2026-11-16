@@ -1,4 +1,5 @@
 // Composes the whole board from region modules and wires up events (delegated on the root).
+import { t } from "../i18n.js";
 import { playerPanel } from "./panel.js";
 import { privateMarkets, sharedMarket } from "./markets.js";
 import { sidebar } from "./sidebar.js";
@@ -18,14 +19,16 @@ export function renderBoard(root, view, store, handlers) {
         ${playerPanel(view, store)}
       </main>
       <aside class="side">${sidebar(view)}</aside>
-    </div>`;
+    </div>
+    <div class="play-zone" data-ok="${t("ui.panel.play_zone")}" data-blocked="${t("ui.panel.play_zone_blocked")}"></div>`;
 
   root.onclick = (event) => {
     const el = event.target.closest("[data-action]");
     if (!el || el.disabled) return;
     const action = el.dataset.action;
-    if (action === "play") handlers.playCard(el.dataset.uid);
-    else if (action === "end-turn") handlers.endTurn();
+    if (action === "end-turn") handlers.endTurn();
+    else if (action === "undo") handlers.undo();
+    else if (action === "cancel-turn") handlers.cancelTurn();
     else if (action === "market") handlers.toggleMarket(Number(el.dataset.seat) === view.you ? "self" : Number(el.dataset.seat));
     else if (action === "new-game") handlers.newGame();
   };
@@ -39,15 +42,18 @@ export function renderBoard(root, view, store, handlers) {
   };
 }
 
-// Drag a hand card left/right to move it: the other cards shift to make room (live, animated).
-// Hand order is cosmetic and client-side only.
+// Hand drag and drop:
+// - drag left/right inside the hand to move a card; the other cards shift to make room (cosmetic, client-side)
+// - drag a card up and release it anywhere on the screen above the hand to play it
 function bindHandDrag(root, handlers) {
   let dragged = null; // the hand card element being dragged
-  let dropped = false;
+  let intent = null; // "reorder" | "play" | null (cancelled)
   const handEl = () => root.querySelector(".hand");
+  const zoneEl = () => root.querySelector(".play-zone");
   const handCards = () => [...handEl().querySelectorAll("[data-hand-uid]")];
+  const isAboveHand = (y) => y < handEl().getBoundingClientRect().top - 8;
 
-  // Element to insert the dragged card before (works for wrapped rows too); null = end of the cards.
+  // Element to insert the dragged card before (works for wrapped rows too); null = end of the hand.
   function insertBeforeFor(x, y) {
     for (const card of handCards()) {
       if (card === dragged) continue;
@@ -59,13 +65,11 @@ function bindHandDrag(root, handlers) {
 
   // FLIP animation: cards jump to their new place, then slide there from the old one.
   function moveWithAnimation(ref) {
-    const hand = handEl();
-    const end = hand.querySelector(".end-turn");
-    const target = ref || end;
-    if (target === dragged || dragged.nextElementSibling === target) return;
+    if (ref === dragged || dragged.nextElementSibling === ref) return;
+    if (ref === null && dragged.nextElementSibling === null) return;
     const cards = handCards();
     const before = new Map(cards.map((c) => [c, c.getBoundingClientRect().left]));
-    hand.insertBefore(dragged, target);
+    handEl().insertBefore(dragged, ref);
     for (const card of cards) {
       if (card === dragged) continue;
       const dx = before.get(card) - card.getBoundingClientRect().left;
@@ -78,31 +82,68 @@ function bindHandDrag(root, handlers) {
     }
   }
 
+  // The drop zone covers the whole viewport above the hand (fixed overlay).
+  function sizeZone() {
+    const zone = zoneEl();
+    if (!zone || !handEl()) return;
+    const top = Math.min(handEl().getBoundingClientRect().top - 8, window.innerHeight);
+    zone.style.height = `${Math.max(0, top)}px`;
+  }
+
+  function showZone(on) {
+    const zone = zoneEl();
+    if (!zone) return;
+    if (on) {
+      const ok = dragged.dataset.playable === "1";
+      zone.classList.toggle("blocked", !ok);
+      zone.textContent = ok ? zone.dataset.ok : zone.dataset.blocked;
+      sizeZone();
+    }
+    zone.classList.toggle("visible", on);
+  }
+
   root.ondragstart = (event) => {
     const el = event.target.closest("[data-hand-uid]");
     if (!el) return;
     dragged = el;
-    dropped = false;
+    intent = null;
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", el.dataset.handUid);
-    requestAnimationFrame(() => el.classList.add("dragging"));
+    requestAnimationFrame(() => {
+      el.classList.add("dragging");
+      showZone(true);
+    });
   };
-  root.ondragover = (event) => {
-    if (!dragged || !event.target.closest(".hand")) return;
+  document.ondragover = (event) => {
+    if (!dragged || !handEl()) return;
+    sizeZone();
+    if (isAboveHand(event.clientY)) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = dragged.dataset.playable === "1" ? "move" : "none";
+      zoneEl()?.classList.add("armed");
+      return;
+    }
+    zoneEl()?.classList.remove("armed");
+    if (!event.target.closest(".hand")) return;
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
     moveWithAnimation(insertBeforeFor(event.clientX, event.clientY));
   };
-  root.ondrop = (event) => {
-    if (!dragged || !event.target.closest(".hand")) return;
+  document.ondrop = (event) => {
+    if (!dragged || !handEl()) return;
+    if (isAboveHand(event.clientY)) intent = dragged.dataset.playable === "1" ? "play" : null;
+    else if (event.target.closest(".hand")) intent = "reorder";
+    else return;
     event.preventDefault();
-    dropped = true;
   };
   root.ondragend = () => {
     if (!dragged) return;
+    const uid = dragged.dataset.handUid;
     const order = handCards().map((c) => c.dataset.handUid);
     dragged = null;
-    // Dropped inside the hand: keep the new order. Cancelled: re-render the old one.
-    handlers.setHandOrder(dropped ? order : null);
+    showZone(false);
+    zoneEl()?.classList.remove("armed");
+    if (intent === "play") handlers.playCard(uid);
+    else handlers.setHandOrder(intent === "reorder" ? order : null);
   };
 }

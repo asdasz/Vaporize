@@ -1,10 +1,13 @@
 {
-  "app": { "title": "Vaporize" },
+  "app": {
+    "title": "Vaporize"
+  },
   "setup": {
     "heading": "Start a local test game",
     "hint": "Hot-seat mode for development. Online lobby with join codes comes next.",
     "players": "{count} players",
-    "error": "Couldn't create the game. Is the server running?"
+    "error": "Couldn't create the game. Is the server running?",
+    "game_lost": "That game no longer exists (the server was restarted). Start a new one."
   },
   "topbar": {
     "game": "Game",
@@ -47,7 +50,15 @@
     "end_turn": "End turn",
     "waiting": "Waiting for {player}…",
     "your_turn": "Your turn",
-    "game_over": "Game over · winner: {winner_names}"
+    "game_over": "Game over · winner: {winner_names}",
+    "undo": "Undo",
+    "undo_hint": "Take back {card_name}",
+    "cancel_turn": "Cancel",
+    "cancel_hint": "Take back everything played this turn",
+    "end_turn_hint": "End your turn. This can't be undone.",
+    "play_zone": "Release to play",
+    "play_zone_blocked": "This card can't be played now",
+    "drag_hint": "Drag a card up to play it"
   },
   "side": {
     "in_play": "Played this turn",
@@ -56,11 +67,31 @@
     "nothing": "Nothing yet"
   },
   "card": {
-    "types": { "influence": "Influence", "spell": "Spell", "unit": "Unit" },
+    "types": {
+      "influence": "Influence",
+      "spell": "Spell",
+      "unit": "Unit"
+    },
     "attack": "Attack",
     "health": "Health"
   },
-  "elements": { "fire": "Fire", "water": "Water", "wind": "Wind", "lightning": "Lightning", "shadow": "Shadow" },
-  "resources": { "mana": "mana", "heat": "heat" },
-  "status": { "shield": "Shield", "stun": "Stun", "freeze": "Freeze" }
+  "elements": {
+    "fire": "Fire",
+    "water": "Water",
+    "wind": "Wind",
+    "lightning": "Lightning",
+    "shadow": "Shadow"
+  },
+  "resources": {
+    "mana": "mana",
+    "heat": "heat"
+  },
+  "status": {
+    "shield": "Shield",
+    "stun": "Stun",
+    "freeze": "Freeze"
+  },
+  "errors": {
+    "connection": "Couldn't reach the server. Check that it's running and try again."
+  }
 }

@@ -104,6 +104,9 @@ def build_view(state: GameState, catalog: Catalog, viewer: int) -> dict[str, Any
             "playable": legal_plays(state, catalog, viewer) if my_turn else [],
             "plays_left": max(0, len(me.hand) - MIN_HAND) if my_turn else 0,
             "can_end_turn": my_turn,
+            "can_undo": my_turn and bool(state.undo_stack),
+            "undo_card": state.undo_stack[-1].card_id if my_turn and state.undo_stack else None,
+            "undo_count": len(state.undo_stack) if my_turn else 0,
         },
         "rules": {"min_hand": MIN_HAND},
     }

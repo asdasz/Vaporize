@@ -52,7 +52,7 @@ export function handCard(card, { playable = false, blocked = false } = {}) {
       ? `<div class="stats"><span>${icon("attack")}${card.attack}</span><span>${icon("health")}${card.health}</span></div>`
       : "";
   return `
-    <div class="${classes}" draggable="true" data-hand-uid="${card.uid}" ${playable ? `data-action="play" data-uid="${card.uid}"` : ""} title="${tooltip(card)}">
+    <div class="${classes}" draggable="true" data-hand-uid="${card.uid}" data-playable="${playable ? 1 : 0}" title="${tooltip(card)}">
       <div class="top">${elementIcons(card.elements)}<span class="cost">${card.cost}</span></div>
       <div class="name">${esc(cardName(card.id))}</div>
       <div class="type">${t(`ui.card.types.${card.type}`)}</div>

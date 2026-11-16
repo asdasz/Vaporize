@@ -13,6 +13,6 @@ class CreateGameRequest(BaseModel):
 
 
 class ActionRequest(BaseModel):
-    type: Literal["play_card", "end_turn"]
+    type: Literal["play_card", "end_turn", "undo", "cancel_turn"]
     seat: int = Field(ge=0, le=3)
     card_uid: Optional[str] = None

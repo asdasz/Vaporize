@@ -4,15 +4,17 @@ Online deck-building card game for 2–4 players. Rules: [`docs/RULES.md`](docs/
 
 ## Run locally
 
-Requires Python 3.12+.
+Requires Python 3.10+ (developed on 3.14).
 
 ```bash
-python3.12 -m venv .venv
+python3.14 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-dev.txt
 
-uvicorn server.app:app --reload
+uvicorn server.app:app --reload --reload-dir engine --reload-dir server --reload-dir data
 ```
+
+`--reload-dir` limits auto-restarts to Python code and game data (not tests or the client, which is served as static files). Dev games are saved to `.devgames.pkl`, so they survive restarts.
 
 Open http://127.0.0.1:8000, pick 2, 3 or 4 players and play hot-seat. "Follow current player" switches the view to whoever's turn it is, and "Viewing as" lets you look at the board from any seat.
 
@@ -29,6 +31,7 @@ mypy
 - [x] Engine core: zones (deck, hand, in play, discard, removed, markets, tiers), card/class loading from YAML
 - [x] Card play loop: play up to 5 of 7, discard, draw back to 7 with reshuffle, smaller hand when nothing is left
 - [x] Board UI draft for 2–4 players (tier table, VP track, markets, hand), hot-seat dev API
+- [x] Turn controls: drag a card up to play it, Undo, Cancel turn, End turn (final); drag to reorder the hand
 - [ ] Real Mage cards (current starter deck is mock data)
 - [ ] Markets: buy, refresh, remove card
 - [ ] Units: develop, attack, statuses

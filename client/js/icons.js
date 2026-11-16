@@ -14,6 +14,9 @@ const PATHS = {
   refresh: "M20 11a8 8 0 0 0-14.9-3M4 4v4h4M4 13a8 8 0 0 0 14.9 3M20 20v-4h-4",
   cards: "M8 4h11v15H8zM5 7v13h11",
   arrowUp: "M12 19V5M5 12l7-7 7 7",
+  undo: "M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3",
+  cancel: "M6 6l12 12M18 6 6 18",
+  check: "M5 12l5 5L20 7",
 };
 
 export function icon(name, title = "") {

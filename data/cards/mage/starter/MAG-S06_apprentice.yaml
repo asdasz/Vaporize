@@ -1,0 +1,13 @@
+# MOCK card: placeholder until the real Mage starter deck is added.
+id: MAG-S06
+type: unit
+cost: 0
+elements: [water]
+class: mage
+source: starter
+copies: 2
+attack: 0
+health: 2
+effects:
+  - do: gain_inf
+    amount: 1

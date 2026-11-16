@@ -1,0 +1,19 @@
+{
+  "all": { "name": "All elements", "text": "The card has all five elements and counts as each of them." },
+  "degrade": { "name": "Degrade", "text": "Move a unit down one tier. Impossible if the tier below is full or the unit is already on Tier 1. A unit degraded from Tier 4 goes to its owner's Tier 3." },
+  "develop": { "name": "Develop", "text": "Move one of your units up one tier into a free spot." },
+  "disrupt": { "name": "Disrupt", "text": "Look at a target opponent's hand and choose 1 card. They discard it." },
+  "eot": { "name": "End of turn", "text": "Takes effect in the first step of its owner's end of turn." },
+  "freeze": { "name": "Freeze", "text": "Put a freeze token on the unit. It can't be developed while it has a freeze token." },
+  "invoke": { "name": "Invoke", "text": "Use your class's invoke to get a value." },
+  "on_damage_taken": { "name": "On damage taken", "text": "Takes effect each time this unit takes damage." },
+  "on_kill": { "name": "On kill", "text": "Takes effect when this unit's attack destroys an enemy unit." },
+  "prepare": { "name": "Prepare", "text": "Use your class's prepare." },
+  "refresh": { "name": "Refresh", "text": "Remove the rightmost card of a market from the game, slide the others right and reveal a new card on the left." },
+  "scout": { "name": "Scout", "text": "Look at the top X cards of your deck, then put them back in the same order." },
+  "shield": { "name": "Shield", "text": "Put a shield token on the unit. Each shield token absorbs one whole hit." },
+  "split": { "name": "Split", "text": "You may split the damage, in whole points, among any units the card can target." },
+  "sot": { "name": "Start of turn", "text": "Takes effect during its owner's start of turn." },
+  "stun": { "name": "Stun", "text": "Put a stun token on the unit. It can't attack while it has a stun token." },
+  "summon": { "name": "Summon", "text": "Create a token unit with the stats shown. It counts as a Tier 1 unit but uses no spot." }
+}

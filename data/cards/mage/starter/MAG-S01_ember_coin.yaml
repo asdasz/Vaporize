@@ -1,0 +1,11 @@
+# MOCK card: placeholder until the real Mage starter deck is added.
+id: MAG-S01
+type: influence
+cost: 0
+elements: [fire]
+class: mage
+source: starter
+copies: 3
+effects:
+  - do: gain_inf
+    amount: 1

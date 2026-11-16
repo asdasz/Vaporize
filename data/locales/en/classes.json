@@ -1,0 +1,12 @@
+{
+  "mage": {
+    "name": "Mage",
+    "passives": [
+      "**Start of turn** Gain 3 mana. You can't have more than 4 mana at once. **End of turn** Lose 3 mana.",
+      "Your spells gain +1 to their invoke values.",
+      "Once per turn, when you play a card, you may treat its printed element as any single other element of your choice."
+    ],
+    "prepare": "Refresh 1 spent mana, up to your mana limit.",
+    "invoke": "Spend any amount of mana. The invoke value equals the mana spent."
+  }
+}

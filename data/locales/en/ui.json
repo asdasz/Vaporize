@@ -1,0 +1,66 @@
+{
+  "app": { "title": "Vaporize" },
+  "setup": {
+    "heading": "Start a local test game",
+    "hint": "Hot-seat mode for development. Online lobby with join codes comes next.",
+    "players": "{count} players",
+    "error": "Couldn't create the game. Is the server running?"
+  },
+  "topbar": {
+    "game": "Game",
+    "round": "Round {round}",
+    "turn": "Turn:",
+    "viewing_as": "Viewing as",
+    "follow_turn": "Follow current player",
+    "new_game": "New game"
+  },
+  "tiers": {
+    "tier": "T{tier}",
+    "shared": "shared",
+    "vp": "+{vp} VP",
+    "no_vp": "0 VP",
+    "develop": "{cost} inf",
+    "slots_shared": "{count} spot(s) · players − 1",
+    "hand": "hand {count}",
+    "deck": "deck {count}",
+    "discard": "discard {count}"
+  },
+  "market": {
+    "shared": "Shared market",
+    "private": "Private markets",
+    "you": "{name} (you)",
+    "deck": "deck {count}",
+    "removed": "removed {count}",
+    "empty": "empty",
+    "view_only": "view only",
+    "click_to_show": "Click a player to show their market",
+    "no_cards": "No cards yet"
+  },
+  "panel": {
+    "inf": "Inf",
+    "resource": "{resource_name} · limit {limit}",
+    "removal": "Remove a card",
+    "played_elements": "Played this turn",
+    "piles": "Deck / discard",
+    "plays_left": "Play up to {count} more card(s)",
+    "no_plays_left": "Keep {min} cards in hand",
+    "end_turn": "End turn",
+    "waiting": "Waiting for {player}…",
+    "your_turn": "Your turn",
+    "game_over": "Game over · winner: {winner_names}"
+  },
+  "side": {
+    "in_play": "Played this turn",
+    "discard": "Discard pile ({count})",
+    "log": "Log",
+    "nothing": "Nothing yet"
+  },
+  "card": {
+    "types": { "influence": "Influence", "spell": "Spell", "unit": "Unit" },
+    "attack": "Attack",
+    "health": "Health"
+  },
+  "elements": { "fire": "Fire", "water": "Water", "wind": "Wind", "lightning": "Lightning", "shadow": "Shadow" },
+  "resources": { "mana": "mana", "heat": "heat" },
+  "status": { "shield": "Shield", "stun": "Stun", "freeze": "Freeze" }
+}

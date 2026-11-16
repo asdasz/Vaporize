@@ -1,0 +1,8 @@
+{
+  "game_over": "The game is over.",
+  "not_your_turn": "It's not your turn.",
+  "card_not_in_hand": "That card isn't in your hand.",
+  "min_hand": "You must keep at least {min} cards in your hand.",
+  "tier_full": "Tier {tier} is full.",
+  "unknown_action": "Unknown action."
+}

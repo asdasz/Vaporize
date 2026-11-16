@@ -1,0 +1,26 @@
+{
+  "MAG-S01": {
+    "name": "Ember Coin",
+    "text": "Gain 1 inf."
+  },
+  "MAG-S02": {
+    "name": "Tide Coin",
+    "text": "Gain 1 inf."
+  },
+  "MAG-S03": {
+    "name": "Arcane Insight",
+    "text": "Gain 1 inf."
+  },
+  "MAG-S04": {
+    "name": "Mana Surge",
+    "text": "Gain 1 inf."
+  },
+  "MAG-S05": {
+    "name": "Focus",
+    "text": "Gain 1 inf."
+  },
+  "MAG-S06": {
+    "name": "Apprentice",
+    "text": "Gain 1 inf."
+  }
+}

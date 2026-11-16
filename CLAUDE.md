@@ -18,9 +18,9 @@ Vaporize is an online deck-building card game for 2–4 players. Each player lea
 
 | Layer | Choice | Notes |
 |---|---|---|
-| Language | Python 3.12+ | Type hints everywhere, `from __future__ import annotations` |
+| Language | Python 3.12 (code stays 3.10-compatible) | Type hints everywhere, `from __future__ import annotations` |
 | Server | FastAPI + WebSockets (uvicorn) | Authoritative: all rules run on the server |
-| Data models | Pydantic v2 | Card/class definitions, network messages |
+| Data models | stdlib dataclasses in `engine/`, Pydantic v2 in `server/` | Engine stays dependency-free; loader validates YAML |
 | Card / class data | YAML | One file per card, human-editable |
 | Client | Plain HTML + CSS + JavaScript (ES modules) | No build step, no framework, served by FastAPI as static files |
 | Tests | pytest | Engine is fully testable without a server or browser |
@@ -64,11 +64,19 @@ vaporize/
 │           ├── ui.json          # UI strings
 │           ├── cards.json       # card names + rules text, keyed by card ID
 │           ├── classes.json     # class names, passives, prepare/invoke text
-│           └── keywords.json    # keyword names + reminder text
+│           ├── keywords.json    # keyword names + reminder text
+│           ├── log.json         # game log messages (event keys)
+│           └── error.json       # illegal-action messages
 ├── engine/
-│   ├── state.py                 # GameState, PlayerState, MarketState, Board
+│   ├── rules.py                 # rulebook constants (hand size, elements, keywords, ...)
+│   ├── state.py                 # GameState, PlayerState, MarketState
 │   ├── zones.py                 # Zone (ordered pile) + helpers
 │   ├── cards.py                 # CardDef (static) and CardInstance (runtime)
+│   ├── catalog.py               # Catalog: all loaded CardDefs + ClassDefs
+│   ├── setup.py                 # new_game(): rulebook setup
+│   ├── drawing.py               # draw / draw-up-to with reshuffle
+│   ├── resolver.py              # runs effect lists (if/then/else)
+│   ├── context.py               # EffectContext passed to effects
 │   ├── loader.py                # loads + validates YAML into CardDef / ClassDef
 │   ├── actions.py               # player actions: play, buy, refresh, remove, develop, attack, end_turn, respond
 │   ├── turn.py                  # SOT → actions → EOT sequencing, round + game end
@@ -90,8 +98,10 @@ vaporize/
 │   ├── prompts.py               # Prompt / PromptResponse types
 │   └── view.py                  # GameState → PlayerView (redaction)
 ├── server/
-│   ├── app.py                   # FastAPI app, static files, WebSocket endpoint
-│   ├── rooms.py                 # Room registry, 6-char join codes
+│   ├── app.py                   # FastAPI app, static files, API endpoints
+│   ├── dev_service.py           # temporary hot-seat dev games (HTTP)
+│   ├── codes.py                 # 6-char join codes
+│   ├── rooms.py                 # (planned) lobby rooms over WebSockets
 │   └── protocol.py              # message schemas (client ⇄ server)
 ├── client/
 │   ├── index.html
@@ -133,16 +143,17 @@ Every pile is its own explicit `Zone` object. Never infer a pile from a flag on 
 | `shared_market.row` | 6 fixed slots, index 0 = leftmost (+1 inf), index 5 = rightmost (−1 inf) |
 | `shared_market.removed` | public; reshuffled into the deck when the deck runs out |
 
-**Board** (`Board`)
+**Board**
 
-- `tiers[player_id][1..3]`: per-player tier slots; spot counts come from the player's `ClassDef`.
-- `tier4`: shared, `players − 1` slots.
-- `tokens[player_id]`: summoned token units. They count as Tier 1 but don't use a Tier 1 spot.
+- `player.tiers[1..3]`: per-player `SlotRow`s; spot counts come from the player's `ClassDef`.
+- `state.tier4`: shared `SlotRow`, `players − 1` slots.
+- `player.tokens`: summoned token units. They count as Tier 1 but don't use a Tier 1 spot.
+- `player.played_this_turn`: ordered list of every card played this turn (units included), used by "played this turn" conditions.
 
 Rule notes the engine must respect:
 
 - "In your discard pile" counts `discard + in_play`. Cards played this turn are already counted as discarded for queries and for the remove action.
-- "Played this turn" conditions count only cards in `in_play` **before** the current card (order matters).
+- "Played this turn" conditions use `player.played_this_turn`: only cards played **before** the current one, plus the card itself unless the condition has `other: true` (see `docs/DECISIONS.md`).
 - When the deck is empty and a draw/scout is needed, shuffle `discard` into `deck` first.
 - Destroyed units go to the owner's `discard`. Destroyed tokens are deleted.
 
@@ -211,7 +222,7 @@ From the rulebook: negative parts of a card are mandatory (and the card can't be
 All card behaviour is composed from **effect primitives** implemented once in `engine/effects/`. Every primitive:
 
 - is registered with `@effect("name")`,
-- declares a Pydantic params model (validated when cards are loaded, so typos fail at startup),
+- declares its required and optional params (validated when cards are loaded, so typos fail at startup),
 - is a pure function `(ctx, params) -> list[Event]` that mutates state only through `ctx`,
 - has unit tests in `tests/effects/`.
 
@@ -274,7 +285,7 @@ Class-specific rules that don't fit the generic primitives go in `engine/classes
 ## Internationalisation
 
 - Locale files: `data/locales/<lang>/*.json`. Only `en` for now.
-- Keys are dotted and stable: `ui.lobby.create_game`, `ui.actions.end_turn`, `keyword.split.name`, `class.mage.passive.1`.
+- Keys are `<namespace>.<path>`, where the namespace is the file name: `ui.panel.end_turn`, `cards.MAG-S01.name`, `keywords.split.name`, `classes.mage.prepare`, `log.card_played`, `error.min_hand`.
 - Client uses `t(key, params)` from `client/js/i18n.js`, with `{param}` interpolation and fallback to `en` when a key is missing.
 - The server never sends display strings. Events and errors carry a key + params, e.g. `{"key": "log.attack", "params": {"attacker": "MAG-S05", "target": "ROB-S02", "damage": 2}}`.
 - A test checks that every card ID, class and keyword has an `en` entry.
@@ -329,6 +340,7 @@ Elements are shown as **icons**, never as colours, so they don't clash with play
 **Interactions.**
 
 - Clicking an own unit that can attack highlights valid targets: same tier or one higher, never lower. Clicking a target attacks.
+- Dragging a hand card left or right moves it to the drop position and the other cards shift to make room (live, animated; e.g. dragging card 1 between 3 and 4 gives 2, 3, 1, 4, …). Hand order is cosmetic and client-side only (kept per game and seat in `sessionStorage`). New cards are added on the right.
 - Hovering a card shows its full text. Hovering the class name shows passives, prepare and invoke.
 - Prompts (targets, order of simultaneous effects, split damage) appear as an inline panel above the hand, not a blocking modal.
 
@@ -338,6 +350,7 @@ Elements are shown as **icons**, never as colours, so they don't clash with play
 - Tests: `pytest`. Every effect primitive, condition and target selector has unit tests. Every card file is load-validated by a test.
 - Keep the engine deterministic. Use only the state's RNG.
 - Small commits with English messages in the imperative mood ("Add refresh_market effect").
+- Keep code 3.10-compatible (no 3.11+-only syntax or stdlib features).
 - When a rule is ambiguous, check `docs/RULES.md`. If it's still unclear, ask instead of guessing, then record the decision in `docs/DECISIONS.md`.
 
 ## Workflow for adding cards

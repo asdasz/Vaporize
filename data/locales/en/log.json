@@ -1,0 +1,17 @@
+{
+  "game_started": "Game started. {player} goes first.",
+  "round_started": "Round {round} begins.",
+  "turn_started": "{player}'s turn.",
+  "turn_ended": "{player} ends their turn.",
+  "card_played": "{player} plays {card_name}.",
+  "unit_played": "{player} plays {card_name} on Tier {tier}.",
+  "gain_inf": "{player} gains {amount} inf.",
+  "gain_resource": "{player} gains {amount} {resource_name}.",
+  "lose_resource": "{player} loses {amount} {resource_name}.",
+  "gain_vp": "{player} gains {amount} VP.",
+  "vp_scored": "{player} scores {amount} VP from units.",
+  "cards_drawn": "{player} draws {count} card(s).",
+  "deck_reshuffled": "{player} shuffles their discard pile into a new deck ({count} cards).",
+  "draw_exhausted": "{player} has no cards left to draw.",
+  "game_over": "Game over. Winner: {winner_names}."
+}

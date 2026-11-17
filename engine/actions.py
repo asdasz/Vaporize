@@ -16,13 +16,15 @@ from engine.errors import IllegalAction
 from engine.events import Event
 from engine.history import copy_state, reveals_information, snapshot
 from engine.prompts import NeedChoice, PendingChoice
+from engine.removal import remove_card
 from engine.resolver import resolve_effects
 from engine.rules import MIN_HAND
 from engine.state import GameState, PlayedCard, UndoEntry
 from engine.turn import end_turn
 
 __all__ = [
-    "Action", "CancelChoice", "CancelTurn", "Develop", "EndTurn", "IllegalAction", "PlayCard", "Respond", "Undo",
+    "Action", "CancelChoice", "CancelTurn", "Develop", "EndTurn", "IllegalAction", "PlayCard", "RemoveCard", "Respond",
+    "Undo",
     "apply_action", "check_play", "legal_plays",
 ]
 
@@ -57,6 +59,14 @@ class Develop:
 
 
 @dataclass(frozen=True)
+class RemoveCard:
+    """Pay the removal cost to remove a card played this turn or in the discard pile from the game."""
+
+    seat: int
+    card_uid: str
+
+
+@dataclass(frozen=True)
 class EndTurn:
     seat: int
 
@@ -75,7 +85,7 @@ class CancelTurn:
     seat: int
 
 
-Action = Union[PlayCard, Respond, CancelChoice, Develop, EndTurn, Undo, CancelTurn]
+Action = Union[PlayCard, Respond, CancelChoice, Develop, RemoveCard, EndTurn, Undo, CancelTurn]
 
 
 def _check_turn(state: GameState, seat: int) -> None:
@@ -221,6 +231,12 @@ def apply_action(state: GameState, catalog: Catalog, action: Action) -> tuple[Ga
         develop_unit(new_state, catalog, action.seat, option, events)
         unit = next(u for _, u in state.units_of(action.seat) if u.uid == action.unit_uid)
         new_state.undo_stack.append(UndoEntry(snapshot(state), unit.def_id))
+        return new_state, events
+    if isinstance(action, RemoveCard):
+        _check_turn(state, action.seat)
+        new_state = copy_state(state)
+        card = remove_card(new_state, catalog, action.seat, action.card_uid, events)
+        new_state.undo_stack.append(UndoEntry(snapshot(state), card.def_id))
         return new_state, events
     if isinstance(action, EndTurn):
         _check_turn(state, action.seat)

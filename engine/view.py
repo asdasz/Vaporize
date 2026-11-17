@@ -9,6 +9,7 @@ from engine.actions import legal_plays
 from engine.cardview import card_view
 from engine.catalog import Catalog
 from engine.development import eot_vp, legal_develops
+from engine.removal import removable_cards
 from engine.rules import ELEMENTS, MIN_HAND, SHARED_PRICE_MODIFIERS
 from engine.state import GameState, MarketState, PlayerState
 from engine.zones import SlotRow
@@ -52,6 +53,7 @@ def _player(state: GameState, catalog: Catalog, player: PlayerState, viewer: int
         "discard": [card_view(c, catalog) for c in player.discard],
         "in_play": [card_view(c, catalog) for c in player.in_play],
         "removed_count": len(player.removed),
+        "removed": [card_view(c, catalog) for c in player.removed],
         "played_elements": {e: played.get(e, 0) for e in ELEMENTS},
         "played_count": len(player.played_this_turn),
         "free_refresh_used": player.free_refresh_used,
@@ -98,6 +100,7 @@ def build_view(state: GameState, catalog: Catalog, viewer: int) -> dict[str, Any
             "playable": legal_plays(state, catalog, viewer) if free else [],
             "plays_left": max(0, len(me.hand) - MIN_HAND) if my_turn else 0,
             "can_end_turn": free,
+            "removable": removable_cards(state, catalog, viewer) if free else [],
             "develop": {
                 o.uid: {"cost": o.cost, "to": o.to_tier} for o in (legal_develops(state, catalog, viewer) if free else [])
             },

@@ -35,7 +35,8 @@ mypy
 - [x] Mage starter deck (cards 001–012) with invoke, scout, damage + split, heal, prepare
 - [x] Choice prompts (invoke amount, targets, scouted card, split damage)
 - [ ] Mage private market cards
-- [ ] Markets: buy, refresh, remove card
+- [x] Remove a card (from hand, played this turn or discard) on the 1, 1, 2, 2, … cost track
+- [ ] Markets: buy, refresh
 - [x] Units: develop (tier up for 3/4/5 inf, shared Tier 4) and VP scoring by tier at end of turn
 - [ ] Units: attack, statuses
 - [ ] Mage element swap passive

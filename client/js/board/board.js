@@ -30,6 +30,7 @@ export function renderBoard(root, view, store, handlers) {
     else if (action === "undo") handlers.undo();
     else if (action === "target") handlers.pickUnit(el.dataset.uid);
     else if (action === "develop") handlers.develop(el.dataset.uid);
+    else if (action === "remove-card") handlers.removeCard(el.dataset.uid);
     else if (action === "split") handlers.splitAdjust(el.dataset.uid, Number(el.dataset.delta));
     else if (action === "confirm-number") handlers.confirmNumber();
     else if (action === "confirm-split") handlers.confirmSplit();

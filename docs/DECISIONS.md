@@ -23,6 +23,8 @@ Rule interpretations and technical choices that aren't spelled out in `docs/RULE
 15. **Invoke happens once per card.** Every `{invoke: N}` on the same card reuses the value. The spell bonus applies to spells only, not units.
 16. **Tokens develop and score.** A summoned token is a unit, so it can develop (taking a normal spot) and scores VP by its tier like any other unit.
 17. **Develop cost comes from the unit owner's class board** (the `develop_cost` of the target tier).
+18. **What can be removed.** A card in your hand, played this turn or in the discard pile. Never from the deck. Hand removal can't take you below 2 cards in hand.
+19. **Removing a played card keeps its effects.** Inf it gave stays, and its elements still count as played this turn.
 
 ## Technical
 

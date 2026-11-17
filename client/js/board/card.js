@@ -54,7 +54,8 @@ export function marketCard(entry, { affordable = null, showModifier = false, own
     </div>`;
 }
 
-export function handCard(card, { playable = false, blocked = false, choose = false } = {}) {
+// opts.removeCost: show a green "Remove · N" button (card can be removed from the game right now)
+export function handCard(card, { playable = false, blocked = false, choose = false, removeCost = null } = {}) {
   const classes = ["hcard", playable ? "playable" : "", blocked ? "blocked" : "", choose ? "choosable" : ""].join(" ");
   const attrs = choose
     ? `data-action="choose-card" data-uid="${card.uid}"`
@@ -71,6 +72,7 @@ export function handCard(card, { playable = false, blocked = false, choose = fal
       <div class="text">${rulesText(card.id)}</div>
       ${stats}
       ${card.number ? `<div class="num">No. ${String(card.number).padStart(3, "0")}</div>` : ""}
+      ${removeCost !== null ? `<button class="remove-btn hand-remove" data-action="remove-card" data-uid="${card.uid}" draggable="false" title="${t("ui.side.remove_hint", { cost: removeCost })}">${icon("trash")}${removeCost}</button>` : ""}
     </div>`;
 }
 

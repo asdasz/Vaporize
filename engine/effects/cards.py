@@ -37,7 +37,7 @@ def scout(ctx: EffectContext, p: dict[str, Any]) -> None:
         Prompt(
             kind="choose_card",
             key="prompt.scout_draw",
-            params={"count": len(cards)},
+            params={"count": len(cards), "skip_key": "ui.prompt.skip_draw"},
             options=tuple(card_view(c, ctx.catalog) for c in cards),
             allow_skip=True,
             cancellable=False,  # the player has seen the cards now

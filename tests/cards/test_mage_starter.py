@@ -159,3 +159,14 @@ def test_prompt_is_only_shown_to_the_acting_player() -> None:
     assert mine["prompt"]["kind"] == "number" and mine["card"]["id"] == "MAG-S10"
     assert "prompt" not in theirs and theirs["seat"] == seat
     assert build_view(state, catalog(), seat)["legal"]["playable"] == []
+
+
+def test_009_can_be_played_dealing_no_damage() -> None:
+    state, seat, uid = _setup("MAG-S09", mana=0)  # 0 mana: invoke is automatic (value 1)
+    own = place_unit(state, seat, 1, hp=2)
+    state, _ = apply_action(state, catalog(), PlayCard(seat, uid))
+    assert state.pending.prompt.kind == "choose_unit"
+    state, _ = apply_action(state, catalog(), Respond(seat, None))  # "Deal no damage"
+    assert state.pending is None
+    assert state.players[seat].in_play.find(uid) is not None
+    assert next(u for _, u in state.units_of(seat) if u.uid == own.uid).current_hp == 2

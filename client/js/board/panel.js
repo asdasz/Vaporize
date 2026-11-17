@@ -40,6 +40,8 @@ function chips(view, store) {
     );
     if (left > 0) out.push(`<span class="chip info">${icon("arrowUp")}${t("ui.panel.drag_hint")}</span>`);
     const develops = Object.keys(view.legal.develop || {}).length;
+    const removable = (view.legal.removable || []).length;
+    if (removable) out.push(`<span class="chip">${icon("trash")}${t("ui.panel.remove_chip", { cost: view.players[view.you].removal_cost })}</span>`);
     if (develops) out.push(`<span class="chip">${icon("arrowUp")}${t("ui.panel.develops", { count: develops })}</span>`);
     out.push(`<span class="chip info">${icon("star")}${t("ui.panel.eot_vp", { vp: view.players[view.you].eot_vp })}</span>`);
   }
@@ -66,8 +68,15 @@ export function playerPanel(view, store) {
   const me = view.players[view.you];
   const myTurn = view.current === view.you && view.phase === "actions";
   const playable = new Set(view.legal.playable);
+  const removable = new Set(view.legal.removable || []);
   const hand = (me.hand || [])
-    .map((card) => handCard(card, { playable: playable.has(card.uid), blocked: myTurn && !playable.has(card.uid) }))
+    .map((card) =>
+      handCard(card, {
+        playable: playable.has(card.uid),
+        blocked: myTurn && !playable.has(card.uid),
+        removeCost: removable.has(card.uid) ? me.removal_cost : null,
+      }),
+    )
     .join("");
   const filler = me.hand ? "" : Array.from({ length: me.hand_count }, hiddenCard).join("");
   return `

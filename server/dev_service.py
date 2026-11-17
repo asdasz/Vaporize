@@ -22,6 +22,7 @@ from engine.actions import (
     EndTurn,
     IllegalAction,
     PlayCard,
+    RemoveCard,
     Respond,
     Undo,
     apply_action,
@@ -65,6 +66,8 @@ def parse_action(payload: dict[str, Any]) -> Action:
         return Undo(seat=seat)
     if kind == "cancel_turn":
         return CancelTurn(seat=seat)
+    if kind == "remove_card":
+        return RemoveCard(seat=seat, card_uid=str(payload.get("card_uid")))
     if kind == "develop":
         return Develop(seat=seat, unit_uid=str(payload.get("unit_uid")))
     if kind == "respond":

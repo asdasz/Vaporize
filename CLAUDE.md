@@ -79,7 +79,8 @@ vaporize/
 │   ├── resolver.py              # runs effect lists (if/then/else)
 │   ├── context.py               # EffectContext passed to effects
 │   ├── loader.py                # loads + validates YAML into CardDef / ClassDef
-│   ├── actions.py               # player actions: play, respond, cancel_choice, develop, undo, cancel_turn, end_turn
+│   ├── actions.py               # player actions: play, respond, cancel_choice, develop, remove_card, undo, cancel_turn, end_turn
+│   ├── removal.py               # removing cards from the game (cost track)
 │   ├── development.py           # develop (tier up) rules, legal develops, end-of-turn VP preview
 │   ├── errors.py                # IllegalAction (translation key + params)
 │   ├── invoke.py                # class invoke modes + spell bonus
@@ -170,6 +171,13 @@ Rule notes the engine must respect:
 - End of turn: every unit scores its tier's `vp` (T1 0, T2 1, T3 2, T4 3), tokens included. `eot_vp()` gives the same number as a preview for the UI.
 - The view lists legal develops as `legal.develop = {uid: {cost, to}}`. The UI shows a green "↑ T2 · 3" button on those units.
 
+## Removing cards
+
+- `RemoveCard(seat, card_uid)` removes a card from the **hand**, **played this turn** (`in_play`) or the **discard pile** into `player.removed`. Cards in the deck can't be removed. Removing from the hand respects the 2-card minimum, and a card removed from the hand never counts as played.
+- Cost comes from the class `removal_costs` track (1, 1, 2, 2, 3, 3, …), paid in inf; `player.removal_index` moves 1 space per removal. When the track is used up, no more removals.
+- Effects of a removed played card stay: inf it gave, and its elements in `played_this_turn`.
+- Undoable. The view lists `legal.removable` (uids) and each player's `removed` pile. The UI shows a green "Remove · N" button next to removable cards in the sidebar and a small green trash button on removable hand cards.
+
 ## Undo
 
 - Every undoable action pushes a snapshot of the state before it onto `state.undo_stack` (`UndoEntry`).
@@ -188,6 +196,7 @@ Some effects need a decision: how much to invoke, which unit to hit, which scout
 - `CancelChoice` drops the pending card. It isn't allowed once a prompt has shown hidden cards (`cancellable: false`, e.g. scout).
 - While a choice is pending, every other action is rejected with `error.choice_pending`.
 - Prompt kinds: `number` (min..max), `choose_unit` (uids), `choose_card` (card views), `split_damage` ({uid: amount}, optional `same_tier`). Optional (positive) effects set `allow_skip`, and the answer `null` skips them.
+- `params.skip_key` names the skip button (e.g. `ui.prompt.skip_damage` = "Deal no damage"), so a player can play a damage spell just to get rid of it without hurting their own units.
 - Only the acting player sees the prompt in their view. The others only see who is choosing and for which card.
 - A `number` prompt with a single possible value (e.g. invoke with 0 mana) is answered automatically.
 

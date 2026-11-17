@@ -27,7 +27,7 @@ def deal_damage(ctx: EffectContext, p: dict[str, Any]) -> None:
             Prompt(
                 kind="split_damage",
                 key="prompt.split_damage",
-                params={"amount": amount},
+                params={"amount": amount, "skip_key": "ui.prompt.skip_damage"},
                 options=tuple(tiers),
                 total=amount,
                 same_tier=split.get("scope") == "same_tier",
@@ -42,7 +42,7 @@ def deal_damage(ctx: EffectContext, p: dict[str, Any]) -> None:
         Prompt(
             kind="choose_unit",
             key="prompt.deal_damage",
-            params={"amount": amount},
+            params={"amount": amount, "skip_key": "ui.prompt.skip_damage"},
             options=tuple(unit.uid for _, unit in targets),
             allow_skip=True,
         )
@@ -63,7 +63,7 @@ def heal(ctx: EffectContext, p: dict[str, Any]) -> None:
         Prompt(
             kind="choose_unit",
             key="prompt.heal",
-            params={"amount": amount, "max_hp": p.get("max_hp")},
+            params={"amount": amount, "max_hp": p.get("max_hp"), "skip_key": "ui.prompt.skip_heal"},
             options=tuple(unit.uid for _, unit in targets),
             allow_skip=True,
         )

@@ -77,7 +77,8 @@ export function promptPanel(view, store) {
   else if (prompt.kind === "choose_unit") body = chooseUnitBody(view, prompt);
   else if (prompt.kind === "split_damage") body = splitBody(view, prompt, draft);
   else if (prompt.kind === "choose_card") body = chooseCardBody(prompt);
-  const skip = prompt.allow_skip ? `<button data-action="skip-choice">${t("ui.prompt.skip")}</button>` : "";
+  const skipLabel = t(prompt.params.skip_key || "ui.prompt.skip");
+  const skip = prompt.allow_skip ? `<button class="skip" data-action="skip-choice">${skipLabel}</button>` : "";
   const cancel = prompt.cancellable ? `<button data-action="cancel-choice">${icon("cancel")}${t("ui.prompt.cancel")}</button>` : "";
   return `
     <div class="prompt">

@@ -103,3 +103,16 @@ def test_heal_only_targets_allies() -> None:
     ctx.answers = [enemy_unit.uid]
     get_effect("heal").fn(ctx, {"amount": 2, "target": {"side": "ally"}})  # no ally units: no prompt
     assert enemy_unit.current_hp == 2
+
+
+def test_damage_prompt_offers_deal_no_damage() -> None:
+    state = make_game()
+    own = place_unit(state, state.current, 1, hp=2)  # only own units alive
+    with pytest.raises(NeedChoice) as need:
+        get_effect("deal_damage").fn(ctx_for(state), {"amount": 2, "target": ANY_1_3})
+    prompt = need.value.prompt
+    assert prompt.allow_skip and prompt.params["skip_key"] == "ui.prompt.skip_damage"
+    ctx = ctx_for(state)
+    ctx.answers = [None]  # "Deal no damage"
+    get_effect("deal_damage").fn(ctx, {"amount": 2, "target": ANY_1_3})
+    assert own.current_hp == 2

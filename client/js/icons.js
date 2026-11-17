@@ -17,6 +17,7 @@ const PATHS = {
   undo: "M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3",
   cancel: "M6 6l12 12M18 6 6 18",
   check: "M5 12l5 5L20 7",
+  trash: "M4 7h16M10 11v6M14 11v6M5 7l1 13h12l1-13M9 7V4h6v3",
 };
 
 export function icon(name, title = "") {

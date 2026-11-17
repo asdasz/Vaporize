@@ -25,5 +25,6 @@
   "prepare": "{player} prepares.",
   "keyword_gained": "{player}'s card gains {keyword_name}.",
   "play_cancelled": "{player} stops playing {card_name}.",
-  "unit_developed": "{player} develops {card_name} to Tier {tier} ({cost} inf)."
+  "unit_developed": "{player} develops {card_name} to Tier {tier} ({cost} inf).",
+  "card_removed": "{player} removes {card_name} from the game ({cost} inf)."
 }

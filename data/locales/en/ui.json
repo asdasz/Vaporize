@@ -63,13 +63,17 @@
     "play_zone_blocked": "This card can't be played now",
     "drag_hint": "Drag a card up to play it",
     "develops": "{count} unit(s) can develop",
-    "eot_vp": "End of turn: +{vp} VP"
+    "eot_vp": "End of turn: +{vp} VP",
+    "remove_chip": "Remove a card: {cost} inf"
   },
   "side": {
     "in_play": "Played this turn",
     "discard": "Discard pile ({count})",
     "log": "Log",
-    "nothing": "Nothing yet"
+    "nothing": "Nothing yet",
+    "removed": "Removed from the game ({count})",
+    "remove": "Remove · {cost}",
+    "remove_hint": "Remove this card from the game for {cost} inf"
   },
   "card": {
     "types": {
@@ -110,6 +114,9 @@
     "assigned": "Assigned {assigned} / {total}",
     "same_tier": "All on one tier",
     "click_unit": "Click a highlighted unit on the board, or pick one here:",
-    "max_hp": "max {max_hp} HP"
+    "max_hp": "max {max_hp} HP",
+    "skip_damage": "Deal no damage",
+    "skip_heal": "Give no HP",
+    "skip_draw": "Draw nothing"
   }
 }

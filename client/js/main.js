@@ -140,6 +140,7 @@ const handlers = {
   cancelTurn: () => act({ type: "cancel_turn", seat: store.seat }),
   respond: (answer) => act({ type: "respond", seat: store.seat, answer }),
   develop: (uid) => act({ type: "develop", seat: store.seat, unit_uid: uid }),
+  removeCard: (uid) => act({ type: "remove_card", seat: store.seat, card_uid: uid }),
   cancelChoice: () => act({ type: "cancel_choice", seat: store.seat }),
   pickUnit: (uid) => {
     const prompt = store.view?.pending?.prompt;

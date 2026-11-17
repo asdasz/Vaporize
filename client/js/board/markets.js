@@ -24,7 +24,18 @@ export function sharedMarket(view) {
         <h3>${t("ui.market.shared")} <span class="muted">· ${t("ui.market.deck", { count: m.deck_count })} · ${t("ui.market.removed", { count: m.removed_count })}</span></h3>
         ${refreshButton("shared", legal.shared_refresh)}
       </div>
-      <div class="market-row">${cards}</div>
+      <div class="market-row">${piles("shared", m)}${cards}</div>
+    </div>`;
+}
+
+// Face-down deck and face-up removed pile, left of the row. Animations fly cards from/to these.
+function piles(key, market) {
+  return `
+    <div class="market-piles">
+      <div class="pile deck" data-pile="${key}-deck" title="${t("ui.market.deck", { count: market.deck_count })}">
+        <span class="pile-label">${t("ui.market.deck_pile")}</span><b>${market.deck_count}</b></div>
+      <div class="pile removed" data-pile="${key}-removed" title="${t("ui.market.removed", { count: market.removed_count })}">
+        <span class="pile-label">${t("ui.market.removed_pile")}</span><b>${market.removed_count}</b></div>
     </div>`;
 }
 
@@ -58,7 +69,7 @@ export function privateMarkets(view, store) {
     const note = mine
       ? refreshButton("private", view.legal.market?.private_refresh)
       : `<span class="muted" style="align-self:center">${t("ui.market.view_only")}</span>`;
-    body = `${cards}${note}`;
+    body = `${piles(`private${p.seat}`, p.private_market)}${cards}${note}`;
   }
 
   return `

@@ -188,13 +188,15 @@ Rule notes the engine must respect:
 - When a market deck is empty, its removed pile is shuffled into a new deck.
 - Revealing a market card is hidden information, so a buy or refresh that reveals a card becomes a new undo checkpoint.
 - The view lists `legal.market = {shared_buy: [slots], private_buy: [slots], shared_refresh: cost|null, private_refresh: cost|null}`. UI: buyable cards get a green outline (click to buy). Green refresh buttons sit next to the markets.
+- Each market row starts with two piles on the left: the face-down **deck** and the face-up **removed** pile. Market changes are animated (`client/js/board/animate.js`, FLIP): on refresh the cards slide right, the rightmost card flies to the removed pile and the new card comes out of the deck. A bought card flies to the buyer's panel.
 
 ## Removing cards
 
 - `RemoveCard(seat, card_uid)` removes a card from the **hand**, **played this turn** (`in_play`) or the **discard pile** into `player.removed`. Cards in the deck can't be removed. Removing from the hand respects the 2-card minimum, and a card removed from the hand never counts as played.
 - Cost comes from the class `removal_costs` track (1, 1, 2, 2, 3, 3, …), paid in inf; `player.removal_index` moves 1 space per removal. When the track is used up, no more removals.
 - Effects of a removed played card stay: inf it gave, and its elements in `played_this_turn`.
-- Undoable. The view lists `legal.removable` (uids) and each player's `removed` pile. The UI shows a green "Remove · N" button next to removable cards in the sidebar and a small green trash button on removable hand cards.
+- Undoable. The view lists `legal.removable` (uids) and each player's `removed` pile.
+- UI (Hearthstone-style): a green "Remove a card: N inf" chip opens an overlay in the middle of the screen with the cards grouped as **In hand / Played this turn / Discard pile**. Removable cards are outlined green and turn red on hover. "Peek at the table" hides the overlay until "Back to removing a card". Picking any card asks for confirmation first (the hand version adds that the card won't be played). Esc, Cancel or a click outside closes it.
 
 ## Undo
 

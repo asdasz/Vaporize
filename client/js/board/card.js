@@ -65,7 +65,7 @@ export function marketCard(entry, { affordable = null, showModifier = false, own
   const border = ownerSeat !== null ? `style="border:2px solid ${seatColor(ownerSeat)}"` : "";
   const mod = showModifier && modifier ? `<span class="mod">${modifier > 0 ? `+${modifier}` : `−${-modifier}`}</span>` : "";
   return `
-    <div class="mcard ${dim} ${buy ? "buyable" : ""}" ${border} title="${buy ? t("ui.market.buy_hint", { price }) + " · " : ""}${tooltip(card)}"
+    <div class="mcard ${dim} ${buy ? "buyable" : ""}" data-mcard="${card.uid}" ${border} title="${buy ? t("ui.market.buy_hint", { price }) + " · " : ""}${tooltip(card)}"
       ${buy ? `data-action="buy" data-market="${buy.market}" data-slot="${buy.slot}"` : ""}>
       <div class="name">${elementIcons(card.elements)}<span>${esc(cardName(card.id))}</span></div>
       <div class="mtext">${rulesText(card.id)}</div>
@@ -73,12 +73,12 @@ export function marketCard(entry, { affordable = null, showModifier = false, own
     </div>`;
 }
 
-// opts.removeCost: show a green "Remove · N" button (card can be removed from the game right now)
-export function handCard(card, { playable = false, blocked = false, choose = false, removeCost = null } = {}) {
+// opts.choose: clickable in a prompt; opts.still: display only (no drag, no click), e.g. in the removal overlay
+export function handCard(card, { playable = false, blocked = false, choose = false, still = false } = {}) {
   const classes = ["hcard", playable ? "playable" : "", blocked ? "blocked" : "", choose ? "choosable" : ""].join(" ");
-  const attrs = choose
-    ? `data-action="choose-card" data-uid="${card.uid}"`
-    : `draggable="true" data-hand-uid="${card.uid}" data-playable="${playable ? 1 : 0}"`;
+  let attrs = `draggable="true" data-hand-uid="${card.uid}" data-playable="${playable ? 1 : 0}"`;
+  if (choose) attrs = `data-action="choose-card" data-uid="${card.uid}"`;
+  else if (still) attrs = "";
   const stats =
     card.type === "unit"
       ? `<div class="stats"><span>${icon("attack")}${statText(card.attack)}</span><span>${icon("health")}${statText(card.health)}</span></div>`
@@ -91,7 +91,6 @@ export function handCard(card, { playable = false, blocked = false, choose = fal
       <div class="text">${rulesText(card.id)}</div>
       ${stats}
       ${card.number ? `<div class="num">No. ${String(card.number).padStart(3, "0")}</div>` : ""}
-      ${removeCost !== null ? `<button class="remove-btn hand-remove" data-action="remove-card" data-uid="${card.uid}" draggable="false" title="${t("ui.side.remove_hint", { cost: removeCost })}">${icon("trash")}${removeCost}</button>` : ""}
     </div>`;
 }
 

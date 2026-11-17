@@ -14,6 +14,7 @@ const store = {
   openMarket: "self", // "self" | seat number | null (all hidden)
   draft: null, // local, unsent answer for the pending prompt: {key, value, split}
   attacker: null, // uid of the own unit selected to attack
+  removal: { open: false, peek: false, confirm: null }, // card-removal overlay
 };
 
 // Reset the local draft whenever a new prompt appears.
@@ -114,6 +115,7 @@ async function sendAction(action) {
     if (res.ok && action.type === "end_turn") {
       store.openMarket = "self";
       store.attacker = null;
+      store.removal = { open: false, peek: false, confirm: null };
     }
     await refresh();
   } catch (err) {
@@ -144,7 +146,17 @@ const handlers = {
   cancelTurn: () => act({ type: "cancel_turn", seat: store.seat }),
   respond: (answer) => act({ type: "respond", seat: store.seat, answer }),
   develop: (uid) => act({ type: "develop", seat: store.seat, unit_uid: uid }),
-  removeCard: (uid) => act({ type: "remove_card", seat: store.seat, card_uid: uid }),
+  removeCard: (uid) => {
+    store.removal = { open: false, peek: false, confirm: null };
+    return act({ type: "remove_card", seat: store.seat, card_uid: uid });
+  },
+  removal: (changes) => {
+    const base = changes.open === true ? { open: true, peek: false, confirm: null } : store.removal;
+    store.removal = { ...base, ...changes };
+    if (!store.removal.open) store.removal = { open: false, peek: false, confirm: null };
+    draw();
+  },
+  pickRemove: (uid) => handlers.removal({ confirm: uid }), // every removal asks for confirmation
   buy: (market, slot) => act({ type: "buy", seat: store.seat, market, slot }),
   refresh: (market) => act({ type: "refresh", seat: store.seat, market }),
   selectAttacker: (uid) => {

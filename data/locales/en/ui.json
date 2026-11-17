@@ -45,7 +45,9 @@
     "private_name": "private market",
     "refresh": "Refresh · {cost}",
     "refresh_free": "Free refresh",
-    "buy_hint": "Buy for {price} inf"
+    "buy_hint": "Buy for {price} inf",
+    "deck_pile": "Deck",
+    "removed_pile": "Removed"
   },
   "panel": {
     "inf": "Inf",
@@ -132,5 +134,20 @@
     "skip_draw": "Draw nothing",
     "skip_play": "Play nothing",
     "tier": "Tier {tier}"
+  },
+  "remove": {
+    "title": "Remove a card from the game · {cost} inf",
+    "hand": "In hand",
+    "played": "Played this turn",
+    "discard": "Discard pile",
+    "empty": "No cards here",
+    "keep_two": "you must keep {min} cards in hand",
+    "confirm_hand": "Remove {card_name} from your hand for {cost} inf? It won't be played.",
+    "yes": "Remove it",
+    "no": "Keep it",
+    "peek": "Peek at the table",
+    "back": "Back to removing a card",
+    "cancel": "Cancel",
+    "confirm": "Remove {card_name} from the game for {cost} inf?"
   }
 }

@@ -39,6 +39,7 @@ Rule interpretations and technical choices that aren't spelled out in `docs/RULE
 31. **044** "non-primary" means the card has at least one element outside your class's primary elements (Mage: fire, water). After every card you play while 044 is on the board, it checks whether at least 4 such cards were played this turn. The first time that's true, you gain 2 inf. It doesn't fire again that turn (Jan's ruling).
 32. **045** adds +1 to your spells' invoke values while it's on the board. Several copies stack.
 33. **Attacks** follow the rulebook: same tier or one higher, enemy units only, attacker taps, damage = attack, no strike back.
+34. **Refreshed-out market cards** go to the market's face-up removed pile, which sits on the left next to the deck. They don't go straight back into the deck: the removed pile is shuffled into a new deck only when the deck runs out (rulebook).
 
 ## Technical
 
@@ -51,3 +52,4 @@ Rule interpretations and technical choices that aren't spelled out in `docs/RULE
 7. **Playing by drag.** A card is played by dragging it up out of the hand. Clicking no longer plays, to avoid accidental plays.
 8. **Card names.** The card table has no names yet. Names are `MAG 009 · Spell` (number + type) until real names arrive (add a Name column).
 9. **IDs use the printed card number.** "New card #" is unique across the whole game, so IDs are `<CLASS>-<SOURCE><NNN>` (e.g. `MAG-S001`, `MAG-P031`).
+10. **One way to remove cards.** Removal happens only through the overlay, opened from the "Remove a card" chip. The inline trash buttons on hand cards and in the sidebar are gone.

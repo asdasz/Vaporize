@@ -1,13 +1,19 @@
 // Composes the whole board from region modules and wires up events (delegated on the root).
 import { t } from "../i18n.js";
+import { animateMarkets, snapshotMarkets } from "./animate.js";
 import { playerPanel } from "./panel.js";
+import { removalOverlay } from "./removal.js";
 import { privateMarkets, sharedMarket } from "./markets.js";
 import { sidebar } from "./sidebar.js";
 import { tierTable } from "./tiers.js";
 import { topbar } from "./topbar.js";
 import { vpTrack } from "./vptrack.js";
 
+let lastGame = null;
+
 export function renderBoard(root, view, store, handlers) {
+  const before = lastGame === `${view.game_id}:${view.you}` ? snapshotMarkets(root) : null;
+  lastGame = `${view.game_id}:${view.you}`;
   root.innerHTML = `
     <div class="layout">
       <main class="main">
@@ -20,18 +26,31 @@ export function renderBoard(root, view, store, handlers) {
       </main>
       <aside class="side">${sidebar(view)}</aside>
     </div>
-    <div class="play-zone" data-ok="${t("ui.panel.play_zone")}" data-blocked="${t("ui.panel.play_zone_blocked")}"></div>`;
+    <div class="play-zone" data-ok="${t("ui.panel.play_zone")}" data-blocked="${t("ui.panel.play_zone_blocked")}"></div>
+    ${removalOverlay(view, store)}`;
+  animateMarkets(root, before);
 
   root.onclick = (event) => {
     const el = event.target.closest("[data-action]");
     if (!el && store.attacker) handlers.selectAttacker(null);  // click elsewhere: drop the attacker selection
     if (!el || el.disabled) return;
     const action = el.dataset.action;
+    if (action === "close-remove-backdrop") {
+      if (!event.target.closest("[data-stop]")) handlers.removal({ open: false }); // click outside the dialog
+      return;
+    }
     if (action === "end-turn") handlers.endTurn();
     else if (action === "undo") handlers.undo();
     else if (action === "target") handlers.pickUnit(el.dataset.uid);
     else if (action === "develop") handlers.develop(el.dataset.uid);
     else if (action === "remove-card") handlers.removeCard(el.dataset.uid);
+    else if (action === "open-remove") handlers.removal({ open: true });
+    else if (action === "close-remove") handlers.removal({ open: false });
+    else if (action === "peek-on") handlers.removal({ peek: true });
+    else if (action === "peek-off") handlers.removal({ peek: false });
+    else if (action === "pick-remove") handlers.pickRemove(el.dataset.uid);
+    else if (action === "confirm-remove") handlers.removeCard(el.dataset.uid);
+    else if (action === "confirm-no") handlers.removal({ confirm: null });
     else if (action === "choose-option") handlers.respond(Number(el.dataset.value));
     else if (action === "buy") handlers.buy(el.dataset.market, Number(el.dataset.slot));
     else if (action === "refresh") handlers.refresh(el.dataset.market);
@@ -48,6 +67,9 @@ export function renderBoard(root, view, store, handlers) {
     else if (action === "new-game") handlers.newGame();
   };
   bindHandDrag(root, handlers);
+  document.onkeydown = (event) => {
+    if (event.key === "Escape" && store.removal?.open) handlers.removal({ open: false });
+  };
 
   root.oninput = (event) => {
     const el = event.target.closest("[data-input='number']");

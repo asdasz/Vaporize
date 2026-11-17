@@ -104,3 +104,4 @@ class PendingChoice:
     card_uid: str
     answers: list[Any]
     prompt: Prompt
+    swap: tuple[str, str] | None = None  # element swap chosen when the card was played

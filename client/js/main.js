@@ -15,6 +15,8 @@ const store = {
   draft: null, // local, unsent answer for the pending prompt: {key, value, split}
   attacker: null, // uid of the own unit selected to attack
   removal: { open: false, peek: false, confirm: null }, // card-removal overlay
+  swap: null, // chosen element swap {uid, from, to}, sent with the next play of that card
+  swapEdit: null, // uid of the hand card whose swap panel is open
 };
 
 // Reset the local draft whenever a new prompt appears.
@@ -73,6 +75,10 @@ async function refresh() {
   }
   applyHandOrder(view);
   syncDraft(view);
+  // Drop a chosen swap that's no longer possible (card played or gone, swap used, not our turn).
+  const swapOptions = view.legal.element_swap?.options || {};
+  if (store.swap && !swapOptions[store.swap.uid]) store.swap = null;
+  if (store.swapEdit && !swapOptions[store.swapEdit]) store.swapEdit = null;
   store.view = view;
   setUrl();
   draw();
@@ -140,7 +146,28 @@ function showSetup(noticeKey = null) {
 }
 
 const handlers = {
-  playCard: (uid) => act({ type: "play_card", seat: store.seat, card_uid: uid }),
+  playCard: (uid) => {
+    const swap = store.swap && store.swap.uid === uid ? { from: store.swap.from, to: store.swap.to } : undefined;
+    if (swap) store.swap = null;
+    store.swapEdit = null;
+    return act({ type: "play_card", seat: store.seat, card_uid: uid, swap });
+  },
+  swapOpen: (uid) => {
+    store.swapEdit = store.swapEdit === uid ? null : uid;
+    draw();
+  },
+  swapPick: (from, to) => {
+    store.swap = { uid: store.swapEdit, from, to }; // only one card can carry the swap (once per turn)
+    draw();
+  },
+  swapClear: () => {
+    store.swap = null;
+    draw();
+  },
+  swapClose: () => {
+    store.swapEdit = null;
+    draw();
+  },
   endTurn: () => act({ type: "end_turn", seat: store.seat }),
   undo: () => act({ type: "undo", seat: store.seat }),
   cancelTurn: () => act({ type: "cancel_turn", seat: store.seat }),

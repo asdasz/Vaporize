@@ -73,8 +73,10 @@ export function marketCard(entry, { affordable = null, showModifier = false, own
     </div>`;
 }
 
-// opts.choose: clickable in a prompt; opts.still: display only (no drag, no click), e.g. in the removal overlay
-export function handCard(card, { playable = false, blocked = false, choose = false, still = false } = {}) {
+// opts.choose: clickable in a prompt; opts.still: display only (no drag, no click), e.g. in the removal overlay;
+// opts.canSwap: show the element-swap button; opts.swap: {from, to} chosen for this card (shown on the card)
+export function handCard(card, { playable = false, blocked = false, choose = false, still = false, canSwap = false, swap = null } = {}) {
+  if (swap) card = { ...card, elements: card.elements.map((e) => (e === swap.from ? swap.to : e)) };
   const classes = ["hcard", playable ? "playable" : "", blocked ? "blocked" : "", choose ? "choosable" : ""].join(" ");
   let attrs = `draggable="true" data-hand-uid="${card.uid}" data-playable="${playable ? 1 : 0}"`;
   if (choose) attrs = `data-action="choose-card" data-uid="${card.uid}"`;
@@ -85,7 +87,11 @@ export function handCard(card, { playable = false, blocked = false, choose = fal
       : "";
   return `
     <div class="${classes}" ${attrs} title="${tooltip(card)}">
-      <div class="top">${elementIcons(card.elements)}<span class="cost">${card.cost}</span></div>
+      <div class="top">
+        <span class="${swap ? "swapped" : ""}">${elementIcons(card.elements)}</span>
+        ${canSwap ? `<button class="swap-btn ${swap ? "on" : ""}" data-action="swap-open" data-uid="${card.uid}" draggable="false" title="${t("ui.swap.button")}">⇄</button>` : ""}
+        <span class="cost">${card.cost}</span>
+      </div>
       <div class="name">${esc(cardName(card.id))}</div>
       <div class="type">${t(`ui.card.types.${card.type}`)}</div>
       <div class="text">${rulesText(card.id)}</div>

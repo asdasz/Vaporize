@@ -45,6 +45,10 @@ export function renderBoard(root, view, store, handlers) {
     else if (action === "develop") handlers.develop(el.dataset.uid);
     else if (action === "remove-card") handlers.removeCard(el.dataset.uid);
     else if (action === "open-remove") handlers.removal({ open: true });
+    else if (action === "swap-open") handlers.swapOpen(el.dataset.uid);
+    else if (action === "swap-pick") handlers.swapPick(el.dataset.from, el.dataset.to);
+    else if (action === "swap-clear") handlers.swapClear();
+    else if (action === "swap-close") handlers.swapClose();
     else if (action === "close-remove") handlers.removal({ open: false });
     else if (action === "peek-on") handlers.removal({ peek: true });
     else if (action === "peek-off") handlers.removal({ peek: false });

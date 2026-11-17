@@ -20,4 +20,5 @@ class ActionRequest(BaseModel):
     target_uid: Optional[str] = None  # attack
     market: Optional[Literal["shared", "private"]] = None  # buy, refresh
     slot: Optional[int] = None  # buy
+    swap: Optional[dict[str, str]] = None  # play_card: {"from": element, "to": element}
     answer: Any = None  # respond: number, uid, {uid: damage} or null (skip)

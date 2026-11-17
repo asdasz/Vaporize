@@ -41,5 +41,5 @@ mypy
 - [x] Units: develop (tier up for 3/4/5 inf, shared Tier 4) and VP scoring by tier at end of turn
 - [x] Units: attacks (same tier or one higher)
 - [ ] Status effects from cards (stun, freeze, shield)
-- [ ] Mage element swap passive
+- [x] Mage element swap passive (free, once per turn)
 - [ ] Online lobby with 6-character join codes over WebSockets

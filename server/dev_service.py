@@ -39,7 +39,7 @@ from server.codes import generate_code
 
 LOG_LIMIT = 60
 # Bump when engine state classes change, so old save files are ignored instead of half-loading.
-SAVE_VERSION = 3
+SAVE_VERSION = 4
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +62,12 @@ def parse_action(payload: dict[str, Any]) -> Action:
     kind = payload.get("type")
     seat = int(payload.get("seat", -1))
     if kind == "play_card":
-        return PlayCard(seat=seat, card_uid=str(payload.get("card_uid")))
+        swap = payload.get("swap")
+        if swap is not None:
+            if not isinstance(swap, dict) or not {"from", "to"} <= swap.keys():
+                raise IllegalAction("error.swap_invalid")
+            swap = (str(swap["from"]), str(swap["to"]))
+        return PlayCard(seat=seat, card_uid=str(payload.get("card_uid")), swap=swap)
     if kind == "end_turn":
         return EndTurn(seat=seat)
     if kind == "undo":

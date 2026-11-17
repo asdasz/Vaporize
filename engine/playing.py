@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from engine.cards import CardInstance
 from engine.context import EffectContext
+from engine.elements import elements_of
 from engine.events import Event
 from engine.resolver import resolve_effects
 from engine.state import PlayedCard
@@ -40,7 +41,7 @@ def resolve_played_card(ctx: EffectContext, card: CardInstance) -> None:
     state, catalog, seat = ctx.state, ctx.catalog, ctx.seat
     player = state.players[seat]
     cdef = catalog.card(card.def_id)
-    player.played_this_turn.append(PlayedCard(card.uid, cdef.id, cdef.elements))
+    player.played_this_turn.append(PlayedCard(card.uid, cdef.id, elements_of(card, catalog)))
     twice, vp_per_kill = _take_next_spell_modifiers(ctx) if cdef.type == "spell" else (False, 0)
 
     if cdef.is_unit:

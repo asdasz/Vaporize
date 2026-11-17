@@ -87,6 +87,7 @@ vaporize/
 │   ├── development.py           # develop (tier up) rules, legal develops, end-of-turn VP preview
 │   ├── errors.py                # IllegalAction (translation key + params)
 │   ├── invoke.py                # class invoke modes + spell bonus
+│   ├── element_swap.py          # Mage passive: change one printed element when playing a card
 │   ├── cardview.py              # JSON-ready card description (views, prompts)
 │   ├── history.py               # undo snapshots for the current turn
 │   ├── turn.py                  # SOT → actions → EOT sequencing, round + game end
@@ -189,6 +190,15 @@ Rule notes the engine must respect:
 - Revealing a market card is hidden information, so a buy or refresh that reveals a card becomes a new undo checkpoint.
 - The view lists `legal.market = {shared_buy: [slots], private_buy: [slots], shared_refresh: cost|null, private_refresh: cost|null}`. UI: buyable cards get a green outline (click to buy). Green refresh buttons sit next to the markets.
 - Each market row starts with two piles on the left: the face-down **deck** and the face-up **removed** pile. Market changes are animated (`client/js/board/animate.js`, FLIP): on refresh the cards slide right, the rightmost card flies to the removed pile and the new card comes out of the deck. A bought card flies to the buyer's panel.
+
+## Element swap (Mage passive)
+
+- `PlayCard(seat, card_uid, swap=(from, to))`: once per turn, for free, the played card treats one printed element as another (`player.element_swap_used`).
+- Allowed only for cards with 1 or 2 printed elements. Cards with all five elements or none can't change. `to` must be a single element the card doesn't already have, so there are no duplicates and never "all".
+- The swap sets `card.effective_elements`. It counts for "played this turn" and "in your discard pile" while the card is in play, and resets when played cards go to the discard pile at end of turn. "Element changes don't count" cards (e.g. 032) read printed elements.
+- The swap is stored in `PendingChoice.swap`, so it survives prompts. Undo restores it.
+- The view: `legal.element_swap = {has, available, options: {uid: {from: [to…]}}}`.
+- UI: a green ⇄ button on swappable hand cards opens an inline panel ("Change [fire] into [water | wind | …]"). The chosen swap shows on the card (accent-coloured element icons) and is sent with the next play of that card. The chip "Element swap available" turns grey with a strikethrough once used.
 
 ## Removing cards
 

@@ -35,5 +35,6 @@
   "next_spell_bonus": "{player}'s next spell gets a bonus to its invoke value.",
   "next_spell_twice": "{player}'s next spell will resolve twice.",
   "attack_boosted": "{player}'s units gain +{amount} attack this turn.",
-  "played_from_discard": "{player} plays {card_name} from the discard pile."
+  "played_from_discard": "{player} plays {card_name} from the discard pile.",
+  "element_swapped": "{player} treats {card_name} as {to_name} instead of {from_name}."
 }

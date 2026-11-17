@@ -13,6 +13,7 @@ from engine.catalog import Catalog
 from engine.attacks import attack
 from engine.context import EffectContext
 from engine.development import check_develop, develop_unit
+from engine.element_swap import check_swap, swapped_elements
 from engine.errors import IllegalAction
 from engine.events import Event
 from engine.history import copy_state, reveals_information, snapshot
@@ -35,6 +36,7 @@ __all__ = [
 class PlayCard:
     seat: int
     card_uid: str
+    swap: tuple[str, str] | None = None  # Mage passive: (printed element, new element)
 
 
 @dataclass(frozen=True)
@@ -148,15 +150,32 @@ def legal_plays(state: GameState, catalog: Catalog, seat: int) -> list[str]:
 
 
 def _play_card(
-    state: GameState, catalog: Catalog, seat: int, card_uid: str, answers: list[Any], events: list[Event]
+    state: GameState,
+    catalog: Catalog,
+    seat: int,
+    card_uid: str,
+    answers: list[Any],
+    events: list[Event],
+    swap: tuple[str, str] | None = None,
 ) -> None:
-    check_play(state, catalog, seat, card_uid)
+    hand_card = check_play(state, catalog, seat, card_uid)
+    if swap is not None:
+        check_swap(state, catalog, seat, hand_card, swap)
     card = state.players[seat].hand.take(card_uid)
+    if swap is not None:
+        card.effective_elements = swapped_elements(catalog, card, swap)
+        state.players[seat].element_swap_used = True
+        events.append(Event("log.element_swapped", {"seat": seat, "card": card.def_id, "from": swap[0], "to": swap[1]}))
     resolve_played_card(EffectContext(state, catalog, seat, card, events, answers=answers), card)
 
 
 def _resolve_play(
-    base: GameState, catalog: Catalog, seat: int, card_uid: str, answers: list[Any]
+    base: GameState,
+    catalog: Catalog,
+    seat: int,
+    card_uid: str,
+    answers: list[Any],
+    swap: tuple[str, str] | None = None,
 ) -> tuple[GameState, list[Event]]:
     """Play a card from `base` (no pending choice) with the answers given so far.
 
@@ -165,10 +184,10 @@ def _resolve_play(
     new_state = copy_state(base)
     events: list[Event] = []
     try:
-        _play_card(new_state, catalog, seat, card_uid, answers, events)
+        _play_card(new_state, catalog, seat, card_uid, answers, events, swap)
     except NeedChoice as need:
         waiting = copy_state(base)
-        waiting.pending = PendingChoice(seat, card_uid, list(answers), need.prompt)
+        waiting.pending = PendingChoice(seat, card_uid, list(answers), need.prompt, swap)
         return waiting, []
     if reveals_information(events):
         new_state.undo_stack = []  # new checkpoint: can't undo past revealed information
@@ -185,7 +204,9 @@ def _respond(state: GameState, catalog: Catalog, action: Respond) -> tuple[GameS
         raise IllegalAction("error.no_choice_pending")
     base = copy_state(state)
     base.pending = None
-    return _resolve_play(base, catalog, pending.seat, pending.card_uid, [*pending.answers, action.answer])
+    return _resolve_play(
+        base, catalog, pending.seat, pending.card_uid, [*pending.answers, action.answer], pending.swap
+    )
 
 
 def _cancel_choice(state: GameState, action: CancelChoice) -> tuple[GameState, list[Event]]:
@@ -237,7 +258,7 @@ def apply_action(state: GameState, catalog: Catalog, action: Action) -> tuple[Ga
     if isinstance(action, CancelTurn):
         return _cancel_turn(state, action, events), events
     if isinstance(action, PlayCard):
-        return _resolve_play(state, catalog, action.seat, action.card_uid, [])
+        return _resolve_play(state, catalog, action.seat, action.card_uid, [], action.swap)
     if isinstance(action, Develop):
         _check_turn(state, action.seat)
         option = check_develop(state, catalog, action.seat, action.unit_uid)

@@ -9,6 +9,7 @@ from engine.actions import legal_plays
 from engine.cardview import card_view
 from engine.catalog import Catalog
 from engine.development import eot_vp, legal_develops
+from engine.element_swap import has_element_swap, swap_available, swap_options
 from engine.removal import removable_cards
 from engine.attacks import legal_attacks
 from engine.market import legal_market, refresh_cost
@@ -104,6 +105,15 @@ def build_view(state: GameState, catalog: Catalog, viewer: int) -> dict[str, Any
             "plays_left": max(0, len(me.hand) - MIN_HAND) if my_turn else 0,
             "can_end_turn": free,
             "removable": removable_cards(state, catalog, viewer) if free else [],
+            "element_swap": {
+                "has": has_element_swap(state, catalog, viewer),
+                "available": free and swap_available(state, catalog, viewer),
+                "options": {
+                    c.uid: opts
+                    for c in me.hand
+                    if free and swap_available(state, catalog, viewer) and (opts := swap_options(catalog, c))
+                },
+            },
             "attacks": legal_attacks(state, viewer) if free else {},
             "market": legal_market(state, catalog, viewer) if free else {},
             "shared_refresh_cost": refresh_cost(state, viewer, "shared"),

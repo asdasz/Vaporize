@@ -67,6 +67,8 @@ def end_turn(state: GameState, catalog: Catalog, events: list[Event]) -> None:
             if unit.status[status] > 0:
                 unit.status[status] -= 1
     # 3. Clean up: played cards go to the discard pile, unspent inf is lost.
+    for card in player.in_play:
+        card.effective_elements = None  # an element swap only lasts while the card is in play
     player.discard.cards.extend(player.in_play.take_all())
     player.inf = 0
     player.played_this_turn = []

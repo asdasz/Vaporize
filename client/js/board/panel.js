@@ -3,6 +3,7 @@ import { t } from "../i18n.js";
 import { icon } from "../icons.js";
 import { handCard, hiddenCard } from "./card.js";
 import { promptPanel } from "./prompt.js";
+import { swapPanel } from "./swap.js";
 import { cardName, findUnit, playerName, resourceName, seatColor, winnerNames } from "./util.js";
 
 const ELEMENTS = ["fire", "water", "wind", "lightning", "shadow"];
@@ -39,6 +40,14 @@ function chips(view, store) {
         : `<span class="chip done">${t("ui.panel.no_plays_left", { min: view.rules.min_hand })}</span>`,
     );
     if (left > 0) out.push(`<span class="chip info">${icon("arrowUp")}${t("ui.panel.drag_hint")}</span>`);
+    const swap = view.legal.element_swap || {};
+    if (swap.has) {
+      out.push(
+        swap.available
+          ? `<span class="chip">⇄ ${t("ui.swap.chip")}</span>`
+          : `<span class="chip done">⇄ ${t("ui.swap.chip_used")}</span>`,
+      );
+    }
     const attackers = Object.keys(view.legal.attacks || {}).length;
     if (attackers) out.push(`<span class="chip">${icon("attack")}${t("ui.panel.attacks", { count: attackers })}</span>`);
     if (view.legal.market?.shared_refresh === 0) out.push(`<span class="chip">${icon("refresh")}${t("ui.panel.free_refresh")}</span>`);
@@ -81,11 +90,14 @@ export function playerPanel(view, store) {
   const me = view.players[view.you];
   const myTurn = view.current === view.you && view.phase === "actions";
   const playable = new Set(view.legal.playable);
+  const swapOptions = view.legal.element_swap?.options || {};
   const hand = (me.hand || [])
     .map((card) =>
       handCard(card, {
         playable: playable.has(card.uid),
         blocked: myTurn && !playable.has(card.uid),
+        canSwap: Boolean(swapOptions[card.uid]),
+        swap: store.swap && store.swap.uid === card.uid ? store.swap : null,
       }),
     )
     .join("");
@@ -95,6 +107,7 @@ export function playerPanel(view, store) {
       ${stats(me)}
       ${chips(view, store)}
       ${promptPanel(view, store)}
+      ${swapPanel(view, store)}
       <div class="hand-row">
         <div class="hand">${hand}${filler}</div>
         ${turnButtons(view, myTurn)}

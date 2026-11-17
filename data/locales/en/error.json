@@ -24,5 +24,8 @@
   "unit_stunned": "A stunned unit can't attack.",
   "no_attack": "A unit with 0 attack can't attack.",
   "invalid_target": "That's not a valid target.",
-  "out_of_range": "Units can only attack enemies on the same tier or one tier higher."
+  "out_of_range": "Units can only attack enemies on the same tier or one tier higher.",
+  "swap_not_allowed": "Your class can't change elements.",
+  "swap_used": "You already changed an element this turn.",
+  "swap_invalid": "That element change isn't allowed."
 }

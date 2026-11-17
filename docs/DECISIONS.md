@@ -40,6 +40,7 @@ Rule interpretations and technical choices that aren't spelled out in `docs/RULE
 32. **045** adds +1 to your spells' invoke values while it's on the board. Several copies stack.
 33. **Attacks** follow the rulebook: same tier or one higher, enemy units only, attacker taps, damage = attack, no strike back.
 34. **Refreshed-out market cards** go to the market's face-up removed pile, which sits on the left next to the deck. They don't go straight back into the deck: the removed pile is shuffled into a new deck only when the deck runs out (rulebook).
+35. **Mage element swap** (Jan's ruling): free, once per turn, chosen when playing a card. A two-element card can't end up with the same element twice. All-element cards can't change, and "all" can't be chosen. A card with no element can't change either. The swap lasts while the card is in play (units keep it while on the board) and resets when the card goes to the discard pile.
 
 ## Technical
 

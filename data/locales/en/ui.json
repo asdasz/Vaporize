@@ -149,5 +149,17 @@
     "back": "Back to removing a card",
     "cancel": "Cancel",
     "confirm": "Remove {card_name} from the game for {cost} inf?"
+  },
+  "swap": {
+    "chip": "Element swap available",
+    "chip_used": "Element swap used",
+    "button": "Change element",
+    "title": "Change an element of {card_name}",
+    "pick_from": "Change",
+    "pick_to": "into",
+    "clear": "Keep printed elements",
+    "done": "Done",
+    "hint": "Free, once per turn. Applies when you play the card.",
+    "marked": "Will be played as {elements}"
   }
 }

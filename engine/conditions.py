@@ -30,10 +30,17 @@ def _in_discard(ctx: EffectContext, p: dict[str, Any]) -> bool:
     return count >= p["min"]
 
 
+def _value_at_least(ctx: EffectContext, p: dict[str, Any]) -> bool:
+    from engine.values import resolve_value  # local import: values -> invoke -> context
+
+    return resolve_value(ctx, p["value"]) >= p["min"]
+
+
 # name -> (function, required params, optional params)
 _CONDITIONS: dict[str, tuple[ConditionFn, frozenset[str], frozenset[str]]] = {
     "played_this_turn": (_played_this_turn, frozenset({"element", "min"}), frozenset({"other"})),
     "in_discard": (_in_discard, frozenset({"element", "min"}), frozenset()),
+    "value_at_least": (_value_at_least, frozenset({"value", "min"}), frozenset()),
 }
 
 
@@ -52,6 +59,10 @@ def validate_condition(cond: Any, where: str) -> list[str]:
         errors.append(f"{where}.{name}: unknown element {params['element']!r}")
     if "min" in params and not isinstance(params["min"], int):
         errors.append(f"{where}.{name}: 'min' must be an integer")
+    if "value" in params:
+        from engine.values import validate_value
+
+        errors += validate_value(params["value"], f"{where}.{name}.value")
     return errors
 
 

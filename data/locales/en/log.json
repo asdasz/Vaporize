@@ -15,5 +15,14 @@
   "draw_exhausted": "{player} has no cards left to draw.",
   "game_over": "Game over. Winner: {winner_names}.",
   "undo": "{player} takes back {card_name}.",
-  "turn_cancelled": "{player} takes back their whole turn ({count} card(s))."
+  "turn_cancelled": "{player} takes back their whole turn ({count} card(s)).",
+  "invoke": "{player} invokes for {value} (spent {spent} {resource_name}).",
+  "damage": "{card_name} ({owner_name}) takes {amount} damage.",
+  "shield_absorbed": "A shield absorbs the hit on {card_name} ({owner_name}).",
+  "unit_destroyed": "{card_name} ({owner_name}) is destroyed.",
+  "heal": "{card_name} ({owner_name}) gains {amount} HP.",
+  "scouted": "{player} scouts {count} card(s).",
+  "prepare": "{player} prepares.",
+  "keyword_gained": "{player}'s card gains {keyword_name}.",
+  "play_cancelled": "{player} stops playing {card_name}."
 }

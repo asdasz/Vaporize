@@ -49,7 +49,7 @@ def test_cannot_play_on_other_players_turn() -> None:
 def test_unit_enters_tier1_and_blocks_when_full() -> None:
     state = make_game()
     seat = state.current
-    cards = set_hand(state, seat, ["MAG-S06"] * 3 + ["MAG-S01"] * 4)
+    cards = set_hand(state, seat, ["MAG-S12"] * 3 + ["MAG-S01"] * 4)
     state, _ = apply_action(state, catalog(), PlayCard(seat, cards[0].uid))
     state, _ = apply_action(state, catalog(), PlayCard(seat, cards[1].uid))
     tier1 = state.players[seat].tiers[1]
@@ -61,10 +61,10 @@ def test_unit_enters_tier1_and_blocks_when_full() -> None:
     assert exc.value.key == "error.tier_full"
 
 
-def test_every_mock_card_gives_one_inf() -> None:
+def test_every_influence_card_gives_one_inf() -> None:
     state = make_game()
     seat = state.current
-    for def_id in catalog().cards:
+    for def_id in [c.id for c in catalog().cards.values() if c.type == "influence"]:
         cards = set_hand(state, seat, [def_id] + ["MAG-S01"] * 6)
         state.players[seat].inf = 0
         after, _ = apply_action(state, catalog(), PlayCard(seat, cards[0].uid))

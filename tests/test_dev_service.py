@@ -5,15 +5,21 @@ from pathlib import Path
 
 from server.codes import ALPHABET
 from server.dev_service import DevGames
-from tests.helpers import catalog
+from tests.helpers import catalog, set_hand
+
+
+def _influence_hand(games: DevGames, gid: str) -> int:
+    """Give the current player 7 plain influence cards (no choices needed). Returns their seat."""
+    state = games.games[gid].state
+    set_hand(state, state.current, ["MAG-S01"] * 7)
+    return state.current
 
 
 def test_create_view_and_play() -> None:
     games = DevGames(catalog())
     gid = games.create(players=3, seed=7)
     assert len(gid) == 6 and all(ch in ALPHABET for ch in gid)
-    view = games.view(gid, 0)
-    seat = view["current"]
+    seat = _influence_hand(games, gid)
     view = games.view(gid, seat)
     uid = view["legal"]["playable"][0]
     res = games.act(gid, {"type": "play_card", "seat": seat, "card_uid": uid})
@@ -33,7 +39,7 @@ def test_illegal_action_returns_error_key() -> None:
 def test_undo_and_cancel_via_service() -> None:
     games = DevGames(catalog())
     gid = games.create(players=2, seed=2)
-    seat = games.view(gid, 0)["current"]
+    seat = _influence_hand(games, gid)
     playable = games.view(gid, seat)["legal"]["playable"]
     games.act(gid, {"type": "play_card", "seat": seat, "card_uid": playable[0]})
     games.act(gid, {"type": "play_card", "seat": seat, "card_uid": playable[1]})
@@ -63,7 +69,7 @@ def test_broken_save_file_starts_fresh(tmp_path: Path) -> None:
 def test_parallel_actions_are_not_lost() -> None:
     games = DevGames(catalog())
     gid = games.create(players=2, seed=5)
-    seat = games.view(gid, 0)["current"]
+    seat = _influence_hand(games, gid)
     hand = [c["uid"] for c in games.view(gid, seat)["players"][seat]["hand"]]
     results: list[bool] = []
 
@@ -79,3 +85,11 @@ def test_parallel_actions_are_not_lost() -> None:
     assert results.count(True) == 5  # 7 cards, keep 2
     assert view["players"][seat]["hand_count"] == 2
     assert view["legal"]["undo_count"] == 5
+
+
+def test_old_save_format_is_ignored(tmp_path: Path) -> None:
+    import pickle
+
+    path = tmp_path / "games.pkl"
+    path.write_bytes(pickle.dumps({"ABCDEF": "old game"}))
+    assert DevGames(catalog(), save_path=path).games == {}

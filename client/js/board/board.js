@@ -13,7 +13,7 @@ export function renderBoard(root, view, store, handlers) {
       <main class="main">
         ${topbar(view, store)}
         ${vpTrack(view)}
-        ${tierTable(view)}
+        ${tierTable(view, store)}
         ${sharedMarket(view)}
         ${privateMarkets(view, store)}
         ${playerPanel(view, store)}
@@ -28,11 +28,23 @@ export function renderBoard(root, view, store, handlers) {
     const action = el.dataset.action;
     if (action === "end-turn") handlers.endTurn();
     else if (action === "undo") handlers.undo();
+    else if (action === "target") handlers.pickUnit(el.dataset.uid);
+    else if (action === "split") handlers.splitAdjust(el.dataset.uid, Number(el.dataset.delta));
+    else if (action === "confirm-number") handlers.confirmNumber();
+    else if (action === "confirm-split") handlers.confirmSplit();
+    else if (action === "choose-card") handlers.respond(el.dataset.uid);
+    else if (action === "skip-choice") handlers.respond(null);
+    else if (action === "cancel-choice") handlers.cancelChoice();
     else if (action === "cancel-turn") handlers.cancelTurn();
     else if (action === "market") handlers.toggleMarket(Number(el.dataset.seat) === view.you ? "self" : Number(el.dataset.seat));
     else if (action === "new-game") handlers.newGame();
   };
   bindHandDrag(root, handlers);
+
+  root.oninput = (event) => {
+    const el = event.target.closest("[data-input='number']");
+    if (el) handlers.draftNumber(Number(el.value), root);
+  };
 
   root.onchange = (event) => {
     const el = event.target.closest("[data-change]");

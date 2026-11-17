@@ -1,0 +1,12 @@
+# Mage starter card 008 (legacy card number: 9).
+id: MAG-S08
+number: 8
+type: spell
+cost: 0
+elements: [wind]
+class: mage
+source: starter
+effects:
+  - do: scout
+    count: {invoke: -1}   # [invoke] - 1
+    draw: 1

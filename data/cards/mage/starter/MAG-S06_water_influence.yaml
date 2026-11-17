@@ -1,0 +1,11 @@
+# Mage starter card 006 (legacy card number: 7).
+id: MAG-S06
+number: 6
+type: influence
+cost: 0
+elements: [water]
+class: mage
+source: starter
+effects:
+  - do: gain_inf
+    amount: 1

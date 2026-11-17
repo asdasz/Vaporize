@@ -2,6 +2,7 @@
 import { t } from "../i18n.js";
 import { icon } from "../icons.js";
 import { handCard, hiddenCard } from "./card.js";
+import { promptPanel } from "./prompt.js";
 import { cardName, playerName, resourceName, seatColor, winnerNames } from "./util.js";
 
 const ELEMENTS = ["fire", "water", "wind", "lightning", "shadow"];
@@ -70,6 +71,7 @@ export function playerPanel(view, store) {
     <div class="panel" style="--seat-color:${seatColor(me.seat)}">
       ${stats(me)}
       ${chips(view, store)}
+      ${promptPanel(view, store)}
       <div class="hand-row">
         <div class="hand">${hand}${filler}</div>
         ${turnButtons(view, myTurn)}

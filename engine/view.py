@@ -6,34 +6,11 @@ from collections import Counter
 from typing import Any
 
 from engine.actions import legal_plays
-from engine.cards import CardInstance
+from engine.cardview import card_view
 from engine.catalog import Catalog
-from engine.elements import elements_of
 from engine.rules import ELEMENTS, MIN_HAND, SHARED_PRICE_MODIFIERS
 from engine.state import GameState, MarketState, PlayerState
 from engine.zones import SlotRow
-
-
-def card_view(card: CardInstance, catalog: Catalog) -> dict[str, Any]:
-    cdef = catalog.card(card.def_id)
-    view: dict[str, Any] = {
-        "uid": card.uid,
-        "id": cdef.id,
-        "type": cdef.type,
-        "cost": cdef.cost,
-        "elements": list(elements_of(card, catalog)),
-        "owner": card.owner,
-    }
-    if cdef.is_unit:
-        view.update(
-            attack=card.fixed_attack if card.fixed_attack is not None else cdef.attack,
-            health=card.fixed_health if card.fixed_health is not None else cdef.health,
-            hp=card.current_hp if card.current_hp is not None else cdef.health,
-            status=dict(card.status),
-            tapped=card.tapped,
-            token=card.is_token,
-        )
-    return view
 
 
 def _row(row: SlotRow, catalog: Catalog) -> list[dict[str, Any] | None]:
@@ -85,11 +62,25 @@ def _player(state: GameState, catalog: Catalog, player: PlayerState, viewer: int
     }
 
 
+def _pending(state: GameState, catalog: Catalog, viewer: int) -> dict[str, Any] | None:
+    """The pending choice. Only the acting player sees the prompt (it may show hidden cards)."""
+    pending = state.pending
+    if pending is None:
+        return None
+    card = state.players[pending.seat].hand.find(pending.card_uid)
+    view: dict[str, Any] = {"seat": pending.seat, "card": card_view(card, catalog) if card else None}
+    if viewer == pending.seat:
+        view["prompt"] = pending.prompt.to_dict()
+        view["step"] = len(pending.answers)
+    return view
+
+
 def build_view(state: GameState, catalog: Catalog, viewer: int) -> dict[str, Any]:
     if not 0 <= viewer < len(state.players):
         raise ValueError(f"no seat {viewer}")
     me = state.players[viewer]
     my_turn = state.phase == "actions" and state.current == viewer
+    free = my_turn and state.pending is None  # no choice waiting
     return {
         "you": viewer,
         "round": state.round,
@@ -100,13 +91,14 @@ def build_view(state: GameState, catalog: Catalog, viewer: int) -> dict[str, Any
         "players": [_player(state, catalog, p, viewer) for p in state.players],
         "tier4": _row(state.tier4, catalog),
         "shared_market": _market(state.shared_market, catalog, SHARED_PRICE_MODIFIERS),
+        "pending": _pending(state, catalog, viewer),
         "legal": {
-            "playable": legal_plays(state, catalog, viewer) if my_turn else [],
+            "playable": legal_plays(state, catalog, viewer) if free else [],
             "plays_left": max(0, len(me.hand) - MIN_HAND) if my_turn else 0,
-            "can_end_turn": my_turn,
-            "can_undo": my_turn and bool(state.undo_stack),
-            "undo_card": state.undo_stack[-1].card_id if my_turn and state.undo_stack else None,
-            "undo_count": len(state.undo_stack) if my_turn else 0,
+            "can_end_turn": free,
+            "can_undo": free and bool(state.undo_stack),
+            "undo_card": state.undo_stack[-1].card_id if free and state.undo_stack else None,
+            "undo_count": len(state.undo_stack) if free else 0,
         },
         "rules": {"min_hand": MIN_HAND},
     }

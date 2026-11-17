@@ -66,7 +66,8 @@ vaporize/
 │           ├── classes.json     # class names, passives, prepare/invoke text
 │           ├── keywords.json    # keyword names + reminder text
 │           ├── log.json         # game log messages (event keys)
-│           └── error.json       # illegal-action messages
+│           ├── error.json       # illegal-action messages
+│           └── prompt.json      # questions asked while a card resolves
 ├── engine/
 │   ├── rules.py                 # rulebook constants (hand size, elements, keywords, ...)
 │   ├── state.py                 # GameState, PlayerState, MarketState
@@ -78,25 +79,26 @@ vaporize/
 │   ├── resolver.py              # runs effect lists (if/then/else)
 │   ├── context.py               # EffectContext passed to effects
 │   ├── loader.py                # loads + validates YAML into CardDef / ClassDef
-│   ├── actions.py               # player actions: play, undo, cancel_turn, end_turn (buy, attack, … to come)
+│   ├── actions.py               # player actions: play, respond, cancel_choice, undo, cancel_turn, end_turn
+│   ├── errors.py                # IllegalAction (translation key + params)
+│   ├── invoke.py                # class invoke modes + spell bonus
+│   ├── cardview.py              # JSON-ready card description (views, prompts)
 │   ├── history.py               # undo snapshots for the current turn
 │   ├── turn.py                  # SOT → actions → EOT sequencing, round + game end
-│   ├── combat.py                # attack range, damage, shields, destruction
+│   ├── combat.py                # damage, shields, healing, destruction (attacks to come)
 │   ├── effects/
 │   │   ├── registry.py          # @effect("name") decorator + lookup
 │   │   ├── resources.py         # gain_inf, gain_resource, lose_resource, gain_vp, …
 │   │   ├── damage.py            # deal_damage, heal, split handling
-│   │   ├── status.py            # shield, stun, freeze
-│   │   ├── movement.py          # develop, degrade
-│   │   ├── cards.py             # draw, scout, disrupt, discard, remove
-│   │   ├── market.py            # refresh_market
-│   │   ├── units.py             # summon
-│   │   └── class_hooks.py       # invoke, prepare (delegate to ClassDef)
+│   │   ├── keywords.py          # grant_keyword (e.g. Split)
+│   │   ├── cards.py             # draw, scout (+ disrupt, discard, … to come)
+│   │   ├── class_hooks.py       # prepare (delegates to ClassDef)
+│   │   └── …                    # status.py, movement.py, market.py, units.py to come
 │   ├── conditions.py            # played_this_turn, in_discard, has_unit_on_tier, …
 │   ├── targeting.py             # target selectors (ally/enemy/any, tier ranges)
 │   ├── values.py                # value expressions: literal, invoke, invoke+N, count_of(…)
 │   ├── events.py                # Event types (for log + client animations)
-│   ├── prompts.py               # Prompt / PromptResponse types
+│   ├── prompts.py               # Prompt, NeedChoice, PendingChoice
 │   └── view.py                  # GameState → PlayerView (redaction)
 ├── server/
 │   ├── app.py                   # FastAPI app, static files, API endpoints
@@ -166,6 +168,19 @@ Rule notes the engine must respect:
 - Actions that reveal hidden information (events in `engine/history.py: REVEALING_EVENTS`, e.g. drawing a card) clear the stack and become a new checkpoint, so nobody can peek and undo.
 - Snapshots are shared between copies (`copy_state`), never deep-copied again.
 
+## Choices (prompts)
+
+Some effects need a decision: how much to invoke, which unit to hit, which scouted card to draw, how to split damage.
+
+- An effect calls `ctx.ask(Prompt(...))`. If the answer isn't known yet, this raises `NeedChoice`.
+- The engine then keeps the state from **before** the card was played and stores `state.pending = PendingChoice(seat, card_uid, answers, prompt)`. The card stays in the hand while the player chooses.
+- `Respond(seat, answer)` replays the whole card from that state with all answers so far. Replay is deterministic because the RNG lives in the state. It either resolves completely (and pushes one undo entry) or stops at the next prompt.
+- `CancelChoice` drops the pending card. It isn't allowed once a prompt has shown hidden cards (`cancellable: false`, e.g. scout).
+- While a choice is pending, every other action is rejected with `error.choice_pending`.
+- Prompt kinds: `number` (min..max), `choose_unit` (uids), `choose_card` (card views), `split_damage` ({uid: amount}, optional `same_tier`). Optional (positive) effects set `allow_skip`, and the answer `null` skips them.
+- Only the acting player sees the prompt in their view. The others only see who is choosing and for which card.
+- A `number` prompt with a single possible value (e.g. invoke with 0 mana) is answered automatically.
+
 ## Cards
 
 ### Two layers
@@ -178,12 +193,14 @@ Rule notes the engine must respect:
 - Format: `<CLASS>-<SOURCE><NN>`. Examples: `MAG-S01` (Mage starter), `MAG-P07` (Mage private), `SHR-012` (shared market).
 - Class codes: `MAG`, `ROB`, … (add as classes arrive). Shared cards use `SHR`.
 - File name: `<ID>_<snake_case_name>.yaml`, e.g. `MAG-S03_scorch.yaml`.
-- The ID is the printed card number. IDs never change once assigned. Duplicates in a deck are expressed with `copies:` in the file, not with extra files.
+- Every printed card has its own number and its own file, even identical ones (e.g. Mage starter 001–004 are four copies of the same fire influence). `number:` in the file holds the printed number ("New card #"); `copies` stays 1 for numbered cards.
+- IDs never change once assigned.
 
 ### Card file schema
 
 ```yaml
 id: MAG-S03
+number: 3                # printed card number, unique across all cards
 type: spell              # influence | spell | unit
 cost: 0                  # printed buy cost
 elements: [fire]         # any of fire, water, wind, lightning, shadow; [all] for all five; [] for none
@@ -242,24 +259,29 @@ Initial primitive list (extend as cards require):
 | `gain_inf` | `amount` |
 | `gain_resource` / `lose_resource` | `amount` (class resource: mana, heat, …) |
 | `gain_vp` | `amount` |
-| `invoke` | value expression consumer, see `values.py` |
 | `prepare` | none (delegates to the class) |
-| `deal_damage` | `amount`, `target`, optional `split` |
-| `heal` | `amount`, `target` |
+| `deal_damage` | `amount`, `target` (split comes from `grant_keyword: split`) |
+| `heal` | `amount`, `target`, optional `max_hp` (cap; never lowers HP) |
 | `shield` / `stun` / `freeze` | `count`, `target` |
 | `develop` / `degrade` | `target`, optional `cost_override`, `tiers` |
 | `draw` | `count` |
-| `scout` | `count` |
+| `scout` | `count`, optional `draw: 1` (draw one of the scouted cards) |
 | `disrupt` | `target_player` |
 | `refresh_market` | `market: shared \| private` |
 | `summon` | `attack`, `health`, `count` |
-| `grant_keyword` | `keyword` (e.g. `split` for the rest of this card) |
+| `grant_keyword` | `keyword`, optional `scope` (e.g. `split` with `scope: same_tier`, for the rest of this card) |
+
+Invoke isn't an effect: it's a value. `{invoke: N}` asks the class's invoke once per card (Mage: choose mana to spend; spells +1) and adds N (never below 0).
+
+Card input in the format Jan uses (one row per printed card): `New card #`, `Current card #` (legacy, kept as a comment), `Element`, `Cost`, `Type`, `Affiliation`, `Card text`, `Attack`, `Health`.
 
 Control structures, handled by the resolver rather than registered as effects: `if` / `then` / `else`, `choose_one`, `repeat`.
 
-**Values** (`values.py`) can be an int, `{invoke: N}` (invoke + N), or counters such as `{count: {in_discard: {element: water}}}`.
+**Values** (`values.py`): an int or `{invoke: N}` (invoke + N). Counters such as `{count: {in_discard: {element: water}}}` to come.
 
-**Conditions** (`conditions.py`): `played_this_turn {element, min, other: true}`, `in_discard {element, min}`, `has_unit_on_tier {tier}`, `resource_at_least {amount}`, …
+**Targets** (`targeting.py`): `{side: any | ally | enemy, tiers: [1, 2, 3, 4]}`. Tokens count as tier 1. Allies and enemies alike unless `side` says otherwise.
+
+**Conditions** (`conditions.py`): `played_this_turn {element, min, other: true}`, `in_discard {element, min}`, `value_at_least {value, min}` (e.g. "invoke for 4"), more to come.
 
 **Adding a new mechanic:** add a primitive or condition once, test it, then reference it from any number of card files. Never special-case a card ID in engine code.
 

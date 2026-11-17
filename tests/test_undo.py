@@ -16,7 +16,7 @@ def _play(state: GameState, seat: int, uid: str) -> GameState:
 def test_undo_takes_back_last_card() -> None:
     state = make_game()
     seat = state.current
-    a, b, *_ = set_hand(state, seat, ["MAG-S01", "MAG-S06"] + ["MAG-S01"] * 5)
+    a, b, *_ = set_hand(state, seat, ["MAG-S01", "MAG-S12"] + ["MAG-S01"] * 5)
     state = _play(state, seat, a.uid)
     state = _play(state, seat, b.uid)  # unit goes to tier 1
     state, events = apply_action(state, catalog(), Undo(seat))
@@ -25,7 +25,7 @@ def test_undo_takes_back_last_card() -> None:
     assert p.hand.find(b.uid) is not None
     assert p.tiers[1].cards() == []
     assert [x.def_id for x in p.played_this_turn] == ["MAG-S01"]
-    assert events[0].key == "log.undo" and events[0].params["card"] == "MAG-S06"
+    assert events[0].key == "log.undo" and events[0].params["card"] == "MAG-S12"
 
 
 def test_undo_step_by_step_back_to_start() -> None:
@@ -46,7 +46,7 @@ def test_undo_step_by_step_back_to_start() -> None:
 def test_cancel_turn_restores_turn_start() -> None:
     state = make_game()
     seat = state.current
-    cards = set_hand(state, seat, ["MAG-S01"] * 3 + ["MAG-S06"] * 2 + ["MAG-S01"] * 2)
+    cards = set_hand(state, seat, ["MAG-S01"] * 3 + ["MAG-S12"] * 2 + ["MAG-S01"] * 2)
     start_hand = [c.uid for c in state.players[seat].hand]
     for card in cards[:5]:
         state = _play(state, seat, card.uid)

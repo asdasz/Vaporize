@@ -17,10 +17,14 @@ function tooltip(card) {
   return esc(`${cardName(card.id)} · ${t(`ui.card.types.${card.type}`)}`);
 }
 
-export function miniUnit(card) {
+// opts.target: valid target of the pending prompt (clickable, red tint); opts.assigned: split damage so far
+export function miniUnit(card, { target = false, assigned = 0 } = {}) {
+  const classes = ["unit", card.tapped ? "tapped" : "", target ? "target" : ""].join(" ");
+  const action = target ? `data-action="target" data-uid="${card.uid}"` : `data-uid="${card.uid}"`;
+  const badge = assigned ? `<span class="assigned">−${assigned}</span>` : "";
   return `
-    <div class="unit ${card.tapped ? "tapped" : ""}" style="border-color:${seatColor(card.owner)}" title="${tooltip(card)}" data-uid="${card.uid}">
-      ${statusBadges(card.status)}
+    <div class="${classes}" style="border-color:${seatColor(card.owner)}" title="${tooltip(card)}" ${action}>
+      ${statusBadges(card.status)}${badge}
       <div class="name">${elementIcons(card.elements)}<span>${esc(cardName(card.id))}</span></div>
       <div class="stats">
         <span title="${t("ui.card.attack")}">${icon("attack")}${card.attack}</span>
@@ -45,19 +49,23 @@ export function marketCard(entry, { affordable = null, showModifier = false, own
     </div>`;
 }
 
-export function handCard(card, { playable = false, blocked = false } = {}) {
-  const classes = ["hcard", playable ? "playable" : "", blocked ? "blocked" : ""].join(" ");
+export function handCard(card, { playable = false, blocked = false, choose = false } = {}) {
+  const classes = ["hcard", playable ? "playable" : "", blocked ? "blocked" : "", choose ? "choosable" : ""].join(" ");
+  const attrs = choose
+    ? `data-action="choose-card" data-uid="${card.uid}"`
+    : `draggable="true" data-hand-uid="${card.uid}" data-playable="${playable ? 1 : 0}"`;
   const stats =
     card.type === "unit"
       ? `<div class="stats"><span>${icon("attack")}${card.attack}</span><span>${icon("health")}${card.health}</span></div>`
       : "";
   return `
-    <div class="${classes}" draggable="true" data-hand-uid="${card.uid}" data-playable="${playable ? 1 : 0}" title="${tooltip(card)}">
+    <div class="${classes}" ${attrs} title="${tooltip(card)}">
       <div class="top">${elementIcons(card.elements)}<span class="cost">${card.cost}</span></div>
       <div class="name">${esc(cardName(card.id))}</div>
       <div class="type">${t(`ui.card.types.${card.type}`)}</div>
       <div class="text">${rulesText(card.id)}</div>
       ${stats}
+      ${card.number ? `<div class="num">No. ${String(card.number).padStart(3, "0")}</div>` : ""}
     </div>`;
 }
 

@@ -1,0 +1,13 @@
+# Mage starter card 012 (legacy card number: 14).
+id: MAG-S12
+number: 12
+type: unit
+cost: 0
+elements: [water]
+class: mage
+source: starter
+attack: 0
+health: 2
+triggers:
+  sot:
+    - do: prepare

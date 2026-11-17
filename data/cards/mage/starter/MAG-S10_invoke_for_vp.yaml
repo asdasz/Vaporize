@@ -1,0 +1,13 @@
+# Mage starter card 010 (legacy card number: 12).
+id: MAG-S10
+number: 10
+type: spell
+cost: 0
+elements: [water, shadow]
+class: mage
+source: starter
+effects:
+  - if: {value_at_least: {value: {invoke: 0}, min: 4}}
+    then:
+      - do: gain_vp
+        amount: 1

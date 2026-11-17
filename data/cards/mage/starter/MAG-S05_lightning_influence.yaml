@@ -1,0 +1,11 @@
+# Mage starter card 005 (legacy card number: 5).
+id: MAG-S05
+number: 5
+type: influence
+cost: 0
+elements: [lightning]
+class: mage
+source: starter
+effects:
+  - do: gain_inf
+    amount: 1

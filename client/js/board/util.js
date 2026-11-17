@@ -31,5 +31,23 @@ export function eventText(view, event) {
   if ("card" in p) p.card_name = cardName(p.card);
   if ("resource" in p) p.resource_name = resourceName(p.resource);
   if ("winners" in p) p.winner_names = winnerNames(view, p.winners);
+  if ("owner" in p) p.owner_name = playerName(view, p.owner);
+  if ("keyword" in p) p.keyword_name = t(`keywords.${p.keyword}.name`);
   return t(event.key, p);
 }
+
+// All units on the board (own tiers, tokens, shared tier 4) as {unit, tier}.
+export function boardUnits(view) {
+  const out = [];
+  for (const p of view.players) {
+    for (const [tier, row] of Object.entries(p.tiers)) row.forEach((u) => u && out.push({ unit: u, tier: Number(tier) }));
+    p.tokens.forEach((u) => out.push({ unit: u, tier: 1 }));
+  }
+  view.tier4.forEach((u) => u && out.push({ unit: u, tier: 4 }));
+  return out;
+}
+
+export const findUnit = (view, uid) => boardUnits(view).find((x) => x.unit.uid === uid);
+
+// The pending prompt if *we* are the one choosing, else null.
+export const myPrompt = (view) => (view.pending && view.pending.prompt ? view.pending.prompt : null);

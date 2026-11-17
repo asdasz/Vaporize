@@ -1,11 +1,11 @@
-# MOCK card: placeholder until the real Mage starter deck is added.
+# Mage starter card 001 (legacy card number: 1).
 id: MAG-S01
+number: 1
 type: influence
 cost: 0
 elements: [fire]
 class: mage
 source: starter
-copies: 3
 effects:
   - do: gain_inf
     amount: 1

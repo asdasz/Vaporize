@@ -1,5 +1,5 @@
 import { api } from "./api.js";
-import { loadLocale } from "./i18n.js";
+import { loadLocale, t } from "./i18n.js";
 import { renderSetup } from "./setup.js";
 import { renderBoard } from "./board/board.js";
 
@@ -12,7 +12,16 @@ const store = {
   view: null,
   error: null, // last illegal-action error {key, params}
   openMarket: "self", // "self" | seat number | null (all hidden)
+  draft: null, // local, unsent answer for the pending prompt: {key, value, split}
 };
+
+// Reset the local draft whenever a new prompt appears.
+function syncDraft(view) {
+  const p = view.pending;
+  const key = p && p.prompt ? `${p.card?.uid}:${p.step}` : null;
+  if (!key) store.draft = null;
+  else if (!store.draft || store.draft.key !== key) store.draft = { key, value: p.prompt.max, split: {} };
+}
 
 // Hand order is cosmetic and kept per game + seat in the browser (sessionStorage, memory fallback).
 const memoryOrders = new Map();
@@ -61,6 +70,7 @@ async function refresh() {
     view = await api.getView(store.gameId, store.seat);
   }
   applyHandOrder(view);
+  syncDraft(view);
   store.view = view;
   setUrl();
   draw();
@@ -128,6 +138,39 @@ const handlers = {
   endTurn: () => act({ type: "end_turn", seat: store.seat }),
   undo: () => act({ type: "undo", seat: store.seat }),
   cancelTurn: () => act({ type: "cancel_turn", seat: store.seat }),
+  respond: (answer) => act({ type: "respond", seat: store.seat, answer }),
+  cancelChoice: () => act({ type: "cancel_choice", seat: store.seat }),
+  pickUnit: (uid) => {
+    const prompt = store.view?.pending?.prompt;
+    if (!prompt) return;
+    if (prompt.kind === "choose_unit") handlers.respond(uid);
+    else if (prompt.kind === "split_damage") handlers.splitAdjust(uid, 1);
+  },
+  draftNumber: (value, root) => {
+    if (!store.draft) return;
+    store.draft.value = value;
+    const prompt = store.view.pending.prompt;
+    const label = root.querySelector("[data-number-label]");
+    if (label) {
+      label.textContent = t("ui.prompt.spend", {
+        spent: value,
+        resource_name: t(`ui.resources.${prompt.params.resource}`),
+        value: value + (prompt.params.bonus || 0),
+      });
+    }
+  },
+  confirmNumber: () => store.draft && handlers.respond(store.draft.value),
+  splitAdjust: (uid, delta) => {
+    const prompt = store.view?.pending?.prompt;
+    if (!store.draft || !prompt) return;
+    const split = store.draft.split;
+    const assigned = Object.values(split).reduce((a, b) => a + b, 0);
+    if (delta > 0 && assigned >= prompt.total) return;
+    split[uid] = Math.max(0, (split[uid] || 0) + delta);
+    if (!split[uid]) delete split[uid];
+    draw();
+  },
+  confirmSplit: () => store.draft && handlers.respond({ ...store.draft.split }),
   setSeat: async (seat) => {
     store.seat = seat;
     store.follow = false;

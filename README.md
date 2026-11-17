@@ -32,8 +32,10 @@ mypy
 - [x] Card play loop: play up to 5 of 7, discard, draw back to 7 with reshuffle, smaller hand when nothing is left
 - [x] Board UI draft for 2–4 players (tier table, VP track, markets, hand), hot-seat dev API
 - [x] Turn controls: drag a card up to play it, Undo, Cancel turn, End turn (final); drag to reorder the hand
-- [ ] Real Mage cards (current starter deck is mock data)
+- [x] Mage starter deck (cards 001–012) with invoke, scout, damage + split, heal, prepare
+- [x] Choice prompts (invoke amount, targets, scouted card, split damage)
+- [ ] Mage private market cards
 - [ ] Markets: buy, refresh, remove card
 - [ ] Units: develop, attack, statuses
-- [ ] Invoke / prepare, class passives with modifiers
+- [ ] Mage element swap passive
 - [ ] Online lobby with 6-character join codes over WebSockets

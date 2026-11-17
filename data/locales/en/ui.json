@@ -93,5 +93,18 @@
   },
   "errors": {
     "connection": "Couldn't reach the server. Check that it's running and try again."
+  },
+  "prompt": {
+    "playing": "Playing {card_name}",
+    "waiting": "{player} is making a choice for {card_name}…",
+    "confirm": "Confirm",
+    "skip": "Skip",
+    "cancel": "Cancel",
+    "spend": "Spend {spent} {resource_name} → value {value}",
+    "bonus": "(+{bonus} spell bonus)",
+    "assigned": "Assigned {assigned} / {total}",
+    "same_tier": "All on one tier",
+    "click_unit": "Click a highlighted unit on the board, or pick one here:",
+    "max_hp": "max {max_hp} HP"
   }
 }

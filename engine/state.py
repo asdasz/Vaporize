@@ -6,6 +6,7 @@ import random
 from dataclasses import dataclass, field
 
 from engine.cards import CardInstance
+from engine.prompts import PendingChoice
 from engine.zones import SlotRow, Zone
 
 
@@ -71,6 +72,8 @@ class GameState:
     # Undoable actions of the current turn, oldest first. Cleared at end of turn
     # and whenever hidden information is revealed (e.g. a card is drawn).
     undo_stack: list[UndoEntry] = field(default_factory=list)
+    # A card waiting for a player's choice (see engine/prompts.py), or None.
+    pending: PendingChoice | None = None
 
     @property
     def current_player(self) -> PlayerState:

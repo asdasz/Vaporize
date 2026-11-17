@@ -57,3 +57,10 @@ def make_cards(state: GameState, seat: int, def_ids: list[str]) -> list[CardInst
 
 def ctx_for(state: GameState, seat: int | None = None, source: CardInstance | None = None) -> EffectContext:
     return EffectContext(state, catalog(), state.current if seat is None else seat, source, [])
+
+
+def place_unit(state: GameState, seat: int, tier: int, def_id: str = "MAG-S12", hp: int = 2) -> CardInstance:
+    """Put a unit straight onto the board (tier 4 = shared row)."""
+    unit = CardInstance(uid=state.new_uid(), def_id=def_id, owner=seat, current_hp=hp, fixed_attack=0, fixed_health=2)
+    (state.tier4 if tier == 4 else state.players[seat].tiers[tier]).place(unit)
+    return unit

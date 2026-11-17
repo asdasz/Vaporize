@@ -67,3 +67,17 @@ def test_unit_requires_stats() -> None:
     raw = {"id": "MAG-S99", "type": "unit", "cost": 0, "class": "mage", "source": "starter"}
     _, errors = parse_card(raw, "test")
     assert any("attack" in e for e in errors)
+
+
+def test_every_engine_message_key_has_english_text() -> None:
+    """log.*, error.* and prompt.* keys used in engine code must exist in the en locale."""
+    import re
+
+    root = DATA_DIR.parent / "engine"
+    used = set()
+    for path in root.rglob("*.py"):
+        used |= set(re.findall(r'"((?:log|error|prompt)\.[a-z_]+)"', path.read_text(encoding="utf-8")))
+    assert used, "no keys found"
+    for key in sorted(used):
+        namespace, name = key.split(".", 1)
+        assert name in _locale(namespace), f"missing en text for {key}"

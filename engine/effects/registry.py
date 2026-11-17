@@ -13,8 +13,10 @@ EffectFn = Callable[[EffectContext, dict[str, Any]], None]
 
 # Keys allowed on every effect node in addition to the effect's own params.
 COMMON_KEYS = frozenset({"do", "required"})
-# Params that hold a numeric value. Only plain integers are supported for now.
+# Params that hold a value expression (int or {invoke: N}).
 VALUE_PARAMS = frozenset({"amount", "count"})
+# Params that must be plain non-negative integers.
+INT_PARAMS = frozenset({"max_hp", "draw"})
 
 
 @dataclass(frozen=True)
@@ -76,7 +78,27 @@ def validate_effects(nodes: Any, where: str) -> list[str]:
             f"{w} ({name}): unknown param {k!r}"
             for k in sorted(params - spec.required - spec.optional)
         ]
-        for key in VALUE_PARAMS & params:
-            if not isinstance(node[key], int):
-                errors.append(f"{w} ({name}): {key!r} must be an integer (value expressions not supported yet)")
+        errors += _validate_params(node, f"{w} ({name})")
+    return errors
+
+
+def _validate_params(node: dict[str, Any], where: str) -> list[str]:
+    from engine.rules import KEYWORDS
+    from engine.targeting import validate_target
+    from engine.values import validate_value
+
+    errors: list[str] = []
+    for key in VALUE_PARAMS & node.keys():
+        errors += validate_value(node[key], f"{where}.{key}")
+    for key in INT_PARAMS & node.keys():
+        if isinstance(node[key], bool) or not isinstance(node[key], int) or node[key] < 0:
+            errors.append(f"{where}: {key!r} must be a non-negative integer")
+    if "target" in node:
+        errors += validate_target(node["target"], f"{where}.target")
+    if "keyword" in node and node["keyword"] not in KEYWORDS:
+        errors.append(f"{where}: unknown keyword {node['keyword']!r}")
+    if "scope" in node and node["scope"] not in ("same_tier",):
+        errors.append(f"{where}: unknown scope {node['scope']!r}")
+    if "required" in node and not isinstance(node["required"], bool):
+        errors.append(f"{where}: 'required' must be true or false")
     return errors

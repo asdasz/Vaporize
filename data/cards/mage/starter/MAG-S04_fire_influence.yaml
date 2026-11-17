@@ -1,11 +1,11 @@
-# MOCK card: placeholder until the real Mage starter deck is added.
+# Mage starter card 004 (legacy card number: 4).
 id: MAG-S04
-type: spell
+number: 4
+type: influence
 cost: 0
 elements: [fire]
 class: mage
 source: starter
-copies: 1
 effects:
   - do: gain_inf
     amount: 1

@@ -5,5 +5,10 @@
   "min_hand": "You must keep at least {min} cards in your hand.",
   "tier_full": "Tier {tier} is full.",
   "unknown_action": "Unknown action.",
-  "nothing_to_undo": "There's nothing to undo."
+  "nothing_to_undo": "There's nothing to undo.",
+  "invalid_choice": "That choice isn't allowed.",
+  "split_same_tier": "Split damage must go to units on a single tier.",
+  "choice_pending": "Finish the current choice first.",
+  "no_choice_pending": "There's no choice to make.",
+  "choice_not_cancellable": "You've already seen hidden cards, so this can't be cancelled."
 }

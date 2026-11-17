@@ -1,0 +1,11 @@
+# Mage starter card 007 (legacy card number: 8).
+id: MAG-S07
+number: 7
+type: influence
+cost: 0
+elements: [water]
+class: mage
+source: starter
+effects:
+  - do: gain_inf
+    amount: 1

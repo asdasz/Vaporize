@@ -1,0 +1,11 @@
+# Mage starter card 003 (legacy card number: 3).
+id: MAG-S03
+number: 3
+type: influence
+cost: 0
+elements: [fire]
+class: mage
+source: starter
+effects:
+  - do: gain_inf
+    amount: 1

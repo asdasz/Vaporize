@@ -17,6 +17,7 @@ class CardDef:
     card_class: str  # class id, or "shared"
     source: str  # starter | private | shared
     copies: int = 1
+    number: int | None = None  # printed card number ("No. 009")
     attack: int | None = None
     health: int | None = None
     effects: tuple[dict[str, Any], ...] = ()

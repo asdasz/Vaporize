@@ -16,11 +16,12 @@ from engine.cards import CardDef
 from engine.catalog import Catalog
 from engine.classes import ClassDef, ResourceRule, TierRule
 from engine.effects.registry import validate_effects
+from engine.invoke import INVOKE_MODES
 from engine.rules import CARD_TYPES, CLASS_TRIGGERS, ELEMENTS, SOURCES, UNIT_TRIGGERS
 
 CARD_ID_RE = re.compile(r"^[A-Z]{3}-[A-Z]?\d{2,3}$")
 CARD_KEYS = {
-    "id", "type", "cost", "elements", "class", "source", "copies",
+    "id", "number", "type", "cost", "elements", "class", "source", "copies",
     "attack", "health", "effects", "triggers",
 }
 CLASS_MODIFIERS = {"spell_invoke_bonus", "element_swap_once_per_turn"}
@@ -57,6 +58,9 @@ def parse_card(raw: Any, where: str) -> tuple[CardDef | None, list[str]]:
         errors.append(f"{where}: source must be one of {SOURCES}")
     if not isinstance(raw["cost"], int) or raw["cost"] < 0:
         errors.append(f"{where}: cost must be a non-negative integer")
+    number = raw.get("number")
+    if number is not None and (isinstance(number, bool) or not isinstance(number, int) or number < 1):
+        errors.append(f"{where}: number must be a positive integer")
     copies = raw.get("copies", 1)
     if not isinstance(copies, int) or copies < 1:
         errors.append(f"{where}: copies must be a positive integer")
@@ -102,6 +106,7 @@ def parse_card(raw: Any, where: str) -> tuple[CardDef | None, list[str]]:
             card_class=raw["class"],
             source=raw["source"],
             copies=copies,
+            number=number,
             attack=attack,
             health=health,
             effects=tuple(effects),
@@ -147,6 +152,9 @@ def parse_class(raw: Any, where: str) -> tuple[ClassDef | None, list[str]]:
             errors.append(f"{w}: needs a 'trigger' or a known 'modifier' {sorted(CLASS_MODIFIERS)}")
     prepare = raw.get("prepare", []) or []
     errors += validate_effects(prepare, f"{where}.prepare")
+    invoke_mode = (raw.get("invoke") or {}).get("mode")
+    if invoke_mode not in INVOKE_MODES:
+        errors.append(f"{where}: invoke.mode must be one of {INVOKE_MODES}")
 
     if errors:
         return None, errors
@@ -196,9 +204,14 @@ def load_catalog(data_dir: Path) -> Catalog:
                 errors.append(f"{where}: class id must match the file name")
             classes[cdef.id] = cdef
 
+    numbers: dict[int, str] = {}
     for card in cards.values():
         if card.card_class != "shared" and card.card_class not in classes:
             errors.append(f"card {card.id}: unknown class {card.card_class!r}")
+        if card.number is not None:
+            if card.number in numbers:
+                errors.append(f"card {card.id}: number {card.number} already used by {numbers[card.number]}")
+            numbers[card.number] = card.id
 
     if errors:
         raise DataValidationError(errors)

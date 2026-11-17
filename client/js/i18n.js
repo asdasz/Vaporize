@@ -1,5 +1,5 @@
 // Translation lookup. Keys are "<namespace>.<path>", e.g. "ui.panel.end_turn", "cards.MAG-S01.name".
-const NAMESPACES = ["ui", "cards", "classes", "keywords", "log", "error"];
+const NAMESPACES = ["ui", "cards", "classes", "keywords", "log", "error", "prompt"];
 const FALLBACK_LANG = "en";
 
 let dict = {};

@@ -1,0 +1,17 @@
+# Mage starter card 009 (legacy card number: 10).
+id: MAG-S09
+number: 9
+type: spell
+cost: 0
+elements: [fire]
+class: mage
+source: starter
+effects:
+  - if: {played_this_turn: {element: water, min: 3}}
+    then:
+      - do: grant_keyword
+        keyword: split
+        scope: same_tier    # "limited to a single row" = one tier
+  - do: deal_damage
+    amount: {invoke: 0}
+    target: {side: any, tiers: [1, 2, 3]}

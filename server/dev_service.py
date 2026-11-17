@@ -14,7 +14,17 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Any
 
-from engine.actions import Action, CancelTurn, EndTurn, IllegalAction, PlayCard, Undo, apply_action
+from engine.actions import (
+    Action,
+    CancelChoice,
+    CancelTurn,
+    EndTurn,
+    IllegalAction,
+    PlayCard,
+    Respond,
+    Undo,
+    apply_action,
+)
 from engine.catalog import Catalog
 from engine.events import Event
 from engine.setup import new_game
@@ -23,6 +33,8 @@ from engine.view import build_view
 from server.codes import generate_code
 
 LOG_LIMIT = 60
+# Bump when engine state classes change, so old save files are ignored instead of half-loading.
+SAVE_VERSION = 2
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +64,10 @@ def parse_action(payload: dict[str, Any]) -> Action:
         return Undo(seat=seat)
     if kind == "cancel_turn":
         return CancelTurn(seat=seat)
+    if kind == "respond":
+        return Respond(seat=seat, answer=payload.get("answer"))
+    if kind == "cancel_choice":
+        return CancelChoice(seat=seat)
     raise IllegalAction("error.unknown_action")
 
 
@@ -74,9 +90,11 @@ class DevGames:
             return
         try:
             with self.save_path.open("rb") as fh:
-                games = pickle.load(fh)  # local dev file written by this process only
-            if isinstance(games, dict):
-                self.games = games
+                saved = pickle.load(fh)  # local dev file written by this process only
+            if isinstance(saved, dict) and saved.get("version") == SAVE_VERSION:
+                self.games = saved["games"]
+            else:
+                logger.info("Saved dev games are from an older version; starting fresh")
         except Exception:  # noqa: BLE001
             logger.warning("Couldn't load saved dev games from %s; starting fresh", self.save_path)
 
@@ -85,7 +103,7 @@ class DevGames:
             return
         tmp = self.save_path.with_suffix(".tmp")
         with tmp.open("wb") as fh:
-            pickle.dump(self.games, fh)
+            pickle.dump({"version": SAVE_VERSION, "games": self.games}, fh)
         tmp.replace(self.save_path)
 
     def create(self, players: int, seed: int | None = None) -> str:

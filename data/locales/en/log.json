@@ -24,5 +24,6 @@
   "scouted": "{player} scouts {count} card(s).",
   "prepare": "{player} prepares.",
   "keyword_gained": "{player}'s card gains {keyword_name}.",
-  "play_cancelled": "{player} stops playing {card_name}."
+  "play_cancelled": "{player} stops playing {card_name}.",
+  "unit_developed": "{player} develops {card_name} to Tier {tier} ({cost} inf)."
 }

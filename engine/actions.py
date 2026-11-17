@@ -11,6 +11,7 @@ from typing import Any, Union
 from engine.cards import CardInstance
 from engine.catalog import Catalog
 from engine.context import EffectContext
+from engine.development import check_develop, develop_unit
 from engine.errors import IllegalAction
 from engine.events import Event
 from engine.history import copy_state, reveals_information, snapshot
@@ -21,7 +22,7 @@ from engine.state import GameState, PlayedCard, UndoEntry
 from engine.turn import end_turn
 
 __all__ = [
-    "Action", "CancelChoice", "CancelTurn", "EndTurn", "IllegalAction", "PlayCard", "Respond", "Undo",
+    "Action", "CancelChoice", "CancelTurn", "Develop", "EndTurn", "IllegalAction", "PlayCard", "Respond", "Undo",
     "apply_action", "check_play", "legal_plays",
 ]
 
@@ -48,6 +49,14 @@ class CancelChoice:
 
 
 @dataclass(frozen=True)
+class Develop:
+    """Pay inf to move one of your units up one tier."""
+
+    seat: int
+    unit_uid: str
+
+
+@dataclass(frozen=True)
 class EndTurn:
     seat: int
 
@@ -66,7 +75,7 @@ class CancelTurn:
     seat: int
 
 
-Action = Union[PlayCard, Respond, CancelChoice, EndTurn, Undo, CancelTurn]
+Action = Union[PlayCard, Respond, CancelChoice, Develop, EndTurn, Undo, CancelTurn]
 
 
 def _check_turn(state: GameState, seat: int) -> None:
@@ -205,6 +214,14 @@ def apply_action(state: GameState, catalog: Catalog, action: Action) -> tuple[Ga
         return _cancel_turn(state, action, events), events
     if isinstance(action, PlayCard):
         return _resolve_play(state, catalog, action.seat, action.card_uid, [])
+    if isinstance(action, Develop):
+        _check_turn(state, action.seat)
+        option = check_develop(state, catalog, action.seat, action.unit_uid)
+        new_state = copy_state(state)
+        develop_unit(new_state, catalog, action.seat, option, events)
+        unit = next(u for _, u in state.units_of(action.seat) if u.uid == action.unit_uid)
+        new_state.undo_stack.append(UndoEntry(snapshot(state), unit.def_id))
+        return new_state, events
     if isinstance(action, EndTurn):
         _check_turn(state, action.seat)
         new_state = copy_state(state)

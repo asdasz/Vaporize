@@ -10,5 +10,9 @@
   "split_same_tier": "Split damage must go to units on a single tier.",
   "choice_pending": "Finish the current choice first.",
   "no_choice_pending": "There's no choice to make.",
-  "choice_not_cancellable": "You've already seen hidden cards, so this can't be cancelled."
+  "choice_not_cancellable": "You've already seen hidden cards, so this can't be cancelled.",
+  "not_your_unit": "You can only develop your own units.",
+  "max_tier": "This unit is already on Tier 4.",
+  "unit_frozen": "A frozen unit can't be developed.",
+  "not_enough_inf": "You need {cost} inf for that."
 }

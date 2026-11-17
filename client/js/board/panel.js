@@ -39,6 +39,9 @@ function chips(view, store) {
         : `<span class="chip done">${t("ui.panel.no_plays_left", { min: view.rules.min_hand })}</span>`,
     );
     if (left > 0) out.push(`<span class="chip info">${icon("arrowUp")}${t("ui.panel.drag_hint")}</span>`);
+    const develops = Object.keys(view.legal.develop || {}).length;
+    if (develops) out.push(`<span class="chip">${icon("arrowUp")}${t("ui.panel.develops", { count: develops })}</span>`);
+    out.push(`<span class="chip info">${icon("star")}${t("ui.panel.eot_vp", { vp: view.players[view.you].eot_vp })}</span>`);
   }
   if (store.error) {
     const params = { ...store.error.params };

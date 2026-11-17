@@ -8,6 +8,7 @@ from typing import Any
 from engine.actions import legal_plays
 from engine.cardview import card_view
 from engine.catalog import Catalog
+from engine.development import eot_vp, legal_develops
 from engine.rules import ELEMENTS, MIN_HAND, SHARED_PRICE_MODIFIERS
 from engine.state import GameState, MarketState, PlayerState
 from engine.zones import SlotRow
@@ -36,6 +37,7 @@ def _player(state: GameState, catalog: Catalog, player: PlayerState, viewer: int
         "name": player.name,
         "class_id": player.class_id,
         "vp": player.vp,
+        "eot_vp": eot_vp(state, catalog, player.seat),
         "inf": player.inf,
         "resource": {
             "key": cdef.resource.key,
@@ -96,6 +98,9 @@ def build_view(state: GameState, catalog: Catalog, viewer: int) -> dict[str, Any
             "playable": legal_plays(state, catalog, viewer) if free else [],
             "plays_left": max(0, len(me.hand) - MIN_HAND) if my_turn else 0,
             "can_end_turn": free,
+            "develop": {
+                o.uid: {"cost": o.cost, "to": o.to_tier} for o in (legal_develops(state, catalog, viewer) if free else [])
+            },
             "can_undo": free and bool(state.undo_stack),
             "undo_card": state.undo_stack[-1].card_id if free and state.undo_stack else None,
             "undo_count": len(state.undo_stack) if free else 0,

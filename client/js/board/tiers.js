@@ -16,11 +16,15 @@ function targetInfo(view, store) {
   const prompt = myPrompt(view);
   const targets = new Set(prompt && ["choose_unit", "split_damage"].includes(prompt.kind) ? prompt.options : []);
   const split = (prompt && prompt.kind === "split_damage" && store.draft && store.draft.split) || {};
-  return { targets, split };
+  return { targets, split, develop: view.legal.develop || {} };
 }
 
 function unitHtml(card, info) {
-  return miniUnit(card, { target: info.targets.has(card.uid), assigned: info.split[card.uid] || 0 });
+  return miniUnit(card, {
+    target: info.targets.has(card.uid),
+    assigned: info.split[card.uid] || 0,
+    develop: info.develop[card.uid] || null,
+  });
 }
 
 function slots(row, info) {
@@ -39,6 +43,7 @@ export function tierTable(view, store) {
       (p) => `<div class="head ${colClass(p)}" style="color:${seatColor(p.seat)}">
         <span><span class="dot" style="background:${seatColor(p.seat)}"></span> ${esc(p.name)} · ${t(`classes.${p.class_id}.name`)}</span>
         <small>${t("ui.tiers.hand", { count: p.hand_count })} · ${t("ui.tiers.deck", { count: p.deck_count })} · ${t("ui.tiers.discard", { count: p.discard.length })}</small>
+        <small class="eot ${p.eot_vp ? "has" : ""}">${t("ui.tiers.eot_vp", { vp: p.eot_vp })}</small>
       </div>`,
     )
     .join("");

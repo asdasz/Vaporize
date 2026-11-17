@@ -17,11 +17,16 @@ function tooltip(card) {
   return esc(`${cardName(card.id)} · ${t(`ui.card.types.${card.type}`)}`);
 }
 
-// opts.target: valid target of the pending prompt (clickable, red tint); opts.assigned: split damage so far
-export function miniUnit(card, { target = false, assigned = 0 } = {}) {
-  const classes = ["unit", card.tapped ? "tapped" : "", target ? "target" : ""].join(" ");
+// opts.target: valid target of the pending prompt (clickable, red tint); opts.assigned: split damage so far;
+// opts.develop: {cost, to} when the viewer can develop this unit right now (green button)
+export function miniUnit(card, { target = false, assigned = 0, develop = null } = {}) {
+  const classes = ["unit", card.tapped ? "tapped" : "", target ? "target" : "", develop ? "can-develop" : ""].join(" ");
   const action = target ? `data-action="target" data-uid="${card.uid}"` : `data-uid="${card.uid}"`;
-  const badge = assigned ? `<span class="assigned">−${assigned}</span>` : "";
+  let badge = assigned ? `<span class="assigned">−${assigned}</span>` : "";
+  if (develop && !target) {
+    const hint = t("ui.tiers.develop_hint", { tier: develop.to, cost: develop.cost });
+    badge += `<button class="dev-btn" data-action="develop" data-uid="${card.uid}" title="${hint}">${icon("arrowUp")}${t("ui.tiers.develop_button", { tier: develop.to, cost: develop.cost })}</button>`;
+  }
   return `
     <div class="${classes}" style="border-color:${seatColor(card.owner)}" title="${tooltip(card)}" ${action}>
       ${statusBadges(card.status)}${badge}

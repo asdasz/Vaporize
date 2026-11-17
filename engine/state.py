@@ -84,7 +84,7 @@ class GameState:
         return f"c{self.uid_counter}"
 
     def units_of(self, seat: int) -> list[tuple[int, CardInstance]]:
-        """All units owned by `seat` as (tier, unit). Tokens report tier 1."""
+        """All units owned by `seat` as (tier, unit). Undeveloped tokens report tier 1."""
         player = self.players[seat]
         units = [(tier, card) for tier, row in sorted(player.tiers.items()) for card in row.cards()]
         units += [(1, card) for card in player.tokens]

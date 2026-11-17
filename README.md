@@ -36,6 +36,7 @@ mypy
 - [x] Choice prompts (invoke amount, targets, scouted card, split damage)
 - [ ] Mage private market cards
 - [ ] Markets: buy, refresh, remove card
-- [ ] Units: develop, attack, statuses
+- [x] Units: develop (tier up for 3/4/5 inf, shared Tier 4) and VP scoring by tier at end of turn
+- [ ] Units: attack, statuses
 - [ ] Mage element swap passive
 - [ ] Online lobby with 6-character join codes over WebSockets

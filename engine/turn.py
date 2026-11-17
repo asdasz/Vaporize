@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from engine.catalog import Catalog
 from engine.context import EffectContext
+from engine.development import eot_vp
 from engine.drawing import draw_up_to
 from engine.events import Event
 from engine.resolver import resolve_effects
@@ -40,8 +41,7 @@ def start_turn(state: GameState, catalog: Catalog, events: list[Event]) -> None:
 
 
 def score_units(state: GameState, catalog: Catalog, seat: int, events: list[Event]) -> int:
-    tiers = catalog.cls(state.players[seat].class_id).tiers
-    gained = sum(tiers[tier].vp for tier, unit in state.units_of(seat) if not unit.is_token)
+    gained = eot_vp(state, catalog, seat)  # every unit scores by its tier, tokens included
     if gained:
         state.players[seat].vp += gained
         events.append(Event("log.vp_scored", {"seat": seat, "amount": gained}))

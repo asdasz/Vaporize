@@ -147,3 +147,12 @@
 .hcard.choosable { cursor: pointer; outline: 2px solid var(--accent); outline-offset: 2px; }
 .hcard.choosable:hover { transform: translateY(-4px); }
 .hcard .num { font-size: 10px; color: var(--text-3); text-align: right; }
+
+/* Developing units */
+.unit.can-develop { outline: 2px solid var(--success-fill); outline-offset: 2px; }
+.dev-btn { position: absolute; bottom: -11px; left: 50%; transform: translateX(-50%); z-index: 2; display: inline-flex; align-items: center; gap: 2px; padding: 0 6px; height: 18px; font-size: 11px; font-weight: 600; border-radius: 9px; border: 1.5px solid var(--success-fill); background: var(--success-bg); color: var(--success); white-space: nowrap; }
+.dev-btn:hover { background: var(--success-fill); color: #fff; }
+.dev-btn .ic { width: 11px; height: 11px; }
+.tiers .cell { padding-bottom: 12px; }
+.tiers .head .eot { color: var(--text-3); }
+.tiers .head .eot.has { color: var(--gold); font-weight: 600; }

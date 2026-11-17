@@ -79,7 +79,8 @@ vaporize/
 │   ├── resolver.py              # runs effect lists (if/then/else)
 │   ├── context.py               # EffectContext passed to effects
 │   ├── loader.py                # loads + validates YAML into CardDef / ClassDef
-│   ├── actions.py               # player actions: play, respond, cancel_choice, undo, cancel_turn, end_turn
+│   ├── actions.py               # player actions: play, respond, cancel_choice, develop, undo, cancel_turn, end_turn
+│   ├── development.py           # develop (tier up) rules, legal develops, end-of-turn VP preview
 │   ├── errors.py                # IllegalAction (translation key + params)
 │   ├── invoke.py                # class invoke modes + spell bonus
 │   ├── cardview.py              # JSON-ready card description (views, prompts)
@@ -159,6 +160,15 @@ Rule notes the engine must respect:
 - "Played this turn" conditions use `player.played_this_turn`: only cards played **before** the current one, plus the card itself unless the condition has `other: true` (see `docs/DECISIONS.md`).
 - When the deck is empty and a draw/scout is needed, shuffle `discard` into `deck` first.
 - Destroyed units go to the owner's `discard`. Destroyed tokens are deleted.
+
+## Developing units and scoring
+
+- `Develop(seat, unit_uid)` moves one of your units up **one** tier (no skipping) and costs the target tier's `develop_cost` from the owner's class (Mage: T2 3, T3 4, T4 5 inf).
+- It needs a free spot on the target tier. Tier 4 is the shared `state.tier4` row with `players − 1` spots, first come first served.
+- A unit with a freeze token can't develop. Developing doesn't heal or untap. It's undoable like playing a card.
+- Tokens can develop too: they leave `player.tokens` and take a normal spot on the next tier, but stay tokens (deleted when destroyed).
+- End of turn: every unit scores its tier's `vp` (T1 0, T2 1, T3 2, T4 3), tokens included. `eot_vp()` gives the same number as a preview for the UI.
+- The view lists legal develops as `legal.develop = {uid: {cost, to}}`. The UI shows a green "↑ T2 · 3" button on those units.
 
 ## Undo
 
@@ -343,6 +353,8 @@ The approved mockup is "board v2". Keep this layout unless told otherwise.
 - Row label column shows the tier, VP per unit and develop cost.
 - Empty spots are dashed outlines. The number of spots per player comes from their class.
 - Each unit is a mini card. **Its border colour is the owner's player colour.** It shows the element icon(s), name, attack and current HP, and status icons with counts (shield, stun, freeze).
+- Units the viewer can develop right now get a green outline and a green "↑ T{n} · {cost}" button. Clicking it develops the unit.
+- Column headers show each player's end-of-turn VP preview ("EOT +N VP").
 - Tapped units are slightly rotated and dimmed.
 
 **Colour semantics** (keep these exclusive):

@@ -21,6 +21,8 @@ Rule interpretations and technical choices that aren't spelled out in `docs/RULE
 13. **Positive effects are optional.** Damage, healing and drawing a scouted card can be skipped (`allow_skip`). Invoke can't be skipped, but you may spend 0.
 14. **Scout with a short deck** looks only at the cards left. It shuffles the discard pile only if the deck is completely empty.
 15. **Invoke happens once per card.** Every `{invoke: N}` on the same card reuses the value. The spell bonus applies to spells only, not units.
+16. **Tokens develop and score.** A summoned token is a unit, so it can develop (taking a normal spot) and scores VP by its tier like any other unit.
+17. **Develop cost comes from the unit owner's class board** (the `develop_cost` of the target tier).
 
 ## Technical
 

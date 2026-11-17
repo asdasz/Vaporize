@@ -6,9 +6,10 @@ Run from the repository root:  uvicorn server.app:app --reload --reload-dir engi
 from __future__ import annotations
 
 from pathlib import Path
+from collections.abc import Awaitable, Callable
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.staticfiles import StaticFiles
 
 from engine.loader import load_catalog
@@ -20,6 +21,16 @@ ROOT = Path(__file__).resolve().parent.parent
 catalog = load_catalog(ROOT / "data")
 games = DevGames(catalog, save_path=ROOT / ".devgames.pkl")  # survives --reload restarts
 app = FastAPI(title="Vaporize")
+
+
+@app.middleware("http")
+async def no_stale_files(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+    """Make browsers revalidate client files and locales on every load, so a stale cache can't mix
+    old card data (e.g. renamed card IDs) with new code."""
+    response = await call_next(request)
+    if not request.url.path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
 
 
 @app.post("/api/dev/games", response_model=None)

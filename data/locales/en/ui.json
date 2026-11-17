@@ -40,7 +40,12 @@
     "empty": "empty",
     "view_only": "view only",
     "click_to_show": "Click a player to show their market",
-    "no_cards": "No cards yet"
+    "no_cards": "No cards yet",
+    "shared_name": "shared market",
+    "private_name": "private market",
+    "refresh": "Refresh · {cost}",
+    "refresh_free": "Free refresh",
+    "buy_hint": "Buy for {price} inf"
   },
   "panel": {
     "inf": "Inf",
@@ -64,7 +69,12 @@
     "drag_hint": "Drag a card up to play it",
     "develops": "{count} unit(s) can develop",
     "eot_vp": "End of turn: +{vp} VP",
-    "remove_chip": "Remove a card: {cost} inf"
+    "remove_chip": "Remove a card: {cost} inf",
+    "attacks": "{count} unit(s) can attack",
+    "free_refresh": "Free refresh",
+    "select_target": "Choose a target for {card_name}",
+    "next_spell": "Next spell: +{amount} invoke",
+    "next_twice": "Next spell resolves twice"
   },
   "side": {
     "in_play": "Played this turn",
@@ -82,7 +92,9 @@
       "unit": "Unit"
     },
     "attack": "Attack",
-    "health": "Health"
+    "health": "Health",
+    "invoke_stat": "INV+{n}",
+    "invoke_stat0": "INV"
   },
   "elements": {
     "fire": "Fire",
@@ -117,6 +129,8 @@
     "max_hp": "max {max_hp} HP",
     "skip_damage": "Deal no damage",
     "skip_heal": "Give no HP",
-    "skip_draw": "Draw nothing"
+    "skip_draw": "Draw nothing",
+    "skip_play": "Play nothing",
+    "tier": "Tier {tier}"
   }
 }

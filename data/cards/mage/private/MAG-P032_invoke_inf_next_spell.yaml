@@ -1,0 +1,15 @@
+# Mage market card 032 (legacy card number: 30).
+id: MAG-P032
+number: 32
+type: influence
+cost: 5
+elements: [fire]
+class: mage
+source: private
+effects:
+  - do: gain_inf
+    amount: {invoke: 0}
+  - do: next_spell_invoke_bonus
+    amount: 1
+    element: fire          # printed elements only
+    element_amount: 2

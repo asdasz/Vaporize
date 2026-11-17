@@ -38,7 +38,7 @@ def test_every_class_and_keyword_has_english_entry() -> None:
 
 def test_parse_card_rejects_unknown_effect() -> None:
     raw = {
-        "id": "MAG-S99", "type": "spell", "cost": 0, "class": "mage", "source": "starter",
+        "id": "MAG-S099", "type": "spell", "cost": 0, "class": "mage", "source": "starter",
         "effects": [{"do": "teleport"}],
     }
     card, errors = parse_card(raw, "test")
@@ -48,7 +48,7 @@ def test_parse_card_rejects_unknown_effect() -> None:
 
 def test_parse_card_rejects_missing_param_and_bad_element() -> None:
     raw = {
-        "id": "MAG-S99", "type": "influence", "cost": 0, "class": "mage", "source": "starter",
+        "id": "MAG-S099", "type": "influence", "cost": 0, "class": "mage", "source": "starter",
         "elements": ["ice"], "effects": [{"do": "gain_inf"}],
     }
     _, errors = parse_card(raw, "test")
@@ -64,7 +64,7 @@ def test_parse_card_expands_all_elements() -> None:
 
 
 def test_unit_requires_stats() -> None:
-    raw = {"id": "MAG-S99", "type": "unit", "cost": 0, "class": "mage", "source": "starter"}
+    raw = {"id": "MAG-S099", "type": "unit", "cost": 0, "class": "mage", "source": "starter"}
     _, errors = parse_card(raw, "test")
     assert any("attack" in e for e in errors)
 
@@ -81,3 +81,20 @@ def test_every_engine_message_key_has_english_text() -> None:
     for key in sorted(used):
         namespace, name = key.split(".", 1)
         assert name in _locale(namespace), f"missing en text for {key}"
+
+
+def test_value_expressions_validate() -> None:
+    from engine.values import validate_value
+
+    assert validate_value({"sum": [1, {"invoke": 0}, {"count": {"played": {"element": "fire", "other": True}}}]}, "x") == []
+    assert validate_value({"count": {"unique_played_elements": {}}}, "x") == []
+    assert validate_value({"count": {"played": {"element": "ice"}}}, "x")
+    assert validate_value({"count": {"nope": {}}}, "x")
+    assert validate_value({"sum": []}, "x")
+
+
+def test_choose_one_needs_two_options() -> None:
+    raw = {"id": "MAG-S099", "type": "spell", "cost": 0, "class": "mage", "source": "starter",
+           "effects": [{"choose_one": [[{"do": "gain_inf", "amount": 1}]]}]}
+    _, errors = parse_card(raw, "test")
+    assert any("choose_one" in e for e in errors)

@@ -9,7 +9,7 @@ from engine.zones import SlotRow, Zone
 
 
 def _cards(n: int) -> list[CardInstance]:
-    return [CardInstance(uid=f"u{i}", def_id="MAG-S01", owner=0) for i in range(n)]
+    return [CardInstance(uid=f"u{i}", def_id="MAG-S001", owner=0) for i in range(n)]
 
 
 def test_zone_draw_takes_from_top() -> None:

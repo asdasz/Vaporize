@@ -11,7 +11,7 @@ from engine.state import GameState
 from engine.view import build_view
 from tests.helpers import catalog, make_cards, make_game, place_unit, set_hand
 
-FILLER = ["MAG-S01"] * 6
+FILLER = ["MAG-S001"] * 6
 
 
 def _setup(card_id: str, mana: int = 3) -> tuple[GameState, int, str]:
@@ -37,9 +37,9 @@ def test_starter_deck_is_the_12_numbered_cards() -> None:
 
 
 def test_008_scout_invoke_minus_one_and_draw_one() -> None:
-    state, seat, uid = _setup("MAG-S08", mana=3)
+    state, seat, uid = _setup("MAG-S008", mana=3)
     p = state.players[seat]
-    p.deck.cards = make_cards(state, seat, ["MAG-S05", "MAG-S06", "MAG-S07", "MAG-S09", "MAG-S10"])
+    p.deck.cards = make_cards(state, seat, ["MAG-S005", "MAG-S006", "MAG-S007", "MAG-S009", "MAG-S010"])
     top = [c.uid for c in p.deck]
     state, _ = apply_action(state, catalog(), PlayCard(seat, uid))
     state, _ = apply_action(state, catalog(), Respond(seat, 2))  # spend 2 mana -> value 3 -> scout 2
@@ -54,7 +54,7 @@ def test_008_scout_invoke_minus_one_and_draw_one() -> None:
 
 
 def test_008_scout_cannot_be_cancelled_after_reveal() -> None:
-    state, seat, uid = _setup("MAG-S08", mana=2)
+    state, seat, uid = _setup("MAG-S008", mana=2)
     state = _play(state, seat, uid, 2)
     with pytest.raises(IllegalAction) as exc:
         apply_action(state, catalog(), CancelChoice(seat))
@@ -62,7 +62,7 @@ def test_008_scout_cannot_be_cancelled_after_reveal() -> None:
 
 
 def test_009_deals_invoke_damage_to_one_unit() -> None:
-    state, seat, uid = _setup("MAG-S09", mana=3)
+    state, seat, uid = _setup("MAG-S009", mana=3)
     enemy = (seat + 1) % 2
     target = place_unit(state, enemy, 2, hp=5)
     state = _play(state, seat, uid, 3, target.uid)  # 3 mana + 1 bonus = 4 damage
@@ -74,8 +74,8 @@ def test_009_split_after_three_water_cards_single_tier() -> None:
     state = make_game()
     seat = state.current
     enemy = (seat + 1) % 2
-    water = ["MAG-S06", "MAG-S07", "MAG-S12"]
-    cards = set_hand(state, seat, [*water, "MAG-S09", "MAG-S01", "MAG-S01", "MAG-S01"])
+    water = ["MAG-S006", "MAG-S007", "MAG-S012"]
+    cards = set_hand(state, seat, [*water, "MAG-S009", "MAG-S001", "MAG-S001", "MAG-S001"])
     state.players[seat].resource = 2
     a = place_unit(state, enemy, 1, hp=2)
     b = place_unit(state, enemy, 1, hp=2)
@@ -95,7 +95,7 @@ def test_009_split_after_three_water_cards_single_tier() -> None:
 def test_009_no_split_with_only_two_water_cards() -> None:
     state = make_game()
     seat = state.current
-    cards = set_hand(state, seat, ["MAG-S06", "MAG-S07", "MAG-S09", *["MAG-S01"] * 4])
+    cards = set_hand(state, seat, ["MAG-S006", "MAG-S007", "MAG-S009", *["MAG-S001"] * 4])
     place_unit(state, (seat + 1) % 2, 1)
     for card in cards[:2]:
         state = _play(state, seat, card.uid)
@@ -106,14 +106,14 @@ def test_009_no_split_with_only_two_water_cards() -> None:
 
 def test_010_invoke_for_4_gains_vp() -> None:
     for spent, vp in ((3, 1), (2, 0), (4, 1)):
-        state, seat, uid = _setup("MAG-S10", mana=4)
+        state, seat, uid = _setup("MAG-S010", mana=4)
         state = _play(state, seat, uid, spent)
         assert state.players[seat].vp == vp, spent
         assert state.players[seat].resource == 4 - spent
 
 
 def test_011_heal_capped_at_six() -> None:
-    state, seat, uid = _setup("MAG-S11", mana=4)
+    state, seat, uid = _setup("MAG-S011", mana=4)
     unit = place_unit(state, seat, 1, hp=3)
     state = _play(state, seat, uid, 4, unit.uid)  # value 5 -> +4 HP, capped at 6
     healed = next(u for _, u in state.units_of(seat) if u.uid == unit.uid)
@@ -121,7 +121,7 @@ def test_011_heal_capped_at_six() -> None:
 
 
 def test_012_apprentice_prepares_at_start_of_turn() -> None:
-    state, seat, uid = _setup("MAG-S12", mana=0)
+    state, seat, uid = _setup("MAG-S012", mana=0)
     state = _play(state, seat, uid)
     assert state.players[seat].tiers[1].cards()[0].current_hp == 2
     state, _ = apply_action(state, catalog(), EndTurn(seat))
@@ -131,7 +131,7 @@ def test_012_apprentice_prepares_at_start_of_turn() -> None:
 
 
 def test_pending_choice_blocks_other_actions_and_can_be_cancelled() -> None:
-    state, seat, uid = _setup("MAG-S10", mana=3)
+    state, seat, uid = _setup("MAG-S010", mana=3)
     state, _ = apply_action(state, catalog(), PlayCard(seat, uid))
     assert state.players[seat].hand.find(uid) is not None  # card stays in hand until resolved
     for action in (EndTurn(seat), Undo(seat), PlayCard(seat, state.players[seat].hand.cards[1].uid)):
@@ -144,7 +144,7 @@ def test_pending_choice_blocks_other_actions_and_can_be_cancelled() -> None:
 
 
 def test_resolved_card_can_be_undone() -> None:
-    state, seat, uid = _setup("MAG-S10", mana=3)
+    state, seat, uid = _setup("MAG-S010", mana=3)
     state = _play(state, seat, uid, 3)
     assert state.players[seat].vp == 1
     state, _ = apply_action(state, catalog(), Undo(seat))
@@ -152,17 +152,17 @@ def test_resolved_card_can_be_undone() -> None:
 
 
 def test_prompt_is_only_shown_to_the_acting_player() -> None:
-    state, seat, uid = _setup("MAG-S10", mana=3)
+    state, seat, uid = _setup("MAG-S010", mana=3)
     state, _ = apply_action(state, catalog(), PlayCard(seat, uid))
     mine = build_view(state, catalog(), seat)["pending"]
     theirs = build_view(state, catalog(), (seat + 1) % 2)["pending"]
-    assert mine["prompt"]["kind"] == "number" and mine["card"]["id"] == "MAG-S10"
+    assert mine["prompt"]["kind"] == "number" and mine["card"]["id"] == "MAG-S010"
     assert "prompt" not in theirs and theirs["seat"] == seat
     assert build_view(state, catalog(), seat)["legal"]["playable"] == []
 
 
 def test_009_can_be_played_dealing_no_damage() -> None:
-    state, seat, uid = _setup("MAG-S09", mana=0)  # 0 mana: invoke is automatic (value 1)
+    state, seat, uid = _setup("MAG-S009", mana=0)  # 0 mana: invoke is automatic (value 1)
     own = place_unit(state, seat, 1, hp=2)
     state, _ = apply_action(state, catalog(), PlayCard(seat, uid))
     assert state.pending.prompt.kind == "choose_unit"

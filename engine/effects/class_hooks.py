@@ -8,9 +8,16 @@ from engine.context import EffectContext
 from engine.effects.registry import effect
 
 
-@effect("prepare")
+@effect("prepare", optional=("times", "exceed_limit"))
 def prepare(ctx: EffectContext, p: dict[str, Any]) -> None:
+    """Use the class's prepare `times` times. With `exceed_limit`, resource gains may pass the class limit."""
     from engine.resolver import resolve_effects  # local import: resolver imports this package
 
-    ctx.emit("log.prepare", seat=ctx.seat)
-    resolve_effects(ctx, ctx.class_def.prepare)
+    times = p.get("times", 1)
+    ctx.emit("log.prepare", seat=ctx.seat, times=times)
+    before, ctx.exceed_limit = ctx.exceed_limit, bool(p.get("exceed_limit"))
+    try:
+        for _ in range(times):
+            resolve_effects(ctx, ctx.class_def.prepare)
+    finally:
+        ctx.exceed_limit = before

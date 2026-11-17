@@ -17,13 +17,15 @@ from engine.catalog import Catalog
 from engine.classes import ClassDef, ResourceRule, TierRule
 from engine.effects.registry import validate_effects
 from engine.invoke import INVOKE_MODES
+from engine.values import validate_value
 from engine.rules import CARD_TYPES, CLASS_TRIGGERS, ELEMENTS, SOURCES, UNIT_TRIGGERS
 
 CARD_ID_RE = re.compile(r"^[A-Z]{3}-[A-Z]?\d{2,3}$")
 CARD_KEYS = {
     "id", "number", "type", "cost", "elements", "class", "source", "copies",
-    "attack", "health", "effects", "triggers",
+    "attack", "health", "effects", "triggers", "modifiers",
 }
+UNIT_MODIFIERS = {"spell_invoke_bonus"}
 CLASS_MODIFIERS = {"spell_invoke_bonus", "element_swap_once_per_turn"}
 
 
@@ -51,7 +53,7 @@ def parse_card(raw: Any, where: str) -> tuple[CardDef | None, list[str]]:
 
     card_id = raw["id"]
     if not isinstance(card_id, str) or not CARD_ID_RE.match(card_id):
-        errors.append(f"{where}: bad id {card_id!r} (expected e.g. MAG-S01 or SHR-001)")
+        errors.append(f"{where}: bad id {card_id!r} (expected e.g. MAG-S001 or SHR-001)")
     if raw["type"] not in CARD_TYPES:
         errors.append(f"{where}: type must be one of {CARD_TYPES}")
     if raw["source"] not in SOURCES:
@@ -75,8 +77,10 @@ def parse_card(raw: Any, where: str) -> tuple[CardDef | None, list[str]]:
     attack, health = raw.get("attack"), raw.get("health")
     if raw["type"] == "unit":
         for name, value in (("attack", attack), ("health", health)):
-            if not isinstance(value, int):
-                errors.append(f"{where}: unit {name} must be an integer (invoke stats not supported yet)")
+            if value is None:
+                errors.append(f"{where}: unit needs {name}")
+            else:
+                errors += validate_value(value, f"{where}.{name}")
     elif attack is not None or health is not None:
         errors.append(f"{where}: only units have attack/health")
 
@@ -95,6 +99,14 @@ def parse_card(raw: Any, where: str) -> tuple[CardDef | None, list[str]]:
             errors += validate_effects(nodes, f"{where}.triggers.{trig}")
             triggers[trig] = tuple(nodes)
 
+    modifiers = raw.get("modifiers", []) or []
+    if not isinstance(modifiers, list):
+        errors.append(f"{where}: modifiers must be a list")
+        modifiers = []
+    for i, mod in enumerate(modifiers):
+        if not isinstance(mod, dict) or not mod.keys() <= UNIT_MODIFIERS:
+            errors.append(f"{where}.modifiers[{i}]: known modifiers are {sorted(UNIT_MODIFIERS)}")
+
     if errors:
         return None, errors
     return (
@@ -111,6 +123,7 @@ def parse_card(raw: Any, where: str) -> tuple[CardDef | None, list[str]]:
             health=health,
             effects=tuple(effects),
             triggers=triggers,
+            modifiers=tuple(modifiers),
         ),
         [],
     )

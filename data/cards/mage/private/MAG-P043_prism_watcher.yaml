@@ -1,0 +1,16 @@
+# Mage market card 043 (legacy card number: 41).
+id: MAG-P043
+number: 43
+type: unit
+cost: 6
+elements: [water]
+class: mage
+source: private
+attack: 0
+health: {invoke: 1}        # invoke + 1, set when it enters
+triggers:
+  eot:
+    - if: {unique_played_elements_at_least: {min: 5}}
+      then:
+        - do: gain_vp
+          amount: 1

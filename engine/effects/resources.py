@@ -19,7 +19,7 @@ def gain_inf(ctx: EffectContext, p: dict[str, Any]) -> None:
 @effect("gain_resource", required=("amount",), optional=("up_to_limit",))
 def gain_resource(ctx: EffectContext, p: dict[str, Any]) -> None:
     rule = ctx.class_def.resource
-    cap = rule.limit if p.get("up_to_limit") else rule.hard_max
+    cap = rule.limit if p.get("up_to_limit") and not ctx.exceed_limit else rule.hard_max
     before = ctx.player.resource
     after = before + resolve_value(ctx, p["amount"])
     if cap is not None:

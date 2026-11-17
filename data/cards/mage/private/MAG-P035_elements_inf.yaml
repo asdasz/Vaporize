@@ -1,0 +1,11 @@
+# Mage market card 035 (legacy card number: 33).
+id: MAG-P035
+number: 35
+type: influence
+cost: 7
+elements: [all]
+class: mage
+source: private
+effects:
+  - do: gain_inf
+    amount: {sum: [1, {count: {unique_played_elements: {other: true}}}]}

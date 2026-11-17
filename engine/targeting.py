@@ -17,15 +17,21 @@ def validate_target(spec: Any, where: str) -> list[str]:
     if spec.get("side", "any") not in SIDES:
         errors.append(f"{where}: side must be one of {SIDES}")
     tiers = spec.get("tiers", [1, 2, 3, 4])
+    if tiers == "with_ally_units":
+        return errors
     if not isinstance(tiers, list) or not tiers or any(t not in (1, 2, 3, 4) for t in tiers):
-        errors.append(f"{where}: tiers must be a non-empty list of 1-4")
+        errors.append(f"{where}: tiers must be a non-empty list of 1-4, or with_ally_units")
     return errors
 
 
 def find_targets(state: GameState, seat: int, spec: dict[str, Any]) -> list[tuple[int, CardInstance]]:
     """All units matching the selector as (tier, unit), in seat order. Allies and enemies alike unless restricted."""
     side = spec.get("side", "any")
-    tiers = set(spec.get("tiers", [1, 2, 3, 4]))
+    raw_tiers = spec.get("tiers", [1, 2, 3, 4])
+    if raw_tiers == "with_ally_units":  # tiers where you have at least one unit
+        tiers = {tier for tier, _ in state.units_of(seat)}
+    else:
+        tiers = set(raw_tiers)
     found: list[tuple[int, CardInstance]] = []
     for player in state.players:
         if side == "ally" and player.seat != seat:

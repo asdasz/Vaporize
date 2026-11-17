@@ -1,0 +1,13 @@
+# Mage market card 042 (legacy card number: 40).
+id: MAG-P042
+number: 42
+type: spell
+cost: 9
+elements: [water]
+class: mage
+source: private
+effects:
+  - do: boost_attack
+    amount: {invoke: 0}
+  - do: vp_per_attack_kill
+    amount: 1

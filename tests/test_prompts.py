@@ -25,7 +25,7 @@ def test_choose_unit_and_skip() -> None:
 
 
 def test_choose_card_uses_uids() -> None:
-    p = Prompt(kind="choose_card", key="k", options=({"uid": "c5", "id": "MAG-S01"},))
+    p = Prompt(kind="choose_card", key="k", options=({"uid": "c5", "id": "MAG-S001"},))
     assert p.validate("c5") == "c5"
 
 

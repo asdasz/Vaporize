@@ -1,0 +1,11 @@
+# Mage market card 038 (legacy card number: 36).
+id: MAG-P038
+number: 38
+type: spell
+cost: 6
+elements: [shadow]
+class: mage
+source: private
+effects:
+  - do: play_from_discard
+    card_type: spell

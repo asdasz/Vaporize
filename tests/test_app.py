@@ -23,5 +23,6 @@ def test_http_flow() -> None:
     res = client.post(f"/api/dev/games/{gid}/actions", json={"type": "end_turn", "seat": seat}).json()
     assert res["ok"]
     assert client.get("/").status_code == 200
-    assert client.get("/locales/en/ui.json").status_code == 200
+    locale = client.get("/locales/en/ui.json")
+    assert locale.status_code == 200 and locale.headers["cache-control"] == "no-cache"
     assert client.post("/api/dev/games", json={"players": 5}).status_code == 422

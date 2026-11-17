@@ -54,8 +54,8 @@ vaporize/
 │   │   ├── shared/              # shared-market cards
 │   │   │   └── SHR-001_spark.yaml
 │   │   ├── mage/
-│   │   │   ├── starter/         # MAG-S01 … (12 cards incl. copies)
-│   │   │   └── private/         # MAG-P01 … MAG-P15
+│   │   │   ├── starter/         # MAG-S001 … MAG-S012
+│   │   │   └── private/         # MAG-P031 … MAG-P045 (private market)
 │   │   └── robot/ …
 │   ├── classes/
 │   │   └── mage.yaml            # character board: tiers, resource, passives, prepare, invoke
@@ -79,7 +79,10 @@ vaporize/
 │   ├── resolver.py              # runs effect lists (if/then/else)
 │   ├── context.py               # EffectContext passed to effects
 │   ├── loader.py                # loads + validates YAML into CardDef / ClassDef
-│   ├── actions.py               # player actions: play, respond, cancel_choice, develop, remove_card, undo, cancel_turn, end_turn
+│   ├── actions.py               # player actions: play, respond, cancel_choice, develop, remove_card, attack, buy, refresh, undo, cancel_turn, end_turn
+│   ├── playing.py               # resolving a played card (unit stats, "next spell" modifiers, on_card_played triggers)
+│   ├── attacks.py               # unit attacks (range, tap, kill rewards)
+│   ├── market.py                # buy / refresh, price modifiers, market reveal + reshuffle
 │   ├── removal.py               # removing cards from the game (cost track)
 │   ├── development.py           # develop (tier up) rules, legal develops, end-of-turn VP preview
 │   ├── errors.py                # IllegalAction (translation key + params)
@@ -87,13 +90,14 @@ vaporize/
 │   ├── cardview.py              # JSON-ready card description (views, prompts)
 │   ├── history.py               # undo snapshots for the current turn
 │   ├── turn.py                  # SOT → actions → EOT sequencing, round + game end
-│   ├── combat.py                # damage, shields, healing, destruction (attacks to come)
+│   ├── combat.py                # damage, shields, healing, destruction
 │   ├── effects/
 │   │   ├── registry.py          # @effect("name") decorator + lookup
 │   │   ├── resources.py         # gain_inf, gain_resource, lose_resource, gain_vp, …
 │   │   ├── damage.py            # deal_damage, heal, split handling
 │   │   ├── keywords.py          # grant_keyword (e.g. Split)
-│   │   ├── cards.py             # draw, scout (+ disrupt, discard, … to come)
+│   │   ├── cards.py             # draw, scout, play_from_discard
+│   │   ├── modifiers.py         # next_spell_invoke_bonus, next_spell_twice, boost_attack, vp_per_attack_kill
 │   │   ├── class_hooks.py       # prepare (delegates to ClassDef)
 │   │   └── …                    # status.py, movement.py, market.py, units.py to come
 │   ├── conditions.py            # played_this_turn, in_discard, has_unit_on_tier, …
@@ -171,6 +175,20 @@ Rule notes the engine must respect:
 - End of turn: every unit scores its tier's `vp` (T1 0, T2 1, T3 2, T4 3), tokens included. `eot_vp()` gives the same number as a preview for the UI.
 - The view lists legal develops as `legal.develop = {uid: {cost, to}}`. The UI shows a green "↑ T2 · 3" button on those units.
 
+## Attacks
+
+- `Attack(seat, attacker_uid, target_uid)`: an untapped own unit with attack > 0 and no stun token hits an **enemy** unit on the same tier or one tier higher. Damage = attack (`fixed_attack + temp_attack`); shields absorb the hit; the target doesn't strike back. The attacker becomes tapped and untaps at the end of its owner's turn.
+- If the target is destroyed: `vp_per_attack_kill` turn modifiers pay VP and the attacker's `on_kill` trigger runs.
+- Undoable. The view lists `legal.attacks = {attacker_uid: [target uids]}`. UI: click a green-outlined own unit to select it (blue), then click a red-tinted enemy to attack. Clicking anywhere else drops the selection.
+
+## Markets
+
+- `Buy(seat, market, slot)` with `market` = `shared` or `private` (your own only). Price = printed cost, in the shared market +1 for the leftmost slot and −1 for the rightmost. The card goes to your discard pile (owner = you) and a new card is revealed into the same slot.
+- `Refresh(seat, market)`: the rightmost card goes to the market's removed pile, the others slide right, and a new card is revealed on the left. The first shared refresh each turn is free; every other refresh costs 1 inf.
+- When a market deck is empty, its removed pile is shuffled into a new deck.
+- Revealing a market card is hidden information, so a buy or refresh that reveals a card becomes a new undo checkpoint.
+- The view lists `legal.market = {shared_buy: [slots], private_buy: [slots], shared_refresh: cost|null, private_refresh: cost|null}`. UI: buyable cards get a green outline (click to buy). Green refresh buttons sit next to the markets.
+
 ## Removing cards
 
 - `RemoveCard(seat, card_uid)` removes a card from the **hand**, **played this turn** (`in_play`) or the **discard pile** into `player.removed`. Cards in the deck can't be removed. Removing from the hand respects the 2-card minimum, and a card removed from the hand never counts as played.
@@ -193,9 +211,9 @@ Some effects need a decision: how much to invoke, which unit to hit, which scout
 - An effect calls `ctx.ask(Prompt(...))`. If the answer isn't known yet, this raises `NeedChoice`.
 - The engine then keeps the state from **before** the card was played and stores `state.pending = PendingChoice(seat, card_uid, answers, prompt)`. The card stays in the hand while the player chooses.
 - `Respond(seat, answer)` replays the whole card from that state with all answers so far. Replay is deterministic because the RNG lives in the state. It either resolves completely (and pushes one undo entry) or stops at the next prompt.
-- `CancelChoice` drops the pending card. It isn't allowed once a prompt has shown hidden cards (`cancellable: false`, e.g. scout).
+- `CancelChoice` drops the pending card. It isn't allowed once hidden cards were shown during this card (scout, draw, market reveal): `ctx.ask` then marks the prompt `cancellable: false`.
 - While a choice is pending, every other action is rejected with `error.choice_pending`.
-- Prompt kinds: `number` (min..max), `choose_unit` (uids), `choose_card` (card views), `split_damage` ({uid: amount}, optional `same_tier`). Optional (positive) effects set `allow_skip`, and the answer `null` skips them.
+- Prompt kinds: `number` (min..max), `choose_unit` (uids), `choose_card` (card views), `split_damage` ({uid: amount}, optional `same_tier`), `choose_option` (index into `choose_one`), `choose_tier`. Optional (positive) effects set `allow_skip`, and the answer `null` skips them.
 - `params.skip_key` names the skip button (e.g. `ui.prompt.skip_damage` = "Deal no damage"), so a player can play a damage spell just to get rid of it without hurting their own units.
 - Only the acting player sees the prompt in their view. The others only see who is choosing and for which card.
 - A `number` prompt with a single possible value (e.g. invoke with 0 mana) is answered automatically.
@@ -209,16 +227,16 @@ Some effects need a decision: how much to invoke, which unit to hit, which scout
 
 ### IDs and file names
 
-- Format: `<CLASS>-<SOURCE><NN>`. Examples: `MAG-S01` (Mage starter), `MAG-P07` (Mage private), `SHR-012` (shared market).
+- Format: `<CLASS>-<SOURCE><NNN>` where NNN is the **printed card number**, which is unique across the whole game ("New card #"). Examples: `MAG-S001` (Mage starter, card 1), `MAG-P031` (Mage private market, card 31), `SHR-112` (shared market).
 - Class codes: `MAG`, `ROB`, … (add as classes arrive). Shared cards use `SHR`.
 - File name: `<ID>_<snake_case_name>.yaml`, e.g. `MAG-S03_scorch.yaml`.
-- Every printed card has its own number and its own file, even identical ones (e.g. Mage starter 001–004 are four copies of the same fire influence). `number:` in the file holds the printed number ("New card #"); `copies` stays 1 for numbered cards.
+- Every printed card has its own number and its own file, even identical ones (e.g. Mage starter 001–004 are four copies of the same fire influence). `number:` in the file repeats the printed number; `copies` stays 1 for numbered cards.
 - IDs never change once assigned.
 
 ### Card file schema
 
 ```yaml
-id: MAG-S03
+id: MAG-S003
 number: 3                # printed card number, unique across all cards
 type: spell              # influence | spell | unit
 cost: 0                  # printed buy cost
@@ -245,13 +263,19 @@ triggers:                # units: ongoing abilities
   eot:  []
   on_damage_taken: []
   on_kill: []
+  on_card_played: []     # after each card its owner plays (while this unit is on the board)
+
+modifiers:               # units: static, while on the board
+  - spell_invoke_bonus: 1
 ```
+
+Choice text for `choose_one` lives in the locale too: `"options": ["Gain 4 inf", "Draw 2 cards", …]` next to `name` and `text`.
 
 Display text (name, rules text) does **not** live in the card file. It lives in `data/locales/<lang>/cards.json` under the card ID:
 
 ```json
 {
-  "MAG-S03": { "name": "Scorch", "text": "Deal {invoke} damage. If you played at least 2 water cards this turn, gain **Split**." }
+  "MAG-S003": { "name": "Scorch", "text": "Deal {invoke} damage. If you played at least 2 water cards this turn, gain **Split**." }
 }
 ```
 
@@ -278,13 +302,19 @@ Initial primitive list (extend as cards require):
 | `gain_inf` | `amount` |
 | `gain_resource` / `lose_resource` | `amount` (class resource: mana, heat, …) |
 | `gain_vp` | `amount` |
-| `prepare` | none (delegates to the class) |
-| `deal_damage` | `amount`, `target` (split comes from `grant_keyword: split`) |
+| `prepare` | optional `times`, `exceed_limit` (resource may go past the class limit, up to `hard_max`) |
+| `deal_damage` | `amount`, `target`, optional `split: true` (or split from `grant_keyword: split`) |
+| `deal_damage_tier` | `amount`, optional `tiers`: every unit on one chosen tier |
 | `heal` | `amount`, `target`, optional `max_hp` (cap; never lowers HP) |
 | `shield` / `stun` / `freeze` | `count`, `target` |
 | `develop` / `degrade` | `target`, optional `cost_override`, `tiers` |
 | `draw` | `count` |
 | `scout` | `count`, optional `draw: 1` (draw one of the scouted cards) |
+| `play_from_discard` | optional `card_type`: play a card from your discard pile not played this turn |
+| `next_spell_invoke_bonus` | `amount`, optional `element` + `element_amount` (printed elements) |
+| `next_spell_twice` | optional `vp_per_kill`: next spell resolves twice with the same invoke value |
+| `boost_attack` | `amount`: your units gain attack until end of turn |
+| `vp_per_attack_kill` | `amount`: VP per enemy unit your units' attacks destroy this turn |
 | `disrupt` | `target_player` |
 | `refresh_market` | `market: shared \| private` |
 | `summon` | `attack`, `health`, `count` |
@@ -294,13 +324,17 @@ Invoke isn't an effect: it's a value. `{invoke: N}` asks the class's invoke once
 
 Card input in the format Jan uses (one row per printed card): `New card #`, `Current card #` (legacy, kept as a comment), `Element`, `Cost`, `Type`, `Affiliation`, `Card text`, `Attack`, `Health`.
 
-Control structures, handled by the resolver rather than registered as effects: `if` / `then` / `else`, `choose_one`, `repeat`.
+Control structures, handled by the resolver rather than registered as effects: `if` / `then` / `else` and `choose_one: [[effects…], [effects…]]` (a `choose_option` prompt). `repeat` to come.
 
-**Values** (`values.py`): an int or `{invoke: N}` (invoke + N). Counters such as `{count: {in_discard: {element: water}}}` to come.
+Turn modifiers (`player.turn_modifiers`) hold "this turn" effects such as "your next spell…". They're consumed by the next spell (`engine/playing.py`) or cleared at the end of the turn. Temporary attack bonuses live on the unit (`temp_attack`) and reset at its owner's end of turn.
 
-**Targets** (`targeting.py`): `{side: any | ally | enemy, tiers: [1, 2, 3, 4]}`. Tokens count as tier 1. Allies and enemies alike unless `side` says otherwise.
+**Values** (`values.py`): an int, `{invoke: N}`, `{count: {played: {element, other}}}`, `{count: {unique_played_elements: {other}}}`, or `{sum: [values…]}`. Unit `attack`/`health` may be values too (resolved once when the unit enters).
 
-**Conditions** (`conditions.py`): `played_this_turn {element, min, other: true}`, `in_discard {element, min}`, `value_at_least {value, min}` (e.g. "invoke for 4"), more to come.
+**Targets** (`targeting.py`): `{side: any | ally | enemy, tiers: [1, 2, 3, 4] | with_ally_units}`. Tokens count as tier 1. Allies and enemies alike unless `side` says otherwise.
+
+**Conditions** (`conditions.py`): `played_this_turn {element, min, other}`, `in_discard {element, min}`, `value_at_least {value, min}` (e.g. "invoke for 4"), `ally_tiers_at_least {min}`, `unique_played_elements_at_least {min, other}`, `played_matching {filter: non_primary, min}`.
+
+An `if` block may carry `once_per_turn: true`: it's checked every time, fires the first time its condition is true, and then stays off until the end of the turn (tracked in `player.turn_flags`, per source unit).
 
 **Adding a new mechanic:** add a primitive or condition once, test it, then reference it from any number of card files. Never special-case a card ID in engine code.
 
@@ -335,9 +369,9 @@ Class-specific rules that don't fit the generic primitives go in `engine/classes
 ## Internationalisation
 
 - Locale files: `data/locales/<lang>/*.json`. Only `en` for now.
-- Keys are `<namespace>.<path>`, where the namespace is the file name: `ui.panel.end_turn`, `cards.MAG-S01.name`, `keywords.split.name`, `classes.mage.prepare`, `log.card_played`, `error.min_hand`.
+- Keys are `<namespace>.<path>`, where the namespace is the file name: `ui.panel.end_turn`, `cards.MAG-S001.name`, `keywords.split.name`, `classes.mage.prepare`, `log.card_played`, `error.min_hand`.
 - Client uses `t(key, params)` from `client/js/i18n.js`, with `{param}` interpolation and fallback to `en` when a key is missing.
-- The server never sends display strings. Events and errors carry a key + params, e.g. `{"key": "log.attack", "params": {"attacker": "MAG-S05", "target": "ROB-S02", "damage": 2}}`.
+- The server never sends display strings. Events and errors carry a key + params, e.g. `{"key": "log.attack", "params": {"attacker": "MAG-S005", "target": "ROB-S02", "damage": 2}}`.
 - A test checks that every card ID, class and keyword has an `en` entry.
 
 ## Online play

@@ -46,3 +46,33 @@ def scout(ctx: EffectContext, p: dict[str, Any]) -> None:
     if uid is not None:
         ctx.player.hand.put_bottom(deck.take(uid))
         ctx.emit("log.cards_drawn", seat=ctx.seat, count=1)
+
+
+@effect("play_from_discard", optional=("card_type",))
+def play_from_discard(ctx: EffectContext, p: dict[str, Any]) -> None:
+    """Play a card (e.g. a spell) from your discard pile that hasn't been played this turn."""
+    from engine.playing import play_card_from_effect  # local import: playing -> resolver -> effects
+
+    played = {x.uid for x in ctx.player.played_this_turn}
+    wanted = p.get("card_type")
+    options = [
+        c
+        for c in ctx.player.discard
+        if c.uid not in played and (wanted is None or ctx.catalog.card(c.def_id).type == wanted)
+    ]
+    if not options:
+        return
+    uid = ctx.ask(
+        Prompt(
+            kind="choose_card",
+            key="prompt.play_from_discard",
+            params={"skip_key": "ui.prompt.skip_play"},
+            options=tuple(card_view(c, ctx.catalog) for c in options),
+            allow_skip=True,
+        )
+    )
+    if uid is None:
+        return
+    card = ctx.player.discard.take(uid)
+    ctx.emit("log.played_from_discard", seat=ctx.seat, card=card.def_id)
+    play_card_from_effect(ctx, card)

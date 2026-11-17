@@ -1,0 +1,14 @@
+# Mage market card 034 (legacy card number: 32).
+id: MAG-P034
+number: 34
+type: influence
+cost: 5
+elements: [wind]
+class: mage
+source: private
+effects:
+  - do: gain_inf
+    amount: 2
+  - do: prepare
+    times: 2
+    exceed_limit: true

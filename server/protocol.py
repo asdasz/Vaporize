@@ -13,8 +13,11 @@ class CreateGameRequest(BaseModel):
 
 
 class ActionRequest(BaseModel):
-    type: Literal["play_card", "end_turn", "undo", "cancel_turn", "respond", "cancel_choice", "develop", "remove_card"]
+    type: Literal["play_card", "end_turn", "undo", "cancel_turn", "respond", "cancel_choice", "develop", "remove_card", "attack", "buy", "refresh"]
     seat: int = Field(ge=0, le=3)
     card_uid: Optional[str] = None
-    unit_uid: Optional[str] = None  # develop
+    unit_uid: Optional[str] = None  # develop, attack (attacker)
+    target_uid: Optional[str] = None  # attack
+    market: Optional[Literal["shared", "private"]] = None  # buy, refresh
+    slot: Optional[int] = None  # buy
     answer: Any = None  # respond: number, uid, {uid: damage} or null (skip)

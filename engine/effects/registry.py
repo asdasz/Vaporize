@@ -16,7 +16,8 @@ COMMON_KEYS = frozenset({"do", "required"})
 # Params that hold a value expression (int or {invoke: N}).
 VALUE_PARAMS = frozenset({"amount", "count"})
 # Params that must be plain non-negative integers.
-INT_PARAMS = frozenset({"max_hp", "draw"})
+INT_PARAMS = frozenset({"max_hp", "draw", "times", "vp_per_kill", "element_amount"})
+BOOL_PARAMS = frozenset({"exceed_limit", "split", "up_to_limit"})
 
 
 @dataclass(frozen=True)
@@ -60,12 +61,24 @@ def validate_effects(nodes: Any, where: str) -> list[str]:
         if not isinstance(node, dict):
             errors.append(f"{w}: effect must be a mapping")
             continue
+        if "choose_one" in node:
+            options = node["choose_one"]
+            if not isinstance(options, list) or len(options) < 2:
+                errors.append(f"{w}: choose_one needs a list of at least 2 effect lists")
+                continue
+            for j, option in enumerate(options):
+                errors += validate_effects(option, f"{w}.choose_one[{j}]")
+            continue
         if "if" in node:
             errors += validate_condition(node["if"], f"{w}.if")
             errors += validate_effects(node.get("then", []), f"{w}.then")
             errors += validate_effects(node.get("else", []), f"{w}.else")
-            extra = node.keys() - {"if", "then", "else"}
+            extra = node.keys() - {"if", "then", "else", "once_per_turn"}
             errors += [f"{w}: unknown key {k!r} in if-block" for k in sorted(extra)]
+            if "once_per_turn" in node and not isinstance(node["once_per_turn"], bool):
+                errors.append(f"{w}: once_per_turn must be true or false")
+            if node.get("once_per_turn") and "else" in node:
+                errors.append(f"{w}: once_per_turn can't have an else branch")
             continue
         name = node.get("do")
         if name not in _REGISTRY:
@@ -83,7 +96,7 @@ def validate_effects(nodes: Any, where: str) -> list[str]:
 
 
 def _validate_params(node: dict[str, Any], where: str) -> list[str]:
-    from engine.rules import KEYWORDS
+    from engine.rules import CARD_TYPES, ELEMENTS, KEYWORDS
     from engine.targeting import validate_target
     from engine.values import validate_value
 
@@ -93,6 +106,17 @@ def _validate_params(node: dict[str, Any], where: str) -> list[str]:
     for key in INT_PARAMS & node.keys():
         if isinstance(node[key], bool) or not isinstance(node[key], int) or node[key] < 0:
             errors.append(f"{where}: {key!r} must be a non-negative integer")
+    for key in BOOL_PARAMS & node.keys():
+        if not isinstance(node[key], bool):
+            errors.append(f"{where}: {key!r} must be true or false")
+    if "element" in node and node["element"] not in ELEMENTS:
+        errors.append(f"{where}: unknown element {node['element']!r}")
+    if "card_type" in node and node["card_type"] not in CARD_TYPES:
+        errors.append(f"{where}: unknown card_type {node['card_type']!r}")
+    if "tiers" in node and node["tiers"] != "with_ally_units" and (
+        not isinstance(node["tiers"], list) or any(t not in (1, 2, 3, 4) for t in node["tiers"])
+    ):
+        errors.append(f"{where}: tiers must be a list of 1-4")
     if "target" in node:
         errors += validate_target(node["target"], f"{where}.target")
     if "keyword" in node and node["keyword"] not in KEYWORDS:

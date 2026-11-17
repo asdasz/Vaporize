@@ -29,6 +29,7 @@ def destroy_unit(ctx: EffectContext, unit: CardInstance) -> None:
                 row.take(unit.uid)
                 break
     ctx.emit("log.unit_destroyed", card=unit.def_id, owner=unit.owner)
+    ctx.kills += 1
     if not unit.is_token:
         unit.reset_runtime()
         owner.discard.put_bottom(unit)

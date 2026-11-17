@@ -25,15 +25,29 @@ Rule interpretations and technical choices that aren't spelled out in `docs/RULE
 17. **Develop cost comes from the unit owner's class board** (the `develop_cost` of the target tier).
 18. **What can be removed.** A card in your hand, played this turn or in the discard pile. Never from the deck. Hand removal can't take you below 2 cards in hand.
 19. **Removing a played card keeps its effects.** Inf it gave stays, and its elements still count as played this turn.
+20. **"Next spell" bonuses (032)** are used up by the next spell played, even if it doesn't invoke. The fire check uses printed elements.
+21. **"Prepare ×N, can exceed your mana limit" (033, 034)** goes up to the Mage's hard maximum of 7. 031's prepare ×2 respects the limit of 4.
+22. **Unique elements (031, 035, 043)** count elements on cards played this turn. A card with all elements counts as all five. 031 and 035 count only *other* cards; 043 counts all.
+23. **036 option 1** can hit any unit on any tier. **Option 2** splits damage among units of any player on tiers where you have at least one unit, and may span several such tiers.
+24. **037 "rows"** are tiers. Tokens count.
+25. **038** plays a spell from the discard pile: it moves to "played this turn", counts as played (elements, "next spell" bonuses) and resolves fully. 038 can't pick itself.
+26. **039** "deal 1 damage" may hit any unit on any tier, or nothing. Once the card is drawn, the play can't be cancelled.
+27. **040** hits every unit on the chosen tier, your own included. Value = invoke + other fire cards played this turn.
+28. **041**: the next spell resolves twice and invokes once (mana is spent once). +1 VP per unit (any owner) destroyed by that spell.
+29. **042**: your units on the board get +invoke attack until the end of your turn. +1 VP per enemy unit destroyed by your units' attacks this turn.
+30. **043** health = invoke + 1. Units don't get the spell bonus.
+31. **044** "non-primary" means the card has at least one element outside your class's primary elements (Mage: fire, water). After every card you play while 044 is on the board, it checks whether at least 4 such cards were played this turn. The first time that's true, you gain 2 inf. It doesn't fire again that turn (Jan's ruling).
+32. **045** adds +1 to your spells' invoke values while it's on the board. Several copies stack.
+33. **Attacks** follow the rulebook: same tier or one higher, enemy units only, attacker taps, damage = attack, no strike back.
 
 ## Technical
 
 1. **Engine models are stdlib dataclasses, not Pydantic.** This keeps `engine/` dependency-free and pure. Validation happens in `engine/loader.py`. Pydantic is used for HTTP/WebSocket schemas in `server/`.
 2. **Temporary dev API.** `server/dev_service.py` exposes hot-seat games over plain HTTP (`/api/dev/games/...`). It will be replaced by lobby rooms + WebSockets.
-3. **Locale namespaces** match file names: `ui`, `cards`, `classes`, `keywords`, `log`, `error`, `prompt`. A key is `<namespace>.<path>`, e.g. `ui.panel.end_turn`, `cards.MAG-S01.name`, `log.card_played`, `prompt.invoke`.
+3. **Locale namespaces** match file names: `ui`, `cards`, `classes`, `keywords`, `log`, `error`, `prompt`. A key is `<namespace>.<path>`, e.g. `ui.panel.end_turn`, `cards.MAG-S001.name`, `log.card_played`, `prompt.invoke`.
 4. **Icons are inline SVG** (`client/js/icons.js`), so there's no external icon font or CDN.
 5. **Test-only cards.** Engine tests that need special effects define cards with `catalog_with()` in `tests/helpers.py` instead of depending on real card data.
 6. **Hand order is client-side.** Reordering cards by drag and drop (move and shift, not swap) doesn't go through the server. The order is stored per game and seat in `sessionStorage`. If it ever needs to sync across devices, add a `reorder_hand` action.
 7. **Playing by drag.** A card is played by dragging it up out of the hand. Clicking no longer plays, to avoid accidental plays.
 8. **Card names.** The card table has no names yet. Names are `MAG 009 · Spell` (number + type) until real names arrive (add a Name column).
-9. **One file per printed card.** IDs are `MAG-S01` … `MAG-S12` for New card # 001–012. The printed number is the `number:` field.
+9. **IDs use the printed card number.** "New card #" is unique across the whole game, so IDs are `<CLASS>-<SOURCE><NNN>` (e.g. `MAG-S001`, `MAG-P031`).

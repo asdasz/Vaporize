@@ -12,7 +12,7 @@ from typing import Any
 
 from engine.errors import IllegalAction
 
-PROMPT_KINDS = ("number", "choose_unit", "choose_card", "split_damage")
+PROMPT_KINDS = ("number", "choose_unit", "choose_card", "split_damage", "choose_option", "choose_tier")
 
 
 @dataclass(frozen=True)
@@ -48,6 +48,10 @@ class Prompt:
             if str(answer) not in self.option_ids():
                 raise IllegalAction("error.invalid_choice")
             return str(answer)
+        if self.kind in ("choose_option", "choose_tier"):
+            if isinstance(answer, bool) or not isinstance(answer, int) or answer not in self.options:
+                raise IllegalAction("error.invalid_choice")
+            return answer
         if self.kind == "split_damage":
             return self._validate_split(answer)
         raise IllegalAction("error.invalid_choice")

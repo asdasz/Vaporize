@@ -32,6 +32,9 @@ export function eventText(view, event) {
   if ("resource" in p) p.resource_name = resourceName(p.resource);
   if ("winners" in p) p.winner_names = winnerNames(view, p.winners);
   if ("owner" in p) p.owner_name = playerName(view, p.owner);
+  if ("attacker" in p) p.attacker_name = cardName(p.attacker);
+  if ("target" in p) p.card_name = cardName(p.target);
+  if ("market" in p) p.market_name = t(`ui.market.${p.market}_name`);
   if ("keyword" in p) p.keyword_name = t(`keywords.${p.keyword}.name`);
   return t(event.key, p);
 }

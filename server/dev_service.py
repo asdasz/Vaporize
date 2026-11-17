@@ -16,12 +16,15 @@ from typing import Any
 
 from engine.actions import (
     Action,
+    Attack,
+    Buy,
     CancelChoice,
     CancelTurn,
     Develop,
     EndTurn,
     IllegalAction,
     PlayCard,
+    Refresh,
     RemoveCard,
     Respond,
     Undo,
@@ -36,7 +39,7 @@ from server.codes import generate_code
 
 LOG_LIMIT = 60
 # Bump when engine state classes change, so old save files are ignored instead of half-loading.
-SAVE_VERSION = 2
+SAVE_VERSION = 3
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +69,12 @@ def parse_action(payload: dict[str, Any]) -> Action:
         return Undo(seat=seat)
     if kind == "cancel_turn":
         return CancelTurn(seat=seat)
+    if kind == "attack":
+        return Attack(seat=seat, attacker_uid=str(payload.get("unit_uid")), target_uid=str(payload.get("target_uid")))
+    if kind == "buy":
+        return Buy(seat=seat, market=str(payload.get("market")), slot=int(payload.get("slot", -1)))
+    if kind == "refresh":
+        return Refresh(seat=seat, market=str(payload.get("market")))
     if kind == "remove_card":
         return RemoveCard(seat=seat, card_uid=str(payload.get("card_uid")))
     if kind == "develop":

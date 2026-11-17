@@ -1,0 +1,15 @@
+# Mage market card 031 (legacy card number: 29).
+id: MAG-P031
+number: 31
+type: influence
+cost: 3
+elements: [wind]
+class: mage
+source: private
+effects:
+  - do: gain_inf
+    amount: 2
+  - if: {unique_played_elements_at_least: {min: 4, other: true}}
+    then:
+      - do: prepare
+        times: 2

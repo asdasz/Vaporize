@@ -24,6 +24,7 @@ export function renderBoard(root, view, store, handlers) {
 
   root.onclick = (event) => {
     const el = event.target.closest("[data-action]");
+    if (!el && store.attacker) handlers.selectAttacker(null);  // click elsewhere: drop the attacker selection
     if (!el || el.disabled) return;
     const action = el.dataset.action;
     if (action === "end-turn") handlers.endTurn();
@@ -31,6 +32,11 @@ export function renderBoard(root, view, store, handlers) {
     else if (action === "target") handlers.pickUnit(el.dataset.uid);
     else if (action === "develop") handlers.develop(el.dataset.uid);
     else if (action === "remove-card") handlers.removeCard(el.dataset.uid);
+    else if (action === "choose-option") handlers.respond(Number(el.dataset.value));
+    else if (action === "buy") handlers.buy(el.dataset.market, Number(el.dataset.slot));
+    else if (action === "refresh") handlers.refresh(el.dataset.market);
+    else if (action === "select-attacker") handlers.selectAttacker(el.dataset.uid);
+    else if (action === "attack-target") handlers.attack(el.dataset.uid);
     else if (action === "split") handlers.splitAdjust(el.dataset.uid, Number(el.dataset.delta));
     else if (action === "confirm-number") handlers.confirmNumber();
     else if (action === "confirm-split") handlers.confirmSplit();

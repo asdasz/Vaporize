@@ -1,50 +1,119 @@
 {
-  "MAG-S01": {
+  "MAG-S001": {
     "name": "MAG 001 · Influence",
     "text": "Gain 1 inf."
   },
-  "MAG-S02": {
+  "MAG-S002": {
     "name": "MAG 002 · Influence",
     "text": "Gain 1 inf."
   },
-  "MAG-S03": {
+  "MAG-S003": {
     "name": "MAG 003 · Influence",
     "text": "Gain 1 inf."
   },
-  "MAG-S04": {
+  "MAG-S004": {
     "name": "MAG 004 · Influence",
     "text": "Gain 1 inf."
   },
-  "MAG-S05": {
+  "MAG-S005": {
     "name": "MAG 005 · Influence",
     "text": "Gain 1 inf."
   },
-  "MAG-S06": {
+  "MAG-S006": {
     "name": "MAG 006 · Influence",
     "text": "Gain 1 inf."
   },
-  "MAG-S07": {
+  "MAG-S007": {
     "name": "MAG 007 · Influence",
     "text": "Gain 1 inf."
   },
-  "MAG-S08": {
+  "MAG-S008": {
     "name": "MAG 008 · Spell",
     "text": "**Scout** [**invoke**] − 1 cards from your deck and draw 1 of them."
   },
-  "MAG-S09": {
+  "MAG-S009": {
     "name": "MAG 009 · Spell",
     "text": "Deal [**invoke**] damage to a unit on tiers 1–3. If you played 3 water cards this turn, gain **Split** (limited to a single tier)."
   },
-  "MAG-S10": {
+  "MAG-S010": {
     "name": "MAG 010 · Spell",
     "text": "[**Invoke**] for 4 to gain 1 VP."
   },
-  "MAG-S11": {
+  "MAG-S011": {
     "name": "MAG 011 · Spell",
     "text": "Give an ally unit [**invoke**] − 1 HP. This unit can't have more than 6 HP after this card resolves."
   },
-  "MAG-S12": {
+  "MAG-S012": {
     "name": "MAG 012 · Unit",
     "text": "**Start of turn**: **Prepare**."
+  },
+  "MAG-P031": {
+    "name": "MAG 031 · Influence",
+    "text": "Gain 2 inf. If you played at least 4 different elements on other cards this turn, additionally **prepare** ×2."
+  },
+  "MAG-P032": {
+    "name": "MAG 032 · Influence",
+    "text": "Gain [**invoke**] inf. The next spell you play this turn gets +1 invoke value, or +2 instead if it's a fire spell (element changes don't count)."
+  },
+  "MAG-P033": {
+    "name": "MAG 033 · Influence",
+    "text": "Choose one: gain 4 inf; or draw 2 cards; or **prepare** ×4 (can exceed your mana limit).",
+    "options": [
+      "Gain 4 inf",
+      "Draw 2 cards",
+      "Prepare ×4 (can exceed your mana limit)"
+    ]
+  },
+  "MAG-P034": {
+    "name": "MAG 034 · Influence",
+    "text": "Gain 2 inf and **prepare** ×2 (can exceed your mana limit)."
+  },
+  "MAG-P035": {
+    "name": "MAG 035 · Influence",
+    "text": "Gain 1 inf, +1 for each different element on your other cards played this turn."
+  },
+  "MAG-P036": {
+    "name": "MAG 036 · Spell",
+    "text": "Choose one: deal [**invoke**] + 1 damage to a single unit; or deal [**invoke**] + 2 damage **split** among units on tiers where you have units.",
+    "options": [
+      "Invoke + 1 damage to a single unit",
+      "Invoke + 2 damage split among units on tiers with your units"
+    ]
+  },
+  "MAG-P037": {
+    "name": "MAG 037 · Spell",
+    "text": "Gain 1 VP. Gain 1 more if your units occupy at least 2 different tiers."
+  },
+  "MAG-P038": {
+    "name": "MAG 038 · Spell",
+    "text": "Play 1 spell from your discard pile that hasn't been played this turn."
+  },
+  "MAG-P039": {
+    "name": "MAG 039 · Spell",
+    "text": "Gain 1 VP, 1 inf, draw 1 card and deal 1 damage."
+  },
+  "MAG-P040": {
+    "name": "MAG 040 · Spell",
+    "text": "Deal [**invoke**] damage, +1 for each other fire card played this turn, to all units on a chosen tier."
+  },
+  "MAG-P041": {
+    "name": "MAG 041 · Spell",
+    "text": "Your next spell this turn resolves twice with the same invoke value. Gain 1 VP for each unit killed by that spell."
+  },
+  "MAG-P042": {
+    "name": "MAG 042 · Spell",
+    "text": "Each of your units gains [**invoke**] attack this turn. Gain 1 VP for each enemy unit killed by your units until the end of this turn."
+  },
+  "MAG-P043": {
+    "name": "MAG 043 · Unit",
+    "text": "**End of turn**: if you played cards with 5 different elements this turn, gain 1 VP."
+  },
+  "MAG-P044": {
+    "name": "MAG 044 · Unit",
+    "text": "Whenever you play 4 cards with any non-primary element in a single turn, gain 2 inf."
+  },
+  "MAG-P045": {
+    "name": "MAG 045 · Unit",
+    "text": "Add +1 to your spells' invoke values."
   }
 }

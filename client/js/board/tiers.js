@@ -16,7 +16,9 @@ function targetInfo(view, store) {
   const prompt = myPrompt(view);
   const targets = new Set(prompt && ["choose_unit", "split_damage"].includes(prompt.kind) ? prompt.options : []);
   const split = (prompt && prompt.kind === "split_damage" && store.draft && store.draft.split) || {};
-  return { targets, split, develop: view.legal.develop || {} };
+  const attacks = prompt ? {} : view.legal.attacks || {};
+  const attacker = store.attacker && attacks[store.attacker] ? store.attacker : null;
+  return { targets, split, develop: view.legal.develop || {}, attacks, attacker, attackTargets: new Set(attacker ? attacks[attacker] : []) };
 }
 
 function unitHtml(card, info) {
@@ -24,6 +26,9 @@ function unitHtml(card, info) {
     target: info.targets.has(card.uid),
     assigned: info.split[card.uid] || 0,
     develop: info.develop[card.uid] || null,
+    canAttack: Boolean(info.attacks[card.uid]),
+    selected: info.attacker === card.uid,
+    attackTarget: info.attackTargets.has(card.uid),
   });
 }
 

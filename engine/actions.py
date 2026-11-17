@@ -10,21 +10,23 @@ from typing import Any, Union
 
 from engine.cards import CardInstance
 from engine.catalog import Catalog
+from engine.attacks import attack
 from engine.context import EffectContext
 from engine.development import check_develop, develop_unit
 from engine.errors import IllegalAction
 from engine.events import Event
 from engine.history import copy_state, reveals_information, snapshot
+from engine.market import MARKETS, buy, refresh
 from engine.prompts import NeedChoice, PendingChoice
 from engine.removal import remove_card
-from engine.resolver import resolve_effects
+from engine.playing import resolve_played_card
 from engine.rules import MIN_HAND
-from engine.state import GameState, PlayedCard, UndoEntry
+from engine.state import GameState, UndoEntry
 from engine.turn import end_turn
 
 __all__ = [
-    "Action", "CancelChoice", "CancelTurn", "Develop", "EndTurn", "IllegalAction", "PlayCard", "RemoveCard", "Respond",
-    "Undo",
+    "Action", "Attack", "Buy", "CancelChoice", "CancelTurn", "Develop", "EndTurn", "IllegalAction", "PlayCard",
+    "Refresh", "RemoveCard", "Respond", "Undo",
     "apply_action", "check_play", "legal_plays",
 ]
 
@@ -67,6 +69,30 @@ class RemoveCard:
 
 
 @dataclass(frozen=True)
+class Attack:
+    """Attack an enemy unit on the same tier or one tier higher."""
+
+    seat: int
+    attacker_uid: str
+    target_uid: str
+
+
+@dataclass(frozen=True)
+class Buy:
+    """Buy the card in `slot` of the shared market or your private market."""
+
+    seat: int
+    market: str  # shared | private
+    slot: int
+
+
+@dataclass(frozen=True)
+class Refresh:
+    seat: int
+    market: str  # shared | private
+
+
+@dataclass(frozen=True)
 class EndTurn:
     seat: int
 
@@ -85,7 +111,7 @@ class CancelTurn:
     seat: int
 
 
-Action = Union[PlayCard, Respond, CancelChoice, Develop, RemoveCard, EndTurn, Undo, CancelTurn]
+Action = Union[PlayCard, Respond, CancelChoice, Develop, RemoveCard, Attack, Buy, Refresh, EndTurn, Undo, CancelTurn]
 
 
 def _check_turn(state: GameState, seat: int) -> None:
@@ -125,20 +151,8 @@ def _play_card(
     state: GameState, catalog: Catalog, seat: int, card_uid: str, answers: list[Any], events: list[Event]
 ) -> None:
     check_play(state, catalog, seat, card_uid)
-    player = state.players[seat]
-    card = player.hand.take(card_uid)
-    cdef = catalog.card(card.def_id)
-    player.played_this_turn.append(PlayedCard(card.uid, cdef.id, cdef.elements))
-    if cdef.is_unit:
-        player.tiers[1].place(card)
-        card.fixed_attack = cdef.attack
-        card.fixed_health = cdef.health
-        card.current_hp = cdef.health
-        events.append(Event("log.unit_played", {"seat": seat, "card": cdef.id, "tier": 1}))
-    else:
-        player.in_play.put_bottom(card)
-        events.append(Event("log.card_played", {"seat": seat, "card": cdef.id}))
-    resolve_effects(EffectContext(state, catalog, seat, card, events, answers=answers), cdef.effects)
+    card = state.players[seat].hand.take(card_uid)
+    resolve_played_card(EffectContext(state, catalog, seat, card, events, answers=answers), card)
 
 
 def _resolve_play(
@@ -237,6 +251,25 @@ def apply_action(state: GameState, catalog: Catalog, action: Action) -> tuple[Ga
         new_state = copy_state(state)
         card = remove_card(new_state, catalog, action.seat, action.card_uid, events)
         new_state.undo_stack.append(UndoEntry(snapshot(state), card.def_id))
+        return new_state, events
+    if isinstance(action, (Attack, Buy, Refresh)):
+        _check_turn(state, action.seat)
+        if isinstance(action, (Buy, Refresh)) and action.market not in MARKETS:
+            raise IllegalAction("error.unknown_market")
+        new_state = copy_state(state)
+        label = ""
+        if isinstance(action, Attack):
+            unit = next((u for _, u in state.units_of(action.seat) if u.uid == action.attacker_uid), None)
+            label = unit.def_id if unit else ""
+            attack(new_state, catalog, action.seat, action.attacker_uid, action.target_uid, events)
+        elif isinstance(action, Buy):
+            buy(new_state, catalog, action.seat, action.market, action.slot, events)
+        else:
+            refresh(new_state, action.seat, action.market, events)
+        if reveals_information(events):
+            new_state.undo_stack = []  # a new market card was revealed: checkpoint
+        else:
+            new_state.undo_stack.append(UndoEntry(snapshot(state), label))
         return new_state, events
     if isinstance(action, EndTurn):
         _check_turn(state, action.seat)

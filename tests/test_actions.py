@@ -9,7 +9,7 @@ from tests.helpers import catalog, catalog_with, make_game, set_hand, spell_def
 def test_play_influence_gains_inf_and_moves_to_in_play() -> None:
     state = make_game()
     seat = state.current
-    cards = set_hand(state, seat, ["MAG-S01"] * 7)
+    cards = set_hand(state, seat, ["MAG-S001"] * 7)
     new, events = apply_action(state, catalog(), PlayCard(seat, cards[0].uid))
     p = new.players[seat]
     assert p.inf == 1
@@ -20,7 +20,7 @@ def test_play_influence_gains_inf_and_moves_to_in_play() -> None:
 def test_apply_action_does_not_mutate_input_state() -> None:
     state = make_game()
     seat = state.current
-    cards = set_hand(state, seat, ["MAG-S01"] * 7)
+    cards = set_hand(state, seat, ["MAG-S001"] * 7)
     apply_action(state, catalog(), PlayCard(seat, cards[0].uid))
     assert len(state.players[seat].hand) == 7
 
@@ -28,7 +28,7 @@ def test_apply_action_does_not_mutate_input_state() -> None:
 def test_can_play_at_most_five_of_seven() -> None:
     state = make_game()
     seat = state.current
-    cards = set_hand(state, seat, ["MAG-S01"] * 7)
+    cards = set_hand(state, seat, ["MAG-S001"] * 7)
     for card in cards[:5]:
         state, _ = apply_action(state, catalog(), PlayCard(seat, card.uid))
     assert legal_plays(state, catalog(), seat) == []
@@ -49,7 +49,7 @@ def test_cannot_play_on_other_players_turn() -> None:
 def test_unit_enters_tier1_and_blocks_when_full() -> None:
     state = make_game()
     seat = state.current
-    cards = set_hand(state, seat, ["MAG-S12"] * 3 + ["MAG-S01"] * 4)
+    cards = set_hand(state, seat, ["MAG-S012"] * 3 + ["MAG-S001"] * 4)
     state, _ = apply_action(state, catalog(), PlayCard(seat, cards[0].uid))
     state, _ = apply_action(state, catalog(), PlayCard(seat, cards[1].uid))
     tier1 = state.players[seat].tiers[1]
@@ -61,11 +61,11 @@ def test_unit_enters_tier1_and_blocks_when_full() -> None:
     assert exc.value.key == "error.tier_full"
 
 
-def test_every_influence_card_gives_one_inf() -> None:
+def test_every_starter_influence_card_gives_one_inf() -> None:
     state = make_game()
     seat = state.current
-    for def_id in [c.id for c in catalog().cards.values() if c.type == "influence"]:
-        cards = set_hand(state, seat, [def_id] + ["MAG-S01"] * 6)
+    for def_id in [c.id for c in catalog().starter_cards("mage") if c.type == "influence"]:
+        cards = set_hand(state, seat, [def_id] + ["MAG-S001"] * 6)
         state.players[seat].inf = 0
         after, _ = apply_action(state, catalog(), PlayCard(seat, cards[0].uid))
         assert after.players[seat].inf == 1, def_id
@@ -75,7 +75,7 @@ def test_draw_effect_lets_you_play_more_cards() -> None:
     cat = catalog_with(spell_def("TST-001", [{"do": "draw", "count": 1}]))
     state = make_game()
     seat = state.current
-    cards = set_hand(state, seat, ["TST-001"] + ["MAG-S01"] * 6)
+    cards = set_hand(state, seat, ["TST-001"] + ["MAG-S001"] * 6)
     state, _ = apply_action(state, cat, PlayCard(seat, cards[0].uid))
     assert len(state.players[seat].hand) == 7
 
@@ -90,7 +90,7 @@ def test_condition_counts_only_earlier_cards() -> None:
     )
     state = make_game()
     seat = state.current
-    focus, w1, w2, *_ = set_hand(state, seat, ["TST-002", "TST-003", "TST-003"] + ["MAG-S01"] * 4)
+    focus, w1, w2, *_ = set_hand(state, seat, ["TST-002", "TST-003", "TST-003"] + ["MAG-S001"] * 4)
     # Condition card first: no water cards played yet, so no VP.
     after_focus, _ = apply_action(state, cat, PlayCard(seat, focus.uid))
     assert after_focus.players[seat].vp == 0

@@ -18,10 +18,11 @@ class CardDef:
     source: str  # starter | private | shared
     copies: int = 1
     number: int | None = None  # printed card number ("No. 009")
-    attack: int | None = None
-    health: int | None = None
+    attack: int | dict[str, Any] | None = None  # int, or a value expression like {invoke: 0}
+    health: int | dict[str, Any] | None = None
     effects: tuple[dict[str, Any], ...] = ()
     triggers: dict[str, tuple[dict[str, Any], ...]] = field(default_factory=dict)
+    modifiers: tuple[dict[str, Any], ...] = ()  # static, while the unit is on the board
 
     @property
     def is_unit(self) -> bool:
@@ -46,6 +47,11 @@ class CardInstance:
     fixed_health: int | None = None
     effective_elements: tuple[str, ...] | None = None
     is_token: bool = False
+    temp_attack: int = 0  # bonus attack until the end of its owner's turn
+
+    @property
+    def attack_value(self) -> int:
+        return (self.fixed_attack or 0) + self.temp_attack
 
     def reset_runtime(self) -> None:
         """Clear board state, e.g. when a unit leaves the board."""
@@ -55,3 +61,4 @@ class CardInstance:
         self.fixed_attack = None
         self.fixed_health = None
         self.effective_elements = None
+        self.temp_attack = 0

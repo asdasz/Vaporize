@@ -8,7 +8,7 @@ from tests.helpers import catalog, make_game, set_hand
 def test_end_turn_discards_played_cards_and_draws_to_seven() -> None:
     state = make_game()
     seat = state.current
-    cards = set_hand(state, seat, ["MAG-S01"] * 7)
+    cards = set_hand(state, seat, ["MAG-S001"] * 7)
     for card in cards[:5]:
         state, _ = apply_action(state, catalog(), PlayCard(seat, card.uid))
     state, _ = apply_action(state, catalog(), EndTurn(seat))
@@ -55,9 +55,9 @@ def test_units_score_vp_at_end_of_turn() -> None:
     state = make_game()
     seat = state.current
     p = state.players[seat]
-    p.tiers[2].place(CardInstance(uid="x1", def_id="MAG-S12", owner=seat))
-    p.tiers[3].place(CardInstance(uid="x2", def_id="MAG-S12", owner=seat))
-    state.tier4.place(CardInstance(uid="x3", def_id="MAG-S12", owner=seat))
+    p.tiers[2].place(CardInstance(uid="x1", def_id="MAG-S012", owner=seat))
+    p.tiers[3].place(CardInstance(uid="x2", def_id="MAG-S012", owner=seat))
+    state.tier4.place(CardInstance(uid="x3", def_id="MAG-S012", owner=seat))
     state, _ = apply_action(state, catalog(), EndTurn(seat))
     assert state.players[seat].vp == 1 + 2 + 3
 
@@ -80,7 +80,7 @@ def test_tie_broken_by_highest_tier() -> None:
     first, second = state.first_player, (state.first_player + 1) % 2
     state.players[first].vp = 30
     state.players[second].vp = 30
-    state.players[second].tiers[2].place(CardInstance(uid="t", def_id="MAG-S12", owner=second))
+    state.players[second].tiers[2].place(CardInstance(uid="t", def_id="MAG-S012", owner=second))
     state.players[second].vp -= 1  # tier 2 unit scores 1 VP at end of their turn
     state, _ = apply_action(state, catalog(), EndTurn(first))
     state, _ = apply_action(state, catalog(), EndTurn(second))

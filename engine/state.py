@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass, field
+from typing import Any
 
 from engine.cards import CardInstance
 from engine.prompts import PendingChoice
@@ -44,6 +45,10 @@ class PlayerState:
     resource: int = 0
     removal_index: int = 0
     played_this_turn: list[PlayedCard] = field(default_factory=list)
+    # Effects that last until the end of this turn, e.g. {"kind": "next_spell_invoke_bonus", ...}
+    turn_modifiers: list[dict[str, Any]] = field(default_factory=list)
+    # Keys of `once_per_turn` abilities that already fired this turn.
+    turn_flags: list[str] = field(default_factory=list)
     free_refresh_used: bool = False
     element_swap_used: bool = False
 

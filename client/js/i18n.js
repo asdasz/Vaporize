@@ -1,4 +1,4 @@
-// Translation lookup. Keys are "<namespace>.<path>", e.g. "ui.panel.end_turn", "cards.MAG-S01.name".
+// Translation lookup. Keys are "<namespace>.<path>", e.g. "ui.panel.end_turn", "cards.MAG-S001.name".
 const NAMESPACES = ["ui", "cards", "classes", "keywords", "log", "error", "prompt"];
 const FALLBACK_LANG = "en";
 
@@ -9,7 +9,7 @@ async function fetchLocale(lang) {
   const out = {};
   await Promise.all(
     NAMESPACES.map(async (ns) => {
-      const res = await fetch(`/locales/${lang}/${ns}.json`);
+      const res = await fetch(`/locales/${lang}/${ns}.json`, { cache: "no-cache" }); // always revalidate: card data changes often
       out[ns] = res.ok ? await res.json() : {};
     }),
   );

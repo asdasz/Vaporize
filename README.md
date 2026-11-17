@@ -34,10 +34,12 @@ mypy
 - [x] Turn controls: drag a card up to play it, Undo, Cancel turn, End turn (final); drag to reorder the hand
 - [x] Mage starter deck (cards 001–012) with invoke, scout, damage + split, heal, prepare
 - [x] Choice prompts (invoke amount, targets, scouted card, split damage)
-- [ ] Mage private market cards
+- [x] Mage private market cards (031–045)
 - [x] Remove a card (from hand, played this turn or discard) on the 1, 1, 2, 2, … cost track
-- [ ] Markets: buy, refresh
+- [x] Markets: buy, refresh (shared refresh free once per turn)
+- [ ] Shared market cards
 - [x] Units: develop (tier up for 3/4/5 inf, shared Tier 4) and VP scoring by tier at end of turn
-- [ ] Units: attack, statuses
+- [x] Units: attacks (same tier or one higher)
+- [ ] Status effects from cards (stun, freeze, shield)
 - [ ] Mage element swap passive
 - [ ] Online lobby with 6-character join codes over WebSockets

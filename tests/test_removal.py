@@ -15,7 +15,7 @@ def _remove(state: GameState, seat: int, uid: str) -> GameState:
 def _game_with_discard(inf: int = 10) -> tuple[GameState, int, list[str]]:
     state = make_game()
     seat = state.current
-    cards = make_cards(state, seat, ["MAG-S02", "MAG-S05", "MAG-S06", "MAG-S07"])
+    cards = make_cards(state, seat, ["MAG-S002", "MAG-S005", "MAG-S006", "MAG-S007"])
     state.players[seat].discard.cards = list(cards)
     state.players[seat].inf = inf
     return state, seat, [c.uid for c in cards]
@@ -35,7 +35,7 @@ def test_remove_from_discard_pays_track_cost_1_1_2_2() -> None:
 def test_removing_a_played_card_keeps_its_effects() -> None:
     state = make_game()
     seat = state.current
-    cards = set_hand(state, seat, ["MAG-S06", "MAG-S07", *["MAG-S01"] * 5])  # two water influences
+    cards = set_hand(state, seat, ["MAG-S006", "MAG-S007", *["MAG-S001"] * 5])  # two water influences
     state, _ = apply_action(state, catalog(), PlayCard(seat, cards[0].uid))
     state, _ = apply_action(state, catalog(), PlayCard(seat, cards[1].uid))
     assert state.players[seat].inf == 2

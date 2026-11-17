@@ -9,12 +9,19 @@ INVOKE_MODES = ("spend_resource_any",)
 
 
 def invoke_bonus(ctx: EffectContext) -> int:
-    """Class modifiers that add to invoke values (Mage: +1 for spells)."""
+    """Everything added to this card's invoke value.
+
+    - one-off bonuses for this card (e.g. "the next spell you play gets +1"),
+    - for spells: the class passive (Mage +1) and units on your board with `spell_invoke_bonus`.
+    """
+    bonus = ctx.invoke_extra
     if ctx.source is None or ctx.catalog.card(ctx.source.def_id).type != "spell":
-        return 0
-    return sum(
-        int(p.get("amount", 0)) for p in ctx.class_def.passives if p.get("modifier") == "spell_invoke_bonus"
-    )
+        return bonus
+    bonus += sum(int(p.get("amount", 0)) for p in ctx.class_def.passives if p.get("modifier") == "spell_invoke_bonus")
+    for _, unit in ctx.state.units_of(ctx.seat):
+        for mod in ctx.catalog.card(unit.def_id).modifiers:
+            bonus += int(mod.get("spell_invoke_bonus", 0))
+    return bonus
 
 
 def invoke(ctx: EffectContext) -> int:

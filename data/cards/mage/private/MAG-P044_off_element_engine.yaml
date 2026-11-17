@@ -1,0 +1,17 @@
+# Mage market card 044 (legacy card number: 42).
+id: MAG-P044
+number: 44
+type: unit
+cost: 6
+elements: [fire, water]
+class: mage
+source: private
+attack: 1
+health: 4
+triggers:
+  on_card_played:                 # checked after every card you play
+    - if: {played_matching: {filter: non_primary, min: 4}}
+      once_per_turn: true          # fires the first time it's true, then not again this turn
+      then:
+        - do: gain_inf
+          amount: 2

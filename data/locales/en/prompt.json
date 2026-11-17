@@ -3,5 +3,8 @@
   "deal_damage": "Choose a unit to deal {amount} damage to.",
   "split_damage": "Split {amount} damage among units.",
   "heal": "Choose an ally unit to give {amount} HP.",
-  "scout_draw": "You look at the top {count} card(s) of your deck. Choose one to draw."
+  "scout_draw": "You look at the top {count} card(s) of your deck. Choose one to draw.",
+  "choose_one": "Choose one.",
+  "deal_damage_tier": "Choose a tier: every unit there takes {amount} damage.",
+  "play_from_discard": "Choose a spell from your discard pile to play."
 }

@@ -57,6 +57,19 @@ function chooseCardBody(prompt) {
   return `<div class="prompt-row wrap">${prompt.options.map((card) => handCard(card, { choose: true })).join("")}</div>`;
 }
 
+function chooseOptionBody(prompt) {
+  const card = prompt.params.card;
+  return `<div class="prompt-row wrap">${prompt.options
+    .map((i) => `<button class="option" data-action="choose-option" data-value="${i}">${esc(t(`cards.${card}.options.${i}`))}</button>`)
+    .join("")}</div>`;
+}
+
+function chooseTierBody(prompt) {
+  return `<div class="prompt-row wrap">${prompt.options
+    .map((tier) => `<button class="option" data-action="choose-option" data-value="${tier}">${t("ui.prompt.tier", { tier })}</button>`)
+    .join("")}</div>`;
+}
+
 function promptText(prompt) {
   const params = { ...prompt.params };
   if (params.resource) params.resource_name = resourceName(params.resource);
@@ -77,6 +90,8 @@ export function promptPanel(view, store) {
   else if (prompt.kind === "choose_unit") body = chooseUnitBody(view, prompt);
   else if (prompt.kind === "split_damage") body = splitBody(view, prompt, draft);
   else if (prompt.kind === "choose_card") body = chooseCardBody(prompt);
+  else if (prompt.kind === "choose_option") body = chooseOptionBody(prompt);
+  else if (prompt.kind === "choose_tier") body = chooseTierBody(prompt);
   const skipLabel = t(prompt.params.skip_key || "ui.prompt.skip");
   const skip = prompt.allow_skip ? `<button class="skip" data-action="skip-choice">${skipLabel}</button>` : "";
   const cancel = prompt.cancellable ? `<button data-action="cancel-choice">${icon("cancel")}${t("ui.prompt.cancel")}</button>` : "";

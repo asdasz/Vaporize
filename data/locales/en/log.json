@@ -22,9 +22,18 @@
   "unit_destroyed": "{card_name} ({owner_name}) is destroyed.",
   "heal": "{card_name} ({owner_name}) gains {amount} HP.",
   "scouted": "{player} scouts {count} card(s).",
-  "prepare": "{player} prepares.",
+  "prepare": "{player} prepares ({times}×).",
   "keyword_gained": "{player}'s card gains {keyword_name}.",
   "play_cancelled": "{player} stops playing {card_name}.",
   "unit_developed": "{player} develops {card_name} to Tier {tier} ({cost} inf).",
-  "card_removed": "{player} removes {card_name} from the game ({cost} inf)."
+  "card_removed": "{player} removes {card_name} from the game ({cost} inf).",
+  "market_revealed": "A new card is revealed in the {market_name}: {card_name}.",
+  "market_reshuffled": "The {market_name} deck is reshuffled from its removed cards.",
+  "card_bought": "{player} buys {card_name} for {price} inf.",
+  "market_refreshed": "{player} refreshes the {market_name} ({cost} inf).",
+  "attack": "{player}'s {attacker_name} attacks {card_name} ({owner_name}).",
+  "next_spell_bonus": "{player}'s next spell gets a bonus to its invoke value.",
+  "next_spell_twice": "{player}'s next spell will resolve twice.",
+  "attack_boosted": "{player}'s units gain +{amount} attack this turn.",
+  "played_from_discard": "{player} plays {card_name} from the discard pile."
 }

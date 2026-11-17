@@ -104,13 +104,13 @@ def test_develop_can_be_undone() -> None:
     state = _develop(state, seat, unit.uid)
     state, events = apply_action(state, catalog(), Undo(seat))
     assert _tier_of(state, seat, unit.uid) == 1 and state.players[seat].inf == 3
-    assert events[0].params["card"] == "MAG-S12"
+    assert events[0].params["card"] == "MAG-S012"
 
 
 def test_play_inf_then_develop_then_score_at_end_of_turn() -> None:
     state = make_game()
     seat = state.current
-    cards = set_hand(state, seat, ["MAG-S12", "MAG-S01", "MAG-S02", "MAG-S03", "MAG-S04", "MAG-S05", "MAG-S06"])
+    cards = set_hand(state, seat, ["MAG-S012", "MAG-S001", "MAG-S002", "MAG-S003", "MAG-S004", "MAG-S005", "MAG-S006"])
     for card in cards[:4]:  # unit + 3 inf
         state, _ = apply_action(state, catalog(), PlayCard(seat, card.uid))
     unit_uid = cards[0].uid

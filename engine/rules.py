@@ -18,7 +18,7 @@ ELEMENTS = ("fire", "water", "wind", "lightning", "shadow")
 CARD_TYPES = ("influence", "spell", "unit")
 SOURCES = ("starter", "private", "shared")
 STATUSES = ("shield", "stun", "freeze")
-UNIT_TRIGGERS = ("sot", "eot", "on_damage_taken", "on_kill")
+UNIT_TRIGGERS = ("sot", "eot", "on_damage_taken", "on_kill", "on_card_played")
 CLASS_TRIGGERS = ("sot", "eot")
 
 # Every keyword needs an entry in data/locales/<lang>/keywords.json.

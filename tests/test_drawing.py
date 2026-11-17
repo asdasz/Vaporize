@@ -16,7 +16,7 @@ def test_draw_reshuffles_discard_when_deck_empty() -> None:
     state = make_game()
     p = state.players[0]
     p.hand.cards, p.deck.cards = [], []
-    p.discard.cards = make_cards(state, 0, ["MAG-S01"] * 4)
+    p.discard.cards = make_cards(state, 0, ["MAG-S001"] * 4)
     events: list[Event] = []
     assert draw_cards(state, 0, 3, events) == 3
     assert len(p.hand) == 3 and len(p.deck) == 1 and p.discard.is_empty()
@@ -27,8 +27,8 @@ def test_draw_continues_from_reshuffled_discard_midway() -> None:
     state = make_game()
     p = state.players[0]
     p.hand.cards = []
-    p.deck.cards = make_cards(state, 0, ["MAG-S01"] * 2)
-    p.discard.cards = make_cards(state, 0, ["MAG-S02"] * 5)
+    p.deck.cards = make_cards(state, 0, ["MAG-S001"] * 2)
+    p.discard.cards = make_cards(state, 0, ["MAG-S002"] * 5)
     draw_up_to(state, 0, 7, [])
     assert len(p.hand) == 7
     assert len(p.deck) == 0
@@ -38,8 +38,8 @@ def test_draw_stops_when_deck_and_discard_are_empty() -> None:
     state = make_game()
     p = state.players[0]
     p.hand.cards = []
-    p.deck.cards = make_cards(state, 0, ["MAG-S01"] * 2)
-    p.discard.cards = make_cards(state, 0, ["MAG-S01"])
+    p.deck.cards = make_cards(state, 0, ["MAG-S001"] * 2)
+    p.discard.cards = make_cards(state, 0, ["MAG-S001"])
     events: list[Event] = []
     assert draw_up_to(state, 0, 7, events) == 3
     assert len(p.hand) == 3

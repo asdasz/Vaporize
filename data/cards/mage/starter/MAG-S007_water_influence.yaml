@@ -1,9 +1,9 @@
-# Mage starter card 002 (legacy card number: 2).
-id: MAG-S02
-number: 2
+# Mage starter card 007 (legacy card number: 8).
+id: MAG-S007
+number: 7
 type: influence
 cost: 0
-elements: [fire]
+elements: [water]
 class: mage
 source: starter
 effects:

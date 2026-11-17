@@ -33,6 +33,10 @@ def start_turn(state: GameState, catalog: Catalog, events: list[Event]) -> None:
     player = state.current_player
     player.inf = 0
     player.played_this_turn = []
+    player.turn_modifiers = []
+    player.turn_flags = []
+    player.turn_modifiers = []
+    player.turn_flags = []
     player.free_refresh_used = False
     player.element_swap_used = False
     events.append(Event("log.turn_started", {"seat": player.seat, "round": state.round}))
@@ -58,6 +62,7 @@ def end_turn(state: GameState, catalog: Catalog, events: list[Event]) -> None:
     # 2. Untap and remove one stun / freeze token.
     for _, unit in state.units_of(seat):
         unit.tapped = False
+        unit.temp_attack = 0  # "this turn" attack bonuses end
         for status in ("stun", "freeze"):
             if unit.status[status] > 0:
                 unit.status[status] -= 1
@@ -65,6 +70,8 @@ def end_turn(state: GameState, catalog: Catalog, events: list[Event]) -> None:
     player.discard.cards.extend(player.in_play.take_all())
     player.inf = 0
     player.played_this_turn = []
+    player.turn_modifiers = []
+    player.turn_flags = []
     # 4. Draw back up to 7.
     draw_up_to(state, seat, HAND_SIZE, events)
     events.append(Event("log.turn_ended", {"seat": seat}))

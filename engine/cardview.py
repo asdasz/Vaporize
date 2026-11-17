@@ -22,7 +22,7 @@ def card_view(card: CardInstance, catalog: Catalog) -> dict[str, Any]:
     }
     if cdef.is_unit:
         view.update(
-            attack=card.fixed_attack if card.fixed_attack is not None else cdef.attack,
+            attack=card.attack_value if card.fixed_attack is not None else cdef.attack,
             health=card.fixed_health if card.fixed_health is not None else cdef.health,
             hp=card.current_hp if card.current_hp is not None else cdef.health,
             status=dict(card.status),

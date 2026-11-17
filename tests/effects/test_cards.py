@@ -21,7 +21,7 @@ def test_scout_reveals_and_draws_chosen_card_keeping_order() -> None:
 
     state = make_game()
     ctx = ctx_for(state)
-    ctx.player.deck.cards = make_cards(state, ctx.seat, ["MAG-S01", "MAG-S05", "MAG-S06", "MAG-S07"])
+    ctx.player.deck.cards = make_cards(state, ctx.seat, ["MAG-S001", "MAG-S005", "MAG-S006", "MAG-S007"])
     top = [c.uid for c in ctx.player.deck]
     with pytest.raises(NeedChoice) as need:
         get_effect("scout").fn(ctx, {"count": 3, "draw": 1})
@@ -41,7 +41,7 @@ def test_scout_uses_only_cards_left_in_deck() -> None:
 
     state = make_game()
     ctx = ctx_for(state)
-    ctx.player.deck.cards = make_cards(state, ctx.seat, ["MAG-S01", "MAG-S02"])
+    ctx.player.deck.cards = make_cards(state, ctx.seat, ["MAG-S001", "MAG-S002"])
     ctx.answers = [None]  # skip drawing
     get_effect("scout").fn(ctx, {"count": 5, "draw": 1})
     assert ctx.events[0].params["count"] == 2

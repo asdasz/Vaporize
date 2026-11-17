@@ -1,6 +1,6 @@
-# Mage starter card 001 (legacy card number: 1).
-id: MAG-S01
-number: 1
+# Mage starter card 002 (legacy card number: 2).
+id: MAG-S002
+number: 2
 type: influence
 cost: 0
 elements: [fire]

@@ -1,0 +1,11 @@
+# Mage market card 041 (legacy card number: 39).
+id: MAG-P041
+number: 41
+type: spell
+cost: 9
+elements: [water, lightning]
+class: mage
+source: private
+effects:
+  - do: next_spell_twice
+    vp_per_kill: 1

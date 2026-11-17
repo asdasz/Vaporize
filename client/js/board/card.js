@@ -3,6 +3,14 @@ import { t } from "../i18n.js";
 import { icon } from "../icons.js";
 import { cardName, esc, rulesText, seatColor } from "./util.js";
 
+// Unit stats can be value expressions before the unit enters play, e.g. {invoke: 1} -> "INV+1".
+export function statText(value) {
+  if (value && typeof value === "object" && "invoke" in value) {
+    return value.invoke ? t("ui.card.invoke_stat", { n: value.invoke }) : t("ui.card.invoke_stat0");
+  }
+  return String(value ?? 0);
+}
+
 export function elementIcons(elements) {
   return `<span class="els">${elements.map((e) => icon(e, t(`ui.elements.${e}`))).join("")}</span>`;
 }
@@ -19,9 +27,17 @@ function tooltip(card) {
 
 // opts.target: valid target of the pending prompt (clickable, red tint); opts.assigned: split damage so far;
 // opts.develop: {cost, to} when the viewer can develop this unit right now (green button)
-export function miniUnit(card, { target = false, assigned = 0, develop = null } = {}) {
-  const classes = ["unit", card.tapped ? "tapped" : "", target ? "target" : "", develop ? "can-develop" : ""].join(" ");
-  const action = target ? `data-action="target" data-uid="${card.uid}"` : `data-uid="${card.uid}"`;
+// opts.canAttack: own unit with legal attacks (green, click to select); opts.selected: chosen attacker (blue);
+// opts.attackTarget: enemy the selected attacker can hit (red, click to attack)
+export function miniUnit(card, { target = false, assigned = 0, develop = null, canAttack = false, selected = false, attackTarget = false } = {}) {
+  const classes = [
+    "unit", card.tapped ? "tapped" : "", target || attackTarget ? "target" : "", develop || canAttack ? "can-develop" : "",
+    selected ? "selected" : "",
+  ].join(" ");
+  let action = `data-uid="${card.uid}"`;
+  if (target) action = `data-action="target" data-uid="${card.uid}"`;
+  else if (attackTarget) action = `data-action="attack-target" data-uid="${card.uid}"`;
+  else if (canAttack) action = `data-action="select-attacker" data-uid="${card.uid}"`;
   let badge = assigned ? `<span class="assigned">−${assigned}</span>` : "";
   if (develop && !target) {
     const hint = t("ui.tiers.develop_hint", { tier: develop.to, cost: develop.cost });
@@ -32,15 +48,16 @@ export function miniUnit(card, { target = false, assigned = 0, develop = null } 
       ${statusBadges(card.status)}${badge}
       <div class="name">${elementIcons(card.elements)}<span>${esc(cardName(card.id))}</span></div>
       <div class="stats">
-        <span title="${t("ui.card.attack")}">${icon("attack")}${card.attack}</span>
-        <span title="${t("ui.card.health")}">${icon("health")}${card.hp}</span>
+        <span title="${t("ui.card.attack")}">${icon("attack")}${statText(card.attack)}</span>
+        <span title="${t("ui.card.health")}">${icon("health")}${statText(card.hp)}</span>
       </div>
     </div>`;
 }
 
 export const emptySlot = (label = "") => `<div class="slot">${esc(label)}</div>`;
 
-export function marketCard(entry, { affordable = null, showModifier = false, ownerSeat = null } = {}) {
+// opts.buy: {market, slot} when the viewer can buy this card now (click to buy)
+export function marketCard(entry, { affordable = null, showModifier = false, ownerSeat = null, buy = null } = {}) {
   if (!entry) return `<div class="mcard empty">${t("ui.market.empty")}</div>`;
   const { card, price, modifier } = entry;
   const priceClass = affordable === true ? "ok" : "";
@@ -48,8 +65,10 @@ export function marketCard(entry, { affordable = null, showModifier = false, own
   const border = ownerSeat !== null ? `style="border:2px solid ${seatColor(ownerSeat)}"` : "";
   const mod = showModifier && modifier ? `<span class="mod">${modifier > 0 ? `+${modifier}` : `−${-modifier}`}</span>` : "";
   return `
-    <div class="mcard ${dim}" ${border} title="${tooltip(card)}">
+    <div class="mcard ${dim} ${buy ? "buyable" : ""}" ${border} title="${buy ? t("ui.market.buy_hint", { price }) + " · " : ""}${tooltip(card)}"
+      ${buy ? `data-action="buy" data-market="${buy.market}" data-slot="${buy.slot}"` : ""}>
       <div class="name">${elementIcons(card.elements)}<span>${esc(cardName(card.id))}</span></div>
+      <div class="mtext">${rulesText(card.id)}</div>
       <span class="price ${priceClass}">${price} ${mod}</span>
     </div>`;
 }
@@ -62,7 +81,7 @@ export function handCard(card, { playable = false, blocked = false, choose = fal
     : `draggable="true" data-hand-uid="${card.uid}" data-playable="${playable ? 1 : 0}"`;
   const stats =
     card.type === "unit"
-      ? `<div class="stats"><span>${icon("attack")}${card.attack}</span><span>${icon("health")}${card.health}</span></div>`
+      ? `<div class="stats"><span>${icon("attack")}${statText(card.attack)}</span><span>${icon("health")}${statText(card.health)}</span></div>`
       : "";
   return `
     <div class="${classes}" ${attrs} title="${tooltip(card)}">

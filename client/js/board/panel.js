@@ -3,7 +3,7 @@ import { t } from "../i18n.js";
 import { icon } from "../icons.js";
 import { handCard, hiddenCard } from "./card.js";
 import { promptPanel } from "./prompt.js";
-import { cardName, playerName, resourceName, seatColor, winnerNames } from "./util.js";
+import { cardName, findUnit, playerName, resourceName, seatColor, winnerNames } from "./util.js";
 
 const ELEMENTS = ["fire", "water", "wind", "lightning", "shadow"];
 
@@ -39,6 +39,17 @@ function chips(view, store) {
         : `<span class="chip done">${t("ui.panel.no_plays_left", { min: view.rules.min_hand })}</span>`,
     );
     if (left > 0) out.push(`<span class="chip info">${icon("arrowUp")}${t("ui.panel.drag_hint")}</span>`);
+    const attackers = Object.keys(view.legal.attacks || {}).length;
+    if (attackers) out.push(`<span class="chip">${icon("attack")}${t("ui.panel.attacks", { count: attackers })}</span>`);
+    if (view.legal.market?.shared_refresh === 0) out.push(`<span class="chip">${icon("refresh")}${t("ui.panel.free_refresh")}</span>`);
+    for (const mod of view.players[view.you].turn_modifiers || []) {
+      if (mod.kind === "next_spell_invoke_bonus") out.push(`<span class="chip info">${t("ui.panel.next_spell", { amount: mod.amount })}</span>`);
+      if (mod.kind === "next_spell_twice") out.push(`<span class="chip info">${t("ui.panel.next_twice")}</span>`);
+    }
+    if (store.attacker && (view.legal.attacks || {})[store.attacker]) {
+      const unit = findUnit(view, store.attacker);
+      if (unit) out.push(`<span class="chip info">${icon("attack")}${t("ui.panel.select_target", { card_name: cardName(unit.unit.id) })}</span>`);
+    }
     const develops = Object.keys(view.legal.develop || {}).length;
     const removable = (view.legal.removable || []).length;
     if (removable) out.push(`<span class="chip">${icon("trash")}${t("ui.panel.remove_chip", { cost: view.players[view.you].removal_cost })}</span>`);

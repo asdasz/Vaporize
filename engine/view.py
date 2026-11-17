@@ -10,6 +10,8 @@ from engine.cardview import card_view
 from engine.catalog import Catalog
 from engine.development import eot_vp, legal_develops
 from engine.removal import removable_cards
+from engine.attacks import legal_attacks
+from engine.market import legal_market, refresh_cost
 from engine.rules import ELEMENTS, MIN_HAND, SHARED_PRICE_MODIFIERS
 from engine.state import GameState, MarketState, PlayerState
 from engine.zones import SlotRow
@@ -56,6 +58,7 @@ def _player(state: GameState, catalog: Catalog, player: PlayerState, viewer: int
         "removed": [card_view(c, catalog) for c in player.removed],
         "played_elements": {e: played.get(e, 0) for e in ELEMENTS},
         "played_count": len(player.played_this_turn),
+        "turn_modifiers": [dict(m) for m in player.turn_modifiers],
         "free_refresh_used": player.free_refresh_used,
         "tiers": {str(t): _row(row, catalog) for t, row in player.tiers.items()},
         "tokens": [card_view(c, catalog) for c in player.tokens],
@@ -101,6 +104,9 @@ def build_view(state: GameState, catalog: Catalog, viewer: int) -> dict[str, Any
             "plays_left": max(0, len(me.hand) - MIN_HAND) if my_turn else 0,
             "can_end_turn": free,
             "removable": removable_cards(state, catalog, viewer) if free else [],
+            "attacks": legal_attacks(state, viewer) if free else {},
+            "market": legal_market(state, catalog, viewer) if free else {},
+            "shared_refresh_cost": refresh_cost(state, viewer, "shared"),
             "develop": {
                 o.uid: {"cost": o.cost, "to": o.to_tier} for o in (legal_develops(state, catalog, viewer) if free else [])
             },

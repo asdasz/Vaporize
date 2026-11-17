@@ -1,0 +1,15 @@
+# Mage market card 037 (legacy card number: 35).
+id: MAG-P037
+number: 37
+type: spell
+cost: 5
+elements: [water]
+class: mage
+source: private
+effects:
+  - do: gain_vp
+    amount: 1
+  - if: {ally_tiers_at_least: {min: 2}}
+    then:
+      - do: gain_vp
+        amount: 1

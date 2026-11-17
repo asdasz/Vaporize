@@ -1,0 +1,12 @@
+# Mage market card 045 (legacy card number: 43).
+id: MAG-P045
+number: 45
+type: unit
+cost: 8
+elements: [fire]
+class: mage
+source: private
+attack: 1
+health: 5
+modifiers:
+  - spell_invoke_bonus: 1

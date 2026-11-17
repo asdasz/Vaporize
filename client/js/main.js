@@ -13,6 +13,7 @@ const store = {
   error: null, // last illegal-action error {key, params}
   openMarket: "self", // "self" | seat number | null (all hidden)
   draft: null, // local, unsent answer for the pending prompt: {key, value, split}
+  attacker: null, // uid of the own unit selected to attack
 };
 
 // Reset the local draft whenever a new prompt appears.
@@ -110,7 +111,10 @@ async function sendAction(action) {
   try {
     const res = await api.act(store.gameId, action);
     store.error = res.ok ? null : res.error;
-    if (res.ok && action.type === "end_turn") store.openMarket = "self";
+    if (res.ok && action.type === "end_turn") {
+      store.openMarket = "self";
+      store.attacker = null;
+    }
     await refresh();
   } catch (err) {
     handleFailure(err);
@@ -141,6 +145,17 @@ const handlers = {
   respond: (answer) => act({ type: "respond", seat: store.seat, answer }),
   develop: (uid) => act({ type: "develop", seat: store.seat, unit_uid: uid }),
   removeCard: (uid) => act({ type: "remove_card", seat: store.seat, card_uid: uid }),
+  buy: (market, slot) => act({ type: "buy", seat: store.seat, market, slot }),
+  refresh: (market) => act({ type: "refresh", seat: store.seat, market }),
+  selectAttacker: (uid) => {
+    store.attacker = store.attacker === uid ? null : uid;
+    draw();
+  },
+  attack: (targetUid) => {
+    const attacker = store.attacker;
+    store.attacker = null;
+    if (attacker) act({ type: "attack", seat: store.seat, unit_uid: attacker, target_uid: targetUid });
+  },
   cancelChoice: () => act({ type: "cancel_choice", seat: store.seat }),
   pickUnit: (uid) => {
     const prompt = store.view?.pending?.prompt;

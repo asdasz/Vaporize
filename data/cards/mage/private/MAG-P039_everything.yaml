@@ -1,0 +1,18 @@
+# Mage market card 039 (legacy card number: 37).
+id: MAG-P039
+number: 39
+type: spell
+cost: 9
+elements: []
+class: mage
+source: private
+effects:
+  - do: gain_vp
+    amount: 1
+  - do: gain_inf
+    amount: 1
+  - do: draw
+    count: 1
+  - do: deal_damage
+    amount: 1
+    target: {side: any}

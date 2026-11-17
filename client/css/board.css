@@ -164,3 +164,14 @@
 .list li .count + .remove-btn { margin-left: 6px; }
 .prompt button.skip { font-weight: 600; }
 .hcard .hand-remove { position: absolute; top: -9px; right: -7px; margin: 0; height: 20px; padding: 0 6px; }
+
+/* Markets: buying, refresh; attacks; options */
+.mcard { height: auto; min-height: 74px; width: 132px; gap: 3px; }
+.mcard .mtext { font-size: 10.5px; color: var(--text-2); line-height: 1.25; max-height: 40px; overflow: hidden; }
+.mcard.buyable { cursor: pointer; outline: 2px solid var(--success-fill); outline-offset: 2px; }
+.mcard.buyable:hover { transform: translateY(-3px); }
+.refresh-btn { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; font-size: 12px; font-weight: 600; border: 2px solid var(--success-fill); background: var(--success-bg); color: var(--success); align-self: center; }
+.refresh-btn:hover { background: var(--success-fill); color: #fff; }
+.unit.selected { outline: 2px solid var(--accent); outline-offset: 2px; }
+.unit[data-action="select-attacker"] { cursor: pointer; }
+.prompt button.option { font-weight: 600; border-width: 2px; }

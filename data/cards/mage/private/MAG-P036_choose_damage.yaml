@@ -1,0 +1,17 @@
+# Mage market card 036 (legacy card number: 34).
+id: MAG-P036
+number: 36
+type: spell
+cost: 3
+elements: [fire]
+class: mage
+source: private
+effects:
+  - choose_one:
+      - - do: deal_damage
+          amount: {invoke: 1}
+          target: {side: any}
+      - - do: deal_damage
+          amount: {invoke: 2}
+          target: {side: any, tiers: with_ally_units}
+          split: true

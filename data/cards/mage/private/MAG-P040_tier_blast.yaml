@@ -1,0 +1,11 @@
+# Mage market card 040 (legacy card number: 38).
+id: MAG-P040
+number: 40
+type: spell
+cost: 8
+elements: [fire]
+class: mage
+source: private
+effects:
+  - do: deal_damage_tier
+    amount: {sum: [{invoke: 0}, {count: {played: {element: fire, other: true}}}]}

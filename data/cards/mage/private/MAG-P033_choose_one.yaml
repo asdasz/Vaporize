@@ -1,0 +1,13 @@
+# Mage market card 033 (legacy card number: 31).
+id: MAG-P033
+number: 33
+type: influence
+cost: 7
+elements: [wind]
+class: mage
+source: private
+effects:
+  - choose_one:
+      - [{do: gain_inf, amount: 4}]
+      - [{do: draw, count: 2}]
+      - [{do: prepare, times: 4, exceed_limit: true}]

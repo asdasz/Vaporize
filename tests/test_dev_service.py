@@ -11,7 +11,7 @@ from tests.helpers import catalog, set_hand
 def _influence_hand(games: DevGames, gid: str) -> int:
     """Give the current player 7 plain influence cards (no choices needed). Returns their seat."""
     state = games.games[gid].state
-    set_hand(state, state.current, ["MAG-S01"] * 7)
+    set_hand(state, state.current, ["MAG-S001"] * 7)
     return state.current
 
 

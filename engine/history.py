@@ -10,7 +10,7 @@ from engine.state import GameState
 
 # Events that reveal hidden information. Undoing past them would let a player peek
 # (e.g. draw a card, see it, undo), so they become a new checkpoint instead.
-REVEALING_EVENTS = frozenset({"log.cards_drawn", "log.deck_reshuffled", "log.scouted"})
+from engine.context import REVEALING_EVENT_KEYS as REVEALING_EVENTS  # noqa: E402
 
 
 def copy_state(state: GameState) -> GameState:

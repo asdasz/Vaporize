@@ -1,0 +1,12 @@
+# Shared market card 747 (legacy card number: 104).
+id: SHR-747
+number: 747
+type: spell
+cost: 3
+elements: [water]
+class: shared
+source: shared
+effects:
+  - if: {played_this_turn: {element: water, min: 3, other: true}}
+    then: [{do: shield, target: {side: ally}, heal: 2}]
+    else: [{do: shield, target: {side: ally}}]

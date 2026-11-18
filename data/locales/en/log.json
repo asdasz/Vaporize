@@ -42,5 +42,14 @@
   "status_added": "{card_name} ({owner_name}) gets {count} {status_name} token(s).",
   "unit_degraded": "{card_name} ({owner_name}) is degraded to Tier {tier}.",
   "scout_discarded": "{player} discards {count} scouted card(s).",
-  "card_bought_vp": "{player} buys {card_name} by losing {vp} VP."
+  "card_bought_vp": "{player} buys {card_name} by losing {vp} VP.",
+  "hand_eot_discard": "{player} discards {card_name} from their hand for {vp} VP.",
+  "market_card_discarded": "{player} discards {card_name} from the {market_name}.",
+  "hand_looked_at": "{player} looks at {owner_name}'s hand.",
+  "disrupted": "{player} makes {owner_name} discard {card_name}.",
+  "card_revealed": "{player} reveals {card_name} (it can't be played this turn).",
+  "shuffled_into_deck": "{player} shuffles {count} card(s) from the discard pile into their deck.",
+  "units_swapped": "{player} swaps {a_name} and {b_name} ({owner_name}).",
+  "unit_boosted": "{card_name} ({owner_name}) gets +{attack} attack and {extra} extra attack(s) this turn.",
+  "next_develop_discount": "{player}'s next development is cheaper this turn."
 }

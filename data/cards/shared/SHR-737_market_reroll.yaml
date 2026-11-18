@@ -1,0 +1,11 @@
+# Shared market card 737 (legacy card number: 94).
+id: SHR-737
+number: 737
+type: influence
+cost: 7
+elements: [lightning]
+class: shared
+source: shared
+effects:
+  - {do: gain_inf, amount: 3}
+  - {do: refresh_market, market: private, up_to: 3}   # free

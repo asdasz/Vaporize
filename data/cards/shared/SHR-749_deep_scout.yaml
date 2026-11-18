@@ -1,0 +1,10 @@
+# Shared market card 749 (legacy card number: 106).
+id: SHR-749
+number: 749
+type: spell
+cost: 4
+elements: []
+class: shared
+source: shared
+effects:
+  - {do: scout, count: 5, draw: 1, rest_choice: true}

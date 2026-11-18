@@ -1,0 +1,10 @@
+# Shared market card 753 (legacy card number: 109).
+id: SHR-753
+number: 753
+type: spell
+cost: 6
+elements: [shadow]
+class: shared
+source: shared
+effects:
+  - {do: shuffle_into_deck, count: {min: [{invoke: 0}, 4]}}

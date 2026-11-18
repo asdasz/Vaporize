@@ -1,0 +1,10 @@
+# Shared market card 751 (legacy card number: 107).
+id: SHR-751
+number: 751
+type: spell
+cost: 4
+elements: []
+class: shared
+source: shared
+effects:
+  - {do: boost_units, target: {side: ally}, attack: 2, extra_attacks: 1}

@@ -32,6 +32,14 @@ def destroy_unit(ctx: EffectContext, unit: CardInstance) -> None:
     ctx.kills += 1
     if unit.owner != ctx.seat:
         ctx.player.enemy_kills_this_turn += 1
+    # Cards like "while in your discard pile: gain 1 VP whenever you kill a unit" (played cards count too).
+    killer = ctx.player
+    vp = sum(
+        (ctx.catalog.card(c.def_id).in_discard or {}).get("vp_per_kill", 0) for c in (*killer.discard, *killer.in_play)
+    )
+    if vp:
+        killer.vp += vp
+        ctx.emit("log.gain_vp", seat=ctx.seat, amount=vp)
     if not unit.is_token:
         unit.reset_runtime()
         owner.discard.put_bottom(unit)

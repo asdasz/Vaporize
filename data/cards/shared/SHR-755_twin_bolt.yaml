@@ -1,0 +1,12 @@
+# Shared market card 755 (legacy card number: 111).
+id: SHR-755
+number: 755
+type: spell
+cost: 5
+elements: [lightning]
+class: shared
+source: shared
+effects:
+  - {do: prepare}
+  - {do: deal_damage, amount: {invoke: 1}, target: {side: any, tiers: with_ally_units}}
+  - {do: deal_damage, amount: {invoke: -1}, target: {side: any, tiers: with_ally_units}, different: true}

@@ -1,0 +1,11 @@
+# Shared market card 745 (legacy card number: 102).
+id: SHR-745
+number: 745
+type: spell
+cost: 3
+elements: [wind]
+class: shared
+source: shared
+effects:
+  - {do: prepare}
+  - {do: scout, count: 3, discard_any: true}

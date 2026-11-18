@@ -1,0 +1,11 @@
+# Shared market card 758 (legacy card number: 116).
+id: SHR-758
+number: 758
+type: spell
+cost: 9
+elements: [wind]
+class: shared
+source: shared
+in_discard: {vp_per_kill: 1}   # while in your discard pile (cards played this turn count)
+effects:
+  - {do: draw, count: 1}

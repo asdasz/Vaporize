@@ -1,0 +1,11 @@
+# Shared market card 750 (legacy card number: 106).
+id: SHR-750
+number: 750
+type: spell
+cost: 3
+elements: []
+class: shared
+source: shared
+effects:
+  - {do: prepare, times: 2}
+  - {do: deal_damage, amount: 2, target: {side: any}}

@@ -37,10 +37,12 @@ def start_turn(state: GameState, catalog: Catalog, events: list[Event]) -> None:
     player.turn_flags = []
     player.prepares_this_turn = 0
     player.enemy_kills_this_turn = 0
+    player.locked_cards = []
     player.turn_modifiers = []
     player.turn_flags = []
     player.prepares_this_turn = 0
     player.enemy_kills_this_turn = 0
+    player.locked_cards = []
     player.free_refresh_used = False
     player.element_swap_used = False
     events.append(Event("log.turn_started", {"seat": player.seat, "round": state.round}))
@@ -56,17 +58,25 @@ def score_units(state: GameState, catalog: Catalog, seat: int, events: list[Even
     return gained
 
 
-def end_turn(state: GameState, catalog: Catalog, events: list[Event]) -> None:
+def end_turn(state: GameState, catalog: Catalog, events: list[Event], hand_discards: tuple[str, ...] = ()) -> None:
     player = state.current_player
     seat = player.seat
-    # 1. Score: EOT effects, then VP for units on tiers.
+    # 1. Score: hand cards with an end-of-turn ability (chosen by the player), EOT effects, unit VP.
+    for uid in hand_discards:
+        card = player.hand.take(uid)  # may break the 2-card minimum (the card says so)
+        vp = (catalog.card(card.def_id).hand_eot or {}).get("discard_for_vp", 0)
+        player.discard.put_bottom(card)
+        player.vp += vp
+        events.append(Event("log.hand_eot_discard", {"seat": seat, "card": card.def_id, "vp": vp}))
     _run_class_trigger(state, catalog, seat, "eot", events)
     _run_unit_triggers(state, catalog, seat, "eot", events)
     score_units(state, catalog, seat, events)
     # 2. Untap and remove one stun / freeze token.
     for _, unit in state.units_of(seat):
         unit.tapped = False
+        unit.attacks_made = 0
         unit.temp_attack = 0  # "this turn" attack bonuses end
+        unit.temp_extra_attacks = 0
         for status in ("stun", "freeze"):
             if unit.status[status] > 0:
                 unit.status[status] -= 1
@@ -80,6 +90,7 @@ def end_turn(state: GameState, catalog: Catalog, events: list[Event]) -> None:
     player.turn_flags = []
     player.prepares_this_turn = 0
     player.enemy_kills_this_turn = 0
+    player.locked_cards = []
     # 4. Draw back up to 7.
     draw_up_to(state, seat, HAND_SIZE, events)
     events.append(Event("log.turn_ended", {"seat": seat}))

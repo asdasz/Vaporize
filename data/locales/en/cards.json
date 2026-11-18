@@ -235,5 +235,137 @@
   "SHR-730": {
     "name": "SHR 730 · Influence",
     "text": "Gain 3 inf and **prepare**. If you played at least 4 other fire or water cards this turn, gain 4 inf and **prepare** ×2 instead."
+  },
+  "SHR-731": {
+    "name": "SHR 731 · Influence",
+    "text": "Gain 5 inf. **End of turn**: if this card is in your hand, you may discard it to gain 1 VP, even if it's one of the 2 cards you must keep."
+  },
+  "SHR-732": {
+    "name": "SHR 732 · Influence",
+    "text": "Gain [**invoke**] − 1 inf. If you played 2 other lightning cards this turn, draw a card."
+  },
+  "SHR-733": {
+    "name": "SHR 733 · Influence",
+    "text": "Gain 3 inf and **prepare** once."
+  },
+  "SHR-734": {
+    "name": "SHR 734 · Influence",
+    "text": "Gain 3 inf, and discard 1 chosen card from the shared market."
+  },
+  "SHR-735": {
+    "name": "SHR 735 · Influence",
+    "text": "Gain 3 inf. Give 1 HP to all your units and **shield** 1 of them."
+  },
+  "SHR-736": {
+    "name": "SHR 736 · Influence",
+    "text": "Gain 1 inf and discard 1 chosen influence card from every other player's hand. If you played 2 other shadow cards this turn, discard 1 more."
+  },
+  "SHR-737": {
+    "name": "SHR 737 · Influence",
+    "text": "Gain 3 inf. **Refresh** up to 3 cards in your market."
+  },
+  "SHR-738": {
+    "name": "SHR 738 · Influence",
+    "text": "Gain 3 inf. **Freeze** a single chosen unit."
+  },
+  "SHR-739": {
+    "name": "SHR 739 · Influence",
+    "text": "Gain 2 inf, and draw [**invoke**] cards (max. 2)."
+  },
+  "SHR-740": {
+    "name": "SHR 740 · Influence",
+    "text": "Gain 1 inf and draw a card. If you have at least 4 other wind cards in your discard pile, gain 3 inf and draw a card instead."
+  },
+  "SHR-741": {
+    "name": "SHR 741 · Influence",
+    "text": "Play another influence card from your discard pile, or gain 2 inf.",
+    "options": [
+      "Play an influence card from your discard pile",
+      "Gain 2 inf"
+    ]
+  },
+  "SHR-742": {
+    "name": "SHR 742 · Influence",
+    "text": "Gain 3 inf. If you played 2 other lightning cards, you may **stun** all your units to gain 1 more. If you played 2 other shadow cards, you may **refresh** 1 card in every market.",
+    "stun": [
+      "Stun all your units for +1 inf",
+      "Don't"
+    ],
+    "refresh": [
+      "Refresh 1 card in every market",
+      "Don't"
+    ]
+  },
+  "SHR-743": {
+    "name": "SHR 743 · Influence",
+    "text": "**Develop** 2 times for free."
+  },
+  "SHR-744": {
+    "name": "SHR 744 · Spell",
+    "text": "Deal [**invoke**] + 1 damage to a single unit of each other player on tiers 1–3. If you played 3 other fire cards this turn, deal 2 more damage."
+  },
+  "SHR-745": {
+    "name": "SHR 745 · Spell",
+    "text": "**Prepare**, then **scout** 3: put any number of those cards on your discard pile."
+  },
+  "SHR-746": {
+    "name": "SHR 746 · Spell",
+    "text": "Swap 2 units on your board and give them 1 HP. If you played 2 other shadow cards this turn, do it for the other players as well, dealing 1 damage instead."
+  },
+  "SHR-747": {
+    "name": "SHR 747 · Spell",
+    "text": "**Shield** an ally unit. If you played at least 3 other water cards this turn, also give it 2 HP."
+  },
+  "SHR-748": {
+    "name": "SHR 748 · Spell",
+    "text": "**Prepare** ×2. You may reveal 2 wind cards from your hand (they can't be played this turn) to **prepare** again."
+  },
+  "SHR-749": {
+    "name": "SHR 749 · Spell",
+    "text": "**Scout** 5: draw 1 of them, then discard the rest or put them back in any order."
+  },
+  "SHR-750": {
+    "name": "SHR 750 · Spell",
+    "text": "**Prepare** ×2 and deal 2 damage."
+  },
+  "SHR-751": {
+    "name": "SHR 751 · Spell",
+    "text": "Target ally unit gets +2 attack and can attack twice this turn."
+  },
+  "SHR-752": {
+    "name": "SHR 752 · Spell",
+    "text": "**Stun** all units on a chosen tier and deal 1 damage to them."
+  },
+  "SHR-753": {
+    "name": "SHR 753 · Spell",
+    "text": "Shuffle [**invoke**] other cards from your discard pile into your deck (max. 4)."
+  },
+  "SHR-754": {
+    "name": "SHR 754 · Spell",
+    "text": "All your units gain an extra attack this turn."
+  },
+  "SHR-755": {
+    "name": "SHR 755 · Spell",
+    "text": "**Prepare**, then deal [**invoke**] + 1 damage and [**invoke**] − 1 damage to 2 different units on tiers where you have a unit (one invoke for both)."
+  },
+  "SHR-756": {
+    "name": "SHR 756 · Spell",
+    "text": "Gain 1 VP and **stun** [**invoke**] enemy units."
+  },
+  "SHR-757": {
+    "name": "SHR 757 · Spell",
+    "text": "**Prepare** ×2. Your next development this turn costs 1 less for each prepare this turn."
+  },
+  "SHR-758": {
+    "name": "SHR 758 · Spell",
+    "text": "Draw 1 card. While this card is in your discard pile, gain 1 VP whenever you kill a unit."
+  },
+  "SHR-759": {
+    "name": "SHR 759 · Spell",
+    "text": "Deal [**invoke**] damage to all units on a chosen tier. If you played at least 2 wind cards this turn, don't damage your own units."
+  },
+  "SHR-760": {
+    "name": "SHR 760 · Spell",
+    "text": "**Degrade** a unit once for each enemy (players − 1 times). Draw a card."
   }
 }

@@ -26,8 +26,9 @@ def _played_this_turn(ctx: EffectContext, p: dict[str, Any]) -> bool:
 
 
 def _in_discard(ctx: EffectContext, p: dict[str, Any]) -> bool:
-    """Discard pile includes the cards played this turn (rulebook)."""
-    cards = list(ctx.player.discard) + list(ctx.player.in_play)
+    """Discard pile includes the cards played this turn (rulebook). `other: true` leaves this card out."""
+    source_uid = ctx.source.uid if ctx.source else None
+    cards = [c for c in (*ctx.player.discard, *ctx.player.in_play) if not (p.get("other") and c.uid == source_uid)]
     count = sum(1 for c in cards if p["element"] in elements_of(c, ctx.catalog))
     return count >= p["min"]
 
@@ -66,7 +67,7 @@ def _played_matching(ctx: EffectContext, p: dict[str, Any]) -> bool:
 # name -> (function, required params, optional params)
 _CONDITIONS: dict[str, tuple[ConditionFn, frozenset[str], frozenset[str]]] = {
     "played_this_turn": (_played_this_turn, frozenset({"min"}), frozenset({"element", "elements", "other"})),
-    "in_discard": (_in_discard, frozenset({"element", "min"}), frozenset()),
+    "in_discard": (_in_discard, frozenset({"element", "min"}), frozenset({"other"})),
     "value_at_least": (_value_at_least, frozenset({"value", "min"}), frozenset()),
     "ally_tiers_at_least": (_ally_tiers_at_least, frozenset({"min"}), frozenset()),
     "unique_played_elements_at_least": (_unique_played_elements_at_least, frozenset({"min"}), frozenset({"other"})),

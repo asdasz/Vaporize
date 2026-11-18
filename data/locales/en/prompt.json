@@ -14,5 +14,18 @@
   "freeze": "Choose a unit to freeze.",
   "degrade": "You may degrade a unit.",
   "develop": "Choose a unit to develop.",
-  "scout_discard": "You look at the top {count} card(s). Choose any to discard; the rest stay on top in the same order."
+  "scout_discard": "You look at the top {count} card(s). Choose any to discard; the rest stay on top in the same order.",
+  "refresh_count": "How many times do you refresh your market (free)?",
+  "discard_from_market": "Choose a card to discard from the {market_name}.",
+  "deal_damage_opponent": "Choose a unit of {player_name} to deal {amount} damage to.",
+  "disrupt": "Choose a card from {player_name}'s hand. They discard it.",
+  "reveal_for": "You may reveal {count} {element_name} cards from your hand. They can't be played this turn.",
+  "shuffle_into_deck": "Choose up to {count} card(s) to shuffle from your discard pile into your deck.",
+  "scout_rest": "What happens to the other scouted cards?",
+  "scout_order": "Put the cards back in the order you want (first = top of your deck).",
+  "swap_units": "Choose 2 units of {player_name} to swap.",
+  "boost_unit": "Choose an ally unit to boost.",
+  "stun_units": "Choose up to {count} unit(s) to stun.",
+  "shield_units": "Choose up to {count} unit(s) to shield.",
+  "freeze_units": "Choose up to {count} unit(s) to freeze."
 }

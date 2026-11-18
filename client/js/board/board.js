@@ -40,6 +40,9 @@ export function renderBoard(root, view, store, handlers) {
       return;
     }
     if (action === "end-turn") handlers.endTurn();
+    else if (action === "eot-confirm") handlers.endTurnConfirm();
+    else if (action === "eot-cancel") handlers.endTurnCancel();
+    else if (action === "reset-cards") handlers.resetCards();
     else if (action === "undo") handlers.undo();
     else if (action === "target") handlers.pickUnit(el.dataset.uid);
     else if (action === "develop") handlers.develop(el.dataset.uid);
@@ -86,7 +89,8 @@ export function renderBoard(root, view, store, handlers) {
   root.onchange = (event) => {
     const el = event.target.closest("[data-change]");
     if (!el) return;
-    if (el.dataset.change === "seat") handlers.setSeat(Number(el.value));
+    if (el.dataset.change === "eot-discard") handlers.eotToggle(el.dataset.uid, el.checked);
+    else if (el.dataset.change === "seat") handlers.setSeat(Number(el.value));
     else if (el.dataset.change === "follow") handlers.setFollow(el.checked);
   };
 }

@@ -43,3 +43,40 @@ def boost_attack(ctx: EffectContext, p: dict[str, Any]) -> None:
 def vp_per_attack_kill(ctx: EffectContext, p: dict[str, Any]) -> None:
     """Until the end of this turn, gain VP whenever one of your units' attacks destroys an enemy unit."""
     ctx.player.turn_modifiers.append({"kind": "vp_per_attack_kill", "amount": resolve_value(ctx, p["amount"])})
+
+
+@effect("boost_units", required=("target",), optional=("attack", "extra_attacks", "all"))
+def boost_units(ctx: EffectContext, p: dict[str, Any]) -> None:
+    """Until the end of this turn: +`attack` and/or `extra_attacks` for one chosen unit (or `all` matching units)."""
+    from engine.cardview import attacks_allowed
+    from engine.combat import find_unit
+    from engine.prompts import Prompt
+    from engine.targeting import find_targets
+
+    targets = [u for _, u in find_targets(ctx.state, ctx.seat, p["target"])]
+    if not targets:
+        return
+    if not p.get("all"):
+        uid = ctx.ask(
+            Prompt(
+                kind="choose_unit",
+                key="prompt.boost_unit",
+                params={"attack": p.get("attack", 0), "extra_attacks": p.get("extra_attacks", 0)},
+                options=tuple(u.uid for u in targets),
+                allow_skip=True,
+            )
+        )
+        unit = find_unit(ctx.state, uid) if uid else None
+        targets = [unit] if unit else []
+    for unit in targets:
+        unit.temp_attack += p.get("attack", 0)
+        unit.temp_extra_attacks += p.get("extra_attacks", 0)
+        unit.tapped = unit.attacks_made >= attacks_allowed(unit, ctx.catalog)
+        ctx.emit("log.unit_boosted", card=unit.def_id, owner=unit.owner, attack=p.get("attack", 0), extra=p.get("extra_attacks", 0))
+
+
+@effect("next_develop_discount")
+def next_develop_discount(ctx: EffectContext, p: dict[str, Any]) -> None:
+    """Your next development this turn costs 1 less for each prepare you triggered this turn."""
+    ctx.player.turn_modifiers.append({"kind": "next_develop_discount_per_prepare"})
+    ctx.emit("log.next_develop_discount", seat=ctx.seat)

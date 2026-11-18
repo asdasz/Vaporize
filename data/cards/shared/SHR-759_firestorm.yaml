@@ -1,0 +1,12 @@
+# Shared market card 759 (legacy card number: 117).
+id: SHR-759
+number: 759
+type: spell
+cost: 7
+elements: [fire]
+class: shared
+source: shared
+effects:
+  - if: {played_this_turn: {element: wind, min: 2}}
+    then: [{do: deal_damage_tier, amount: {invoke: 0}, spare_allies: true}]
+    else: [{do: deal_damage_tier, amount: {invoke: 0}}]

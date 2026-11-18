@@ -1,0 +1,12 @@
+# Shared market card 740 (legacy card number: 96).
+id: SHR-740
+number: 740
+type: influence
+cost: 7
+elements: [wind]
+class: shared
+source: shared
+effects:
+  - if: {in_discard: {element: wind, min: 4, other: true}}
+    then: [{do: gain_inf, amount: 3}, {do: draw, count: 1}]
+    else: [{do: gain_inf, amount: 1}, {do: draw, count: 1}]

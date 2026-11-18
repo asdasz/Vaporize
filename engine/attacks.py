@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from engine.cards import CardInstance
+from engine.cardview import attacks_allowed
 from engine.catalog import Catalog
 from engine.combat import damage_unit, find_unit
 from engine.context import EffectContext
@@ -77,7 +78,8 @@ def attack(state: GameState, catalog: Catalog, seat: int, attacker_uid: str, tar
     events.append(
         Event("log.attack", {"seat": seat, "attacker": attacker.def_id, "target": target.def_id, "owner": target.owner})
     )
-    attacker.tapped = True
+    attacker.attacks_made += 1
+    attacker.tapped = attacker.attacks_made >= attacks_allowed(attacker, catalog)  # tapped when out of attacks
     damage_unit(ctx, target_uid, attacker.attack_value)
     if ctx.kills:
         player = state.players[seat]

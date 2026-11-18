@@ -30,7 +30,12 @@ def resolve_effects(ctx: EffectContext, nodes: tuple[dict[str, Any], ...] | list
             options = node["choose_one"]
             card_id = ctx.source.def_id if ctx.source else None
             index = ctx.ask(
-                Prompt(kind="choose_option", key="prompt.choose_one", params={"card": card_id}, options=tuple(range(len(options))))
+                Prompt(
+                    kind="choose_option",
+                    key="prompt.choose_one",
+                    params={"card": card_id, "label": node.get("label")},  # label: which option texts (several per card)
+                    options=tuple(range(len(options))),
+                )
             )
             resolve_effects(ctx, options[index])
             continue

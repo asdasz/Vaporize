@@ -12,7 +12,9 @@ from engine.events import Event
 from engine.prompts import NeedChoice, Prompt
 
 # Keep in sync with engine/history.py: REVEALING_EVENTS.
-REVEALING_EVENT_KEYS = frozenset({"log.cards_drawn", "log.deck_reshuffled", "log.scouted", "log.market_revealed"})
+REVEALING_EVENT_KEYS = frozenset(
+    {"log.cards_drawn", "log.deck_reshuffled", "log.scouted", "log.market_revealed", "log.hand_looked_at"}
+)
 from engine.state import GameState, PlayerState
 
 
@@ -30,6 +32,7 @@ class EffectContext:
     invoke_extra: int = 0  # one-off bonus to this card's invoke (e.g. "next spell gets +1")
     exceed_limit: bool = False  # resource gains may go past the class limit (up to hard_max)
     kills: int = 0  # units destroyed by this card
+    targeted: list[str] = field(default_factory=list)  # units this card already chose as damage targets
 
     def child(self, source: CardInstance | None) -> EffectContext:
         """Context for a nested card or trigger. Shares the answers so replay stays in order."""

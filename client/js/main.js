@@ -17,6 +17,7 @@ const store = {
   removal: { open: false, peek: false, confirm: null }, // card-removal overlay
   swap: null, // chosen element swap {uid, from, to}, sent with the next play of that card
   swapEdit: null, // uid of the hand card whose swap panel is open
+  eot: null, // {discards: [uid]} while the "before you end your turn" panel is open
 };
 
 // Reset the local draft whenever a new prompt appears.
@@ -168,7 +169,34 @@ const handlers = {
     store.swapEdit = null;
     draw();
   },
-  endTurn: () => act({ type: "end_turn", seat: store.seat }),
+  endTurn: () => {
+    const hand = store.view.players[store.view.you].hand || [];
+    if (hand.some((c) => c.hand_eot)) {
+      store.eot = { discards: [] }; // ask first: optional end-of-turn abilities of hand cards
+      draw();
+      return;
+    }
+    act({ type: "end_turn", seat: store.seat });
+  },
+  eotToggle: (uid, on) => {
+    const set = new Set(store.eot?.discards || []);
+    if (on) set.add(uid);
+    else set.delete(uid);
+    store.eot = { discards: [...set] };
+  },
+  endTurnConfirm: () => {
+    const discards = store.eot?.discards || [];
+    store.eot = null;
+    act({ type: "end_turn", seat: store.seat, hand_discards: discards });
+  },
+  endTurnCancel: () => {
+    store.eot = null;
+    draw();
+  },
+  resetCards: () => {
+    if (store.draft) store.draft.cards = [];
+    draw();
+  },
   undo: () => act({ type: "undo", seat: store.seat }),
   cancelTurn: () => act({ type: "cancel_turn", seat: store.seat }),
   respond: (answer) => act({ type: "respond", seat: store.seat, answer }),

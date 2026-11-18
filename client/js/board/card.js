@@ -77,9 +77,9 @@ export function marketCard(entry, { affordable = null, showModifier = false, own
 
 // opts.choose: clickable in a prompt; opts.still: display only (no drag, no click), e.g. in the removal overlay;
 // opts.canSwap: show the element-swap button; opts.swap: {from, to} chosen for this card (shown on the card)
-export function handCard(card, { playable = false, blocked = false, choose = false, still = false, canSwap = false, swap = null } = {}) {
+export function handCard(card, { playable = false, blocked = false, choose = false, still = false, canSwap = false, swap = null, locked = false } = {}) {
   if (swap) card = { ...card, elements: card.elements.map((e) => (e === swap.from ? swap.to : e)) };
-  const classes = ["hcard", playable ? "playable" : "", blocked ? "blocked" : "", choose ? "choosable" : ""].join(" ");
+  const classes = ["hcard", playable ? "playable" : "", blocked ? "blocked" : "", choose ? "choosable" : "", locked ? "locked" : ""].join(" ");
   let attrs = `draggable="true" data-hand-uid="${card.uid}" data-playable="${playable ? 1 : 0}"`;
   if (choose) attrs = `data-action="choose-card" data-uid="${card.uid}"`;
   else if (still) attrs = "";
@@ -96,7 +96,7 @@ export function handCard(card, { playable = false, blocked = false, choose = fal
       </div>
       <div class="name">${esc(cardName(card.id))}</div>
       <div class="type">${t(`ui.card.types.${card.type}`)}</div>
-      <div class="text">${rulesText(card.id)}</div>
+      <div class="text">${locked ? `<span class="locked-note">${t("ui.card.locked")}</span>` : ""}${rulesText(card.id)}</div>
       ${stats}
       ${card.number ? `<div class="num">No. ${String(card.number).padStart(3, "0")}</div>` : ""}
     </div>`;

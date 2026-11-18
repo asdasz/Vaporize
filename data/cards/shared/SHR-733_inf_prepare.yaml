@@ -1,0 +1,11 @@
+# Shared market card 733 (legacy card number: 91).
+id: SHR-733
+number: 733
+type: influence
+cost: 5
+elements: []
+class: shared
+source: shared
+effects:
+  - {do: gain_inf, amount: 3}
+  - {do: prepare}

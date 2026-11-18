@@ -38,7 +38,7 @@ mypy
 - [x] Remove a card (from hand, played this turn or discard) on the 1, 1, 2, 2, … cost track
 - [x] Markets: buy, refresh (shared refresh free once per turn)
 - [x] Basic supply pile (701–712, always buyable)
-- [ ] Shared market cards (in batches of 10: 713–730 done)
+- [ ] Shared market cards (713–760 done)
 - [x] Units: develop (tier up for 3/4/5 inf, shared Tier 4) and VP scoring by tier at end of turn
 - [x] Units: attacks (same tier or one higher)
 - [x] Status effects from cards (shield, stun, freeze)

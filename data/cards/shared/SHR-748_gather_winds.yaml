@@ -1,0 +1,11 @@
+# Shared market card 748 (legacy card number: 105).
+id: SHR-748
+number: 748
+type: spell
+cost: 4
+elements: [wind]
+class: shared
+source: shared
+effects:
+  - {do: prepare, times: 2}
+  - {do: reveal_for, element: wind, count: 2, then: [{do: prepare}]}

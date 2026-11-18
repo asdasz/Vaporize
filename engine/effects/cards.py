@@ -17,7 +17,7 @@ def draw(ctx: EffectContext, p: dict[str, Any]) -> None:
     draw_cards(ctx.state, ctx.seat, resolve_value(ctx, p["count"]), ctx.events)
 
 
-@effect("scout", required=("count",), optional=("draw", "discard_any"))
+@effect("scout", required=("count",), optional=("draw", "discard_any", "rest_choice"))
 def scout(ctx: EffectContext, p: dict[str, Any]) -> None:
     """Look at the top X cards (fewer if the deck is short). With `draw: 1`, draw one of them;
     the rest stay on top in the same order."""
@@ -63,6 +63,33 @@ def scout(ctx: EffectContext, p: dict[str, Any]) -> None:
     if uid is not None:
         ctx.player.hand.put_bottom(deck.take(uid))
         ctx.emit("log.cards_drawn", seat=ctx.seat, count=1)
+    rest = [c for c in cards if c.uid != uid]
+    if not p.get("rest_choice") or not rest:
+        return
+    # "discard the rest or leave them in your deck in any order"
+    choice = ctx.ask(
+        Prompt(kind="choose_option", key="prompt.scout_rest", params={"labels": "ui.prompt.scout_rest"}, options=(0, 1), cancellable=False)
+    )
+    if choice == 0:
+        for c in rest:
+            ctx.player.discard.put_bottom(deck.take(c.uid))
+        ctx.emit("log.scout_discarded", seat=ctx.seat, count=len(rest))
+        return
+    if len(rest) == 1:
+        return
+    order = ctx.ask(
+        Prompt(
+            kind="order_cards",
+            key="prompt.scout_order",
+            options=tuple(card_view(c, ctx.catalog) for c in rest),
+            cancellable=False,
+        )
+    )
+    for c in rest:
+        deck.take(c.uid)
+    by_uid = {c.uid: c for c in rest}
+    for u in reversed(order):  # first in the answer ends up on top
+        deck.put_top(by_uid[u])
 
 
 @effect("play_from_discard", optional=("card_type",))
@@ -151,3 +178,86 @@ def move_played_to_deck(ctx: EffectContext, p: dict[str, Any]) -> None:
     else:
         ctx.player.deck.put_bottom(card)
     ctx.emit("log.moved_to_deck", seat=ctx.seat, card=card.def_id, position=p.get("position", "bottom"))
+
+
+@effect("disrupt", optional=("card_type", "count"))
+def disrupt(ctx: EffectContext, p: dict[str, Any]) -> None:
+    """Look at each other player's hand and choose `count` card(s) (optionally of `card_type`); they discard them."""
+    count = resolve_value(ctx, p.get("count", 1))
+    wanted = p.get("card_type")
+    for player in ctx.state.players:
+        if player.seat == ctx.seat:
+            continue
+        ctx.emit("log.hand_looked_at", seat=ctx.seat, owner=player.seat)
+        for _ in range(count):
+            options = [c for c in player.hand if wanted is None or ctx.catalog.card(c.def_id).type == wanted]
+            if not options:
+                break
+            uid = ctx.ask(
+                Prompt(
+                    kind="choose_card",
+                    key="prompt.disrupt",
+                    params={"player_seat": player.seat, "card_type": wanted},
+                    options=tuple(card_view(c, ctx.catalog) for c in options),
+                    cancellable=False,
+                )
+            )
+            card = player.hand.take(uid)
+            player.discard.put_bottom(card)
+            ctx.emit("log.disrupted", seat=ctx.seat, owner=player.seat, card=card.def_id)
+
+
+@effect("reveal_for", required=("element", "count"), optional=("then",))
+def reveal_for(ctx: EffectContext, p: dict[str, Any]) -> None:
+    """You may reveal `count` hand cards of `element`; they can't be played this turn. If you do, resolve `then`."""
+    from engine.resolver import resolve_effects  # local import: resolver imports this package
+
+    from engine.elements import elements_of
+
+    n = resolve_value(ctx, p["count"])
+    options = [c for c in ctx.player.hand if p["element"] in elements_of(c, ctx.catalog) and c.uid not in ctx.player.locked_cards]
+    if len(options) < n:
+        return
+    chosen = ctx.ask(
+        Prompt(
+            kind="choose_cards",
+            key="prompt.reveal_for",
+            params={"count": n, "element": p["element"], "skip_key": "ui.prompt.skip_reveal"},
+            options=tuple(card_view(c, ctx.catalog) for c in options),
+            min=n,
+            max=n,
+            allow_skip=True,
+        )
+    )
+    if not chosen:
+        return
+    ctx.player.locked_cards.extend(chosen)
+    for uid in chosen:
+        card = ctx.player.hand.find(uid)
+        ctx.emit("log.card_revealed", seat=ctx.seat, card=card.def_id if card else "")
+    resolve_effects(ctx, p.get("then", []))
+
+
+@effect("shuffle_into_deck", required=("count",))
+def shuffle_into_deck(ctx: EffectContext, p: dict[str, Any]) -> None:
+    """Choose up to `count` other cards from your discard pile and shuffle them into your deck."""
+    n = resolve_value(ctx, p["count"])
+    source_uid = ctx.source.uid if ctx.source else None
+    options = [c for c in ctx.player.discard if c.uid != source_uid]
+    if n <= 0 or not options:
+        return
+    chosen = ctx.ask(
+        Prompt(
+            kind="choose_cards",
+            key="prompt.shuffle_into_deck",
+            params={"count": min(n, len(options))},
+            options=tuple(card_view(c, ctx.catalog) for c in options),
+            min=0,
+            max=min(n, len(options)),
+        )
+    )
+    for uid in chosen:
+        ctx.player.deck.put_bottom(ctx.player.discard.take(uid))
+    if chosen:
+        ctx.player.deck.shuffle(ctx.state.rng)
+        ctx.emit("log.shuffled_into_deck", seat=ctx.seat, count=len(chosen))

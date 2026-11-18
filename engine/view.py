@@ -52,6 +52,7 @@ def _player(state: GameState, catalog: Catalog, player: PlayerState, viewer: int
         "removal_cost": cdef.removal_cost(player.removal_index),
         "hand_count": len(player.hand),
         "hand": [card_view(c, catalog) for c in player.hand] if player.seat == viewer else None,
+        "locked_cards": list(player.locked_cards),  # revealed cards are public anyway
         "deck_count": len(player.deck),
         "discard": [card_view(c, catalog) for c in player.discard],
         "in_play": [card_view(c, catalog) for c in player.in_play],

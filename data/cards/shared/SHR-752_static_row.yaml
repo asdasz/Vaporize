@@ -1,0 +1,10 @@
+# Shared market card 752 (legacy card number: 108).
+id: SHR-752
+number: 752
+type: spell
+cost: 3
+elements: [lightning]
+class: shared
+source: shared
+effects:
+  - {do: deal_damage_tier, amount: 1, status: stun}

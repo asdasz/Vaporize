@@ -1,0 +1,11 @@
+# Shared market card 734 (legacy card number: 91).
+id: SHR-734
+number: 734
+type: influence
+cost: 6
+elements: [fire]
+class: shared
+source: shared
+effects:
+  - {do: gain_inf, amount: 3}
+  - {do: discard_from_market, market: shared}

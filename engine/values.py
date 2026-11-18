@@ -10,6 +10,7 @@
 - {count: {prepares_this_turn: {}}}                 prepares you triggered this turn
 - {count: {ally_tiers: {}}}                         different tiers where you have a unit
 - {count: {enemy_kills_this_turn: {}}}              enemy units you destroyed this turn
+- {count: {opponents: {}}}                          number of other players (players - 1)
 """
 
 from __future__ import annotations
@@ -27,6 +28,7 @@ COUNTERS = {
     "ally_tiers": set(),
     "prepares_this_turn": set(),
     "enemy_kills_this_turn": set(),
+    "opponents": set(),
 }
 
 
@@ -71,6 +73,8 @@ def _count(ctx: EffectContext, counter: str, params: dict[str, Any]) -> int:
         return ctx.player.prepares_this_turn
     if counter == "enemy_kills_this_turn":
         return ctx.player.enemy_kills_this_turn
+    if counter == "opponents":
+        return len(ctx.state.players) - 1
     raise ValueError(f"unknown counter {counter!r}")
 
 

@@ -4,11 +4,11 @@ import { icon } from "../icons.js";
 import { handCard } from "./card.js";
 import { cardName, esc, findUnit, playerName, resourceName, seatColor } from "./util.js";
 
-function unitButton(view, uid, extra = "") {
+function unitButton(view, uid, extra = "", action = "target") {
   const found = findUnit(view, uid);
   if (!found) return "";
   const { unit, tier } = found;
-  return `<button class="unit-pick" style="border-color:${seatColor(unit.owner)}" data-action="target" data-uid="${uid}">
+  return `<button class="unit-pick" style="border-color:${seatColor(unit.owner)}" data-action="${action}" data-uid="${uid}">
       ${esc(cardName(unit.id))} · T${tier} · ${esc(playerName(view, unit.owner))} · ${icon("health")}${unit.hp}${extra}</button>`;
 }
 
@@ -57,10 +57,14 @@ function chooseCardBody(prompt) {
   return `<div class="prompt-row wrap">${prompt.options.map((card) => handCard(card, { choose: true })).join("")}</div>`;
 }
 
-function chooseCardsBody(prompt, draft) {
+function chooseCardsBody(view, prompt, draft) {
   const picked = new Set(draft.cards || []);
   const tiles = prompt.options
-    .map((card) => `<div class="pick-tile ${picked.has(card.uid) ? "picked" : ""}" data-action="toggle-card" data-uid="${card.uid}">${handCard(card, { still: true })}</div>`)
+    .map((card) =>
+      card.unit // a unit on the board (e.g. "stun N units", "swap 2 units")
+        ? `<span class="pick-unit ${picked.has(card.uid) ? "picked" : ""}">${unitButton(view, card.uid, "", "toggle-card")}</span>`
+        : `<div class="pick-tile ${picked.has(card.uid) ? "picked" : ""}" data-action="toggle-card" data-uid="${card.uid}">${handCard(card, { still: true })}</div>`,
+    )
     .join("");
   const ok = picked.size >= prompt.min && picked.size <= prompt.max;
   return `
@@ -69,10 +73,33 @@ function chooseCardsBody(prompt, draft) {
       <button class="primary" data-action="confirm-cards" ${ok ? "" : "disabled"}>${icon("check")}${t("ui.prompt.confirm")}</button></div>`;
 }
 
+function orderCardsBody(prompt, draft) {
+  const order = draft.cards || [];
+  const tiles = prompt.options
+    .map((card) => {
+      const pos = order.indexOf(card.uid);
+      return `<div class="pick-tile ${pos >= 0 ? "picked ordered" : ""}" data-action="toggle-card" data-uid="${card.uid}">
+          ${pos >= 0 ? `<span class="order-badge">${pos + 1}</span>` : ""}${handCard(card, { still: true })}</div>`;
+    })
+    .join("");
+  const ok = order.length === prompt.options.length;
+  return `
+    <div class="muted">${t("ui.prompt.order_hint")}</div>
+    <div class="prompt-row wrap">${tiles}</div>
+    <div class="prompt-row"><button data-action="reset-cards">${t("ui.prompt.reset_order")}</button>
+      <button class="primary" data-action="confirm-cards" ${ok ? "" : "disabled"}>${icon("check")}${t("ui.prompt.confirm")}</button></div>`;
+}
+
+// Option texts: card options (cards.<id>.options or cards.<id>.<label>), or a UI list (params.labels).
+function optionText(prompt, i) {
+  const { card, label, labels } = prompt.params;
+  if (labels) return t(`${labels}.${i}`);
+  return t(`cards.${card}.${label || "options"}.${i}`);
+}
+
 function chooseOptionBody(prompt) {
-  const card = prompt.params.card;
   return `<div class="prompt-row wrap">${prompt.options
-    .map((i) => `<button class="option" data-action="choose-option" data-value="${i}">${esc(t(`cards.${card}.options.${i}`))}</button>`)
+    .map((i) => `<button class="option" data-action="choose-option" data-value="${i}">${esc(optionText(prompt, i))}</button>`)
     .join("")}</div>`;
 }
 
@@ -82,10 +109,13 @@ function chooseTierBody(prompt) {
     .join("")}</div>`;
 }
 
-function promptText(prompt) {
+function promptText(view, prompt) {
   const params = { ...prompt.params };
   if (params.resource) params.resource_name = resourceName(params.resource);
   if (params.position) params.position = t(`ui.positions.${params.position}`);
+  if ("player_seat" in params) params.player_name = view.players[params.player_seat]?.name ?? "";
+  if (params.element) params.element_name = t(`ui.elements.${params.element}`).toLowerCase();
+  if (params.market) params.market_name = t(`ui.market.${params.market}_name`);
   return t(prompt.key, params);
 }
 
@@ -103,7 +133,8 @@ export function promptPanel(view, store) {
   else if (prompt.kind === "choose_unit") body = chooseUnitBody(view, prompt);
   else if (prompt.kind === "split_damage") body = splitBody(view, prompt, draft);
   else if (prompt.kind === "choose_card") body = chooseCardBody(prompt);
-  else if (prompt.kind === "choose_cards") body = chooseCardsBody(prompt, draft);
+  else if (prompt.kind === "choose_cards") body = chooseCardsBody(view, prompt, draft);
+  else if (prompt.kind === "order_cards") body = orderCardsBody(prompt, draft);
   else if (prompt.kind === "choose_option") body = chooseOptionBody(prompt);
   else if (prompt.kind === "choose_tier") body = chooseTierBody(prompt);
   const skipLabel = t(prompt.params.skip_key || "ui.prompt.skip");
@@ -115,7 +146,7 @@ export function promptPanel(view, store) {
         <span class="label">${t("ui.prompt.playing", { card_name: esc(cardLabel) })}</span>
         <span class="prompt-actions">${skip}${cancel}</span>
       </div>
-      <div class="prompt-title">${esc(promptText(prompt))}</div>
+      <div class="prompt-title">${esc(promptText(view, prompt))}</div>
       ${body}
     </div>`;
 }

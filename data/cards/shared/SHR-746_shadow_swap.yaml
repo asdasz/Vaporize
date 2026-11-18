@@ -1,0 +1,12 @@
+# Shared market card 746 (legacy card number: 103).
+id: SHR-746
+number: 746
+type: spell
+cost: 4
+elements: [shadow]
+class: shared
+source: shared
+effects:
+  - if: {played_this_turn: {element: shadow, min: 2, other: true}}
+    then: [{do: swap_units, heal: 1, damage: 1, per_opponent: true}]
+    else: [{do: swap_units, heal: 1}]

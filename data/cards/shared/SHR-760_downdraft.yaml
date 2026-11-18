@@ -1,0 +1,11 @@
+# Shared market card 760 (legacy card number: 117).
+id: SHR-760
+number: 760
+type: spell
+cost: 6
+elements: [wind]
+class: shared
+source: shared
+effects:
+  - {do: degrade, target: {side: any}, times: {count: {opponents: {}}}}   # players - 1 times (3 with 4 players)
+  - {do: draw, count: 1}

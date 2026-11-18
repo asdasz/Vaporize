@@ -1,0 +1,11 @@
+# Shared market card 739 (legacy card number: 95).
+id: SHR-739
+number: 739
+type: influence
+cost: 9
+elements: [water]
+class: shared
+source: shared
+effects:
+  - {do: gain_inf, amount: 2}
+  - {do: draw, count: {min: [{invoke: 0}, 2]}}

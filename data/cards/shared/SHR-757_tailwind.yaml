@@ -1,0 +1,11 @@
+# Shared market card 757 (legacy card number: 115).
+id: SHR-757
+number: 757
+type: spell
+cost: 6
+elements: [wind]
+class: shared
+source: shared
+effects:
+  - {do: prepare, times: 2}
+  - {do: next_develop_discount}

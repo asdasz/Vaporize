@@ -1,0 +1,22 @@
+# Shared market card 742 (legacy card number: 99).
+id: SHR-742
+number: 742
+type: influence
+cost: 6
+elements: [lightning, shadow]
+class: shared
+source: shared
+effects:
+  - {do: gain_inf, amount: 3}
+  - if: {played_this_turn: {element: lightning, min: 2, other: true}}
+    then:
+      - label: stun
+        choose_one:
+          - [{do: stun, all: true, target: {side: ally}}, {do: gain_inf, amount: 1}]
+          - []
+  - if: {played_this_turn: {element: shadow, min: 2, other: true}}
+    then:
+      - label: refresh
+        choose_one:
+          - [{do: refresh_market, market: all}]
+          - []

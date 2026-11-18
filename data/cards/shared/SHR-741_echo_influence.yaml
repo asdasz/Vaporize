@@ -1,0 +1,12 @@
+# Shared market card 741 (legacy card number: 98).
+id: SHR-741
+number: 741
+type: influence
+cost: 7
+elements: [shadow]
+class: shared
+source: shared
+effects:
+  - choose_one:
+      - [{do: play_from_discard, card_type: influence}]
+      - [{do: gain_inf, amount: 2}]

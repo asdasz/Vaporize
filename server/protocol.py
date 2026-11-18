@@ -22,4 +22,5 @@ class ActionRequest(BaseModel):
     pay: Optional[Literal["inf", "vp"]] = None  # buy: pay the alternative VP cost
     slot: Optional[int] = None  # buy
     swap: Optional[dict[str, str]] = None  # play_card: {"from": element, "to": element}
+    hand_discards: Optional[list[str]] = None  # end_turn: hand cards to discard with their EOT ability
     answer: Any = None  # respond: number, uid, {uid: damage} or null (skip)

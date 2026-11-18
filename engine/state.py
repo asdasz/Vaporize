@@ -51,6 +51,7 @@ class PlayerState:
     turn_flags: list[str] = field(default_factory=list)
     prepares_this_turn: int = 0  # every prepare triggered this turn (start-of-turn ones included)
     enemy_kills_this_turn: int = 0  # enemy units destroyed by this player's cards or units this turn
+    locked_cards: list[str] = field(default_factory=list)  # hand cards revealed "won't be played this turn"
     free_refresh_used: bool = False
     element_swap_used: bool = False
 

@@ -57,9 +57,20 @@ def check_develop(
         raise IllegalAction("error.tier_full", tier=to_tier)
     rule_cost = catalog.cls(state.players[seat].class_id).tiers[to_tier].develop_cost or 0
     cost = rule_cost if cost_override is None else cost_override
+    if cost_override is None:
+        cost = max(0, cost - develop_discount(state, catalog, seat))
     if state.players[seat].inf < cost:
         raise IllegalAction("error.not_enough_inf", cost=cost)
     return DevelopOption(uid, tier, to_tier, cost)
+
+
+def develop_discount(state: GameState, catalog: Catalog, seat: int) -> int:
+    """Static discounts (units with `develop_discount`) + "your next development costs 1 less per prepare"."""
+    player = state.players[seat]
+    total = sum(int(m.get("develop_discount", 0)) for _, u in state.units_of(seat) for m in catalog.card(u.def_id).modifiers)
+    if any(m["kind"] == "next_develop_discount_per_prepare" for m in player.turn_modifiers):
+        total += player.prepares_this_turn
+    return total
 
 
 def develop_unit(state: GameState, catalog: Catalog, seat: int, option: DevelopOption, events: list[Event]) -> None:
@@ -69,7 +80,10 @@ def develop_unit(state: GameState, catalog: Catalog, seat: int, option: DevelopO
     _, card = unit
     _container(state, seat, option.from_tier, card).take(card.uid)
     _row(state, seat, option.to_tier).place(card)
-    state.players[seat].inf -= option.cost
+    player = state.players[seat]
+    player.inf -= option.cost
+    # "your next development costs less" is used up by this development
+    player.turn_modifiers = [m for m in player.turn_modifiers if m["kind"] != "next_develop_discount_per_prepare"]
     events.append(
         Event("log.unit_developed", {"seat": seat, "card": card.def_id, "tier": option.to_tier, "cost": option.cost})
     )

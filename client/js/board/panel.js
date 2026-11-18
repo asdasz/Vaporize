@@ -91,9 +91,11 @@ export function playerPanel(view, store) {
   const myTurn = view.current === view.you && view.phase === "actions";
   const playable = new Set(view.legal.playable);
   const swapOptions = view.legal.element_swap?.options || {};
+  const locked = new Set(me.locked_cards || []);
   const hand = (me.hand || [])
     .map((card) =>
       handCard(card, {
+        locked: locked.has(card.uid),
         playable: playable.has(card.uid),
         blocked: myTurn && !playable.has(card.uid),
         canSwap: Boolean(swapOptions[card.uid]),
@@ -108,9 +110,31 @@ export function playerPanel(view, store) {
       ${chips(view, store)}
       ${promptPanel(view, store)}
       ${swapPanel(view, store)}
+      ${eotPanel(view, store)}
       <div class="hand-row">
         <div class="hand">${hand}${filler}</div>
         ${turnButtons(view, myTurn)}
       </div>
+    </div>`;
+}
+
+// Before ending the turn: optional end-of-turn abilities of hand cards (e.g. "discard it for 1 VP").
+function eotPanel(view, store) {
+  if (!store.eot) return "";
+  const me = view.players[view.you];
+  const cards = (me.hand || []).filter((c) => c.hand_eot);
+  const rows = cards
+    .map((c) => {
+      const on = store.eot.discards.includes(c.uid);
+      return `<label class="eot-row"><input type="checkbox" data-change="eot-discard" data-uid="${c.uid}" ${on ? "checked" : ""}>
+        ${t("ui.eot.discard_for_vp", { card_name: cardName(c.id), vp: c.hand_eot.discard_for_vp })}</label>`;
+    })
+    .join("");
+  return `
+    <div class="prompt eot">
+      <div class="prompt-head"><span class="prompt-title">${t("ui.eot.title")}</span>
+        <span class="prompt-actions"><button data-action="eot-cancel">${icon("cancel")}${t("ui.prompt.cancel")}</button>
+        <button class="primary" data-action="eot-confirm">${icon("check")}${t("ui.eot.confirm")}</button></span></div>
+      ${rows}
     </div>`;
 }

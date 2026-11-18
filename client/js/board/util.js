@@ -37,6 +37,8 @@ export function eventText(view, event) {
   if ("market" in p) p.market_name = t(`ui.market.${p.market}_name`);
   if ("status" in p) p.status_name = t(`ui.status.${p.status}`).toLowerCase();
   if ("position" in p) p.position = t(`ui.positions.${p.position}`);
+  if ("a" in p) p.a_name = cardName(p.a);
+  if ("b" in p) p.b_name = cardName(p.b);
   if ("from" in p) p.from_name = t(`ui.elements.${p.from}`);
   if ("to" in p) p.to_name = t(`ui.elements.${p.to}`);
   if ("keyword" in p) p.keyword_name = t(`keywords.${p.keyword}.name`);

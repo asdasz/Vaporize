@@ -140,14 +140,19 @@ def refresh(state: GameState, seat: int, market: str, events: list[Event]) -> No
     player.inf -= cost
     if market == "shared" and cost == 0:
         player.free_refresh_used = True
+    events.append(Event("log.market_refreshed", {"seat": seat, "market": market, "cost": cost}))
+    slide(state, m, market, events)
+
+
+def slide(state: GameState, m: MarketState, name: str, events: list[Event]) -> None:
+    """The refresh move: rightmost card to the removed pile, others one spot right, new card on the left."""
     slots = m.row.slots
     if slots[-1] is not None:
         m.removed.put_bottom(slots[-1])
     for i in range(len(slots) - 1, 0, -1):
         slots[i] = slots[i - 1]
     slots[0] = None
-    events.append(Event("log.market_refreshed", {"seat": seat, "market": market, "cost": cost}))
-    reveal(state, m, market, 0, events)
+    reveal(state, m, name, 0, events)
 
 
 def legal_market(state: GameState, catalog: Catalog, seat: int) -> dict[str, object]:

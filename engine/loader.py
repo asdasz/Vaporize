@@ -23,9 +23,9 @@ from engine.rules import CARD_TYPES, CLASS_TRIGGERS, ELEMENTS, SOURCES, UNIT_TRI
 CARD_ID_RE = re.compile(r"^[A-Z]{3}-[A-Z]?\d{2,3}$")
 CARD_KEYS = {
     "id", "number", "type", "cost", "elements", "class", "source", "copies",
-    "attack", "health", "effects", "triggers", "modifiers", "alt_cost",
+    "attack", "health", "effects", "triggers", "modifiers", "alt_cost", "hand_eot", "in_discard",
 }
-UNIT_MODIFIERS = {"spell_invoke_bonus"}
+UNIT_MODIFIERS = {"spell_invoke_bonus", "extra_attacks", "develop_discount"}
 CLASS_MODIFIERS = {"spell_invoke_bonus", "element_swap_once_per_turn"}
 
 
@@ -113,6 +113,13 @@ def parse_card(raw: Any, where: str) -> tuple[CardDef | None, list[str]]:
     ):
         errors.append(f"{where}: alt_cost must be {{lose_vp: N}}")
 
+    hand_eot = raw.get("hand_eot")
+    if hand_eot is not None and (not isinstance(hand_eot, dict) or hand_eot.keys() != {"discard_for_vp"}):
+        errors.append(f"{where}: hand_eot must be {{discard_for_vp: N}}")
+    in_discard = raw.get("in_discard")
+    if in_discard is not None and (not isinstance(in_discard, dict) or in_discard.keys() != {"vp_per_kill"}):
+        errors.append(f"{where}: in_discard must be {{vp_per_kill: N}}")
+
     if errors:
         return None, errors
     return (
@@ -131,6 +138,8 @@ def parse_card(raw: Any, where: str) -> tuple[CardDef | None, list[str]]:
             triggers=triggers,
             modifiers=tuple(modifiers),
             alt_cost=alt_cost,
+            hand_eot=hand_eot,
+            in_discard=in_discard,
         ),
         [],
     )

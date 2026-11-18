@@ -59,6 +59,24 @@ Rule interpretations and technical choices that aren't spelled out in `docs/RULE
 51. **728**: discarded scouted cards go to your discard pile, and the rest stay on top in the same order. Once you've seen them, the play can't be cancelled.
 52. **729**'s free develop still needs a free spot and a unit that isn't frozen.
 53. **730** counts other cards played this turn with fire **or** water (a card with both counts once). Prepare respects the limit.
+54. **731** is discarded at the very start of your end of turn (before scoring), only if you tick it in the end-turn panel.
+55. **734** puts the chosen market card on the shared removed pile, and a new card is revealed into that same spot.
+56. **736** lets you look at each other player's hand and pick an influence card. Players with no influence card are skipped. The opponents' 2-card minimum doesn't apply (it isn't their own action).
+57. **737**: "your market" = your private market. The refreshes are free and you pick 0–3.
+58. **740 / 753**: "other" cards leave the card itself out. 753's chosen cards are shuffled into the deck, and the whole deck is reshuffled.
+59. **742**: both bonuses are optional. "Every market" = the shared market and every player's private market, once each, for free.
+60. **743** may develop the same unit twice (T1→T3).
+61. **744** picks one unit of each other player (tiers 1–3). With 3 other fire cards, the damage is invoke + 3.
+62. **746** swaps the tier spots of 2 of your units (tokens that haven't developed can't be swapped). With 2 other shadow cards, you also swap 2 units of every other player and deal 1 damage to each of them.
+63. **748**: the 2 revealed wind cards stay in your hand but are locked for the rest of the turn.
+64. **749**: after drawing 1, you choose to discard all the others or put them back on top in any order.
+65. **751** and **754** give extra attacks for this turn only. 751 targets one of your units.
+66. **755**: the second unit must be different from the first. One invoke sets both values.
+67. **756** stuns up to [invoke] different enemy units (one token each).
+68. **757**: the discount = prepares triggered this turn at the moment you develop. It's used up by your next develop action.
+69. **758** counts any unit you kill (by attacks or card effects) while 758 is in your discard pile or played this turn.
+70. **759**: "2 wind cards" counts this turn's wind cards. 759 is fire, so it doesn't count itself.
+71. **760** "once for each enemy" = degrade players − 1 times (3 with 4 players), as Jan ruled. You choose any unit each time, and the same unit may be degraded again.
 
 ## Technical
 

@@ -102,7 +102,8 @@ vaporize/
 │   │   ├── class_hooks.py       # prepare (delegates to ClassDef)
 │   │   ├── status.py            # shield, stun, freeze tokens
 │   │   ├── movement.py          # develop (effect, e.g. free), degrade (optional refund)
-│   │   └── …                    # market.py, units.py to come
+│   │   ├── market_effects.py    # refresh_market (free, up to N, every market), discard_from_market
+│   │   └── …                    # units.py (summon) to come
 │   ├── conditions.py            # played_this_turn, in_discard, has_unit_on_tier, …
 │   ├── targeting.py             # target selectors (ally/enemy/any, tier ranges)
 │   ├── values.py                # value expressions: literal, invoke, invoke+N, count_of(…)
@@ -183,6 +184,7 @@ Rule notes the engine must respect:
 
 - `Attack(seat, attacker_uid, target_uid)`: an untapped own unit with attack > 0 and no stun token hits an **enemy** unit on the same tier or one tier higher. Damage = attack (`fixed_attack + temp_attack`); shields absorb the hit; the target doesn't strike back. The attacker becomes tapped and untaps at the end of its owner's turn.
 - If the target is destroyed: `vp_per_attack_kill` turn modifiers pay VP and the attacker's `on_kill` trigger runs.
+- A unit attacks once per turn, plus static `extra_attacks` modifiers and `temp_extra_attacks` granted this turn (`boost_units`). `attacks_made` counts; the unit is tapped when it runs out. Both reset at its owner's end of turn.
 - Undoable. The view lists `legal.attacks = {attacker_uid: [target uids]}`. UI: click a green-outlined own unit to select it (blue), then click a red-tinted enemy to attack. Clicking anywhere else drops the selection.
 
 ## Markets
@@ -202,6 +204,11 @@ Rule notes the engine must respect:
 - The swap is stored in `PendingChoice.swap`, so it survives prompts. Undo restores it.
 - The view: `legal.element_swap = {has, available, options: {uid: {from: [to…]}}}`.
 - UI: a green ⇄ button on swappable hand cards opens an inline panel ("Change [fire] into [water | wind | …]"). The chosen swap shows on the card (accent-coloured element icons) and is sent with the next play of that card. The chip "Element swap available" turns grey with a strikethrough once used.
+
+## End of turn choices
+
+- `EndTurn(seat, hand_discards=(uid, …))`: hand cards with `hand_eot: {discard_for_vp: N}` (e.g. 731) that the player chooses to discard at the start of their end of turn, for N VP each. This may break the 2-card minimum (the card says so).
+- UI: if the hand has such cards, End turn first opens a small panel with a checkbox per card.
 
 ## Removing cards
 
@@ -228,7 +235,7 @@ Some effects need a decision: how much to invoke, which unit to hit, which scout
 - `Respond(seat, answer)` replays the whole card from that state with all answers so far. Replay is deterministic because the RNG lives in the state. It either resolves completely (and pushes one undo entry) or stops at the next prompt.
 - `CancelChoice` drops the pending card. It isn't allowed once hidden cards were shown during this card (scout, draw, market reveal): `ctx.ask` then marks the prompt `cancellable: false`.
 - While a choice is pending, every other action is rejected with `error.choice_pending`.
-- Prompt kinds: `number` (min..max), `choose_unit` (uids), `choose_card` (card views), `choose_cards` (list of uids, min..max), `split_damage` ({uid: amount}, optional `same_tier`), `choose_option` (index into `choose_one`), `choose_tier`. Optional (positive) effects set `allow_skip`, and the answer `null` skips them.
+- Prompt kinds: `number` (min..max), `choose_unit` (uids), `choose_card` (card views), `choose_cards` (list of uids, min..max), `split_damage` ({uid: amount}, optional `same_tier`), `order_cards` (all options in a new order, first = top), `choose_option` (index into `choose_one`), `choose_tier`. Optional (positive) effects set `allow_skip`, and the answer `null` skips them.
 - `params.skip_key` names the skip button (e.g. `ui.prompt.skip_damage` = "Deal no damage"), so a player can play a damage spell just to get rid of it without hurting their own units.
 - Only the acting player sees the prompt in their view. The others only see who is choosing and for which card.
 - A `number` prompt with a single possible value (e.g. invoke with 0 mana) is answered automatically.
@@ -284,6 +291,8 @@ modifiers:               # units: static, while on the board
   - spell_invoke_bonus: 1
 
 alt_cost: {lose_vp: 3}   # optional: the card may also be bought by losing VP (Buy with pay: vp)
+hand_eot: {discard_for_vp: 1}   # optional: at your end of turn, may discard it from hand for VP
+in_discard: {vp_per_kill: 1}    # optional: while in your discard pile (played cards count), VP per unit you kill
 ```
 
 Choice text for `choose_one` lives in the locale too: `"options": ["Gain 4 inf", "Draw 2 cards", …]` next to `name` and `text`.
@@ -320,14 +329,14 @@ Initial primitive list (extend as cards require):
 | `gain_resource` / `lose_resource` | `amount` (class resource: mana, heat, …) |
 | `gain_vp` | `amount` |
 | `prepare` | optional `times`, `exceed_limit` (resource may go past the class limit, up to `hard_max`) |
-| `deal_damage` | `amount`, `target`, optional `split: true` (or split from `grant_keyword: split`), `if_killed: [effects]` |
-| `deal_damage_tier` | `amount`, optional `tiers`: every unit on one chosen tier |
+| `deal_damage` | `amount`, `target`, optional `split: true` (or from `grant_keyword: split`), `if_killed: [effects]`, `different: true` (not a unit this card already hit) |
+| `deal_damage_tier` | `amount`, optional `tiers`, `status` (token on each first, e.g. stun), `spare_allies` |
 | `heal` | `amount`, `target`, optional `max_hp` (cap; never lowers HP) |
-| `shield` / `stun` / `freeze` | `target`, optional `count` (tokens on one chosen unit) |
+| `shield` / `stun` / `freeze` | `target`, optional `count` (tokens), `units: N` (up to N different units), `all: true`, `heal` (HP for the chosen unit) |
 | `develop` | optional `cost_override` (e.g. 0 = free): develop one of your units |
-| `degrade` | `target`, optional `refund` (gain the develop cost of the tier the unit leaves) |
+| `degrade` | `target`, optional `times` (value; choose again each time), `refund` (gain the develop cost of the tier the unit leaves), `per_opponent` (one unit of each other player) |
 | `draw` | `count` |
-| `scout` | `count`, optional `draw: 1` (draw one of them) or `discard_any: true` (discard any of them; the rest stay on top in order) |
+| `scout` | `count`, optional `draw: 1`, `discard_any: true`, or `draw: 1` + `rest_choice: true` (discard the rest or put them back in any order) |
 | `play_from_discard` | optional `card_type`: play a card from your discard pile not played this turn |
 | `discard_from_hand` | optional `then`: you may discard 1 hand card (keeps the 2-card minimum); if you do, resolve `then` |
 | `move_played_to_deck` | optional `element`, `position` (top/bottom): you may put one of your other cards played this turn into your deck |
@@ -335,8 +344,16 @@ Initial primitive list (extend as cards require):
 | `next_spell_twice` | optional `vp_per_kill`: next spell resolves twice with the same invoke value |
 | `boost_attack` | `amount`: your units gain attack until end of turn |
 | `vp_per_attack_kill` | `amount`: VP per enemy unit your units' attacks destroy this turn |
-| `disrupt` | `target_player` |
-| `refresh_market` | `market: shared \| private` |
+| `refresh_market` | `market: shared \| private \| all`, optional `times` or `up_to` (player picks 0..N); free |
+| `discard_from_market` | `market`: a chosen market card goes to its removed pile; a new card fills the spot |
+| `disrupt` | optional `card_type`, `count`: look at each other player's hand, choose card(s), they discard them |
+| `reveal_for` | `element`, `count`, `then`: reveal hand cards (locked: can't be played this turn) to resolve `then` |
+| `shuffle_into_deck` | `count`: choose up to N other cards from your discard pile, shuffle them into your deck |
+| `heal_all` | `amount`, `target`: HP for every matching unit |
+| `deal_damage_each_opponent` | `amount`, optional `tiers`: one chosen unit of each other player |
+| `swap_units` | optional `heal`, `damage`, `per_opponent`: swap the places of 2 units |
+| `boost_units` | `target`, optional `attack`, `extra_attacks`, `all`: this turn only |
+| `next_develop_discount` | — : your next development this turn costs 1 less per prepare this turn |
 | `summon` | `attack`, `health`, `count` |
 | `grant_keyword` | `keyword`, optional `scope` (e.g. `split` with `scope: same_tier`, for the rest of this card) |
 
@@ -344,15 +361,15 @@ Invoke isn't an effect: it's a value. `{invoke: N}` asks the class's invoke once
 
 Card input in the format Jan uses (one row per printed card): `New card #`, `Current card #` (legacy, kept as a comment), `Element`, `Cost`, `Type`, `Affiliation`, `Card text`, `Attack`, `Health`.
 
-Control structures, handled by the resolver rather than registered as effects: `if` / `then` / `else` and `choose_one: [[effects…], [effects…]]` (a `choose_option` prompt). `repeat` to come.
+Control structures, handled by the resolver rather than registered as effects: `if` / `then` / `else` and `choose_one: [[effects…], [effects…]]` (a `choose_option` prompt; an option may be `[]` for "don't"; optional `label: name` picks the option texts `cards.<id>.<name>` when a card has several choices). `repeat` to come.
 
 Turn modifiers (`player.turn_modifiers`) hold "this turn" effects such as "your next spell…". They're consumed by the next spell (`engine/playing.py`) or cleared at the end of the turn. Temporary attack bonuses live on the unit (`temp_attack`) and reset at its owner's end of turn.
 
-**Values** (`values.py`): an int, `{invoke: N}`, `{count: {played: {element, other}}}`, `{count: {unique_played_elements: {other}}}`, `{count: {ally_units: {min_tier}}}`, `{count: {ally_tiers: {}}}`, `{count: {prepares_this_turn: {}}}`, `{count: {enemy_kills_this_turn: {}}}`, `{sum: [values…]}` or `{min: [values…]}` ("max. 4" = `{min: [value, 4]}`). Unit `attack`/`health` may be values too (resolved once when the unit enters).
+**Values** (`values.py`): an int, `{invoke: N}`, `{count: {played: {element, other}}}`, `{count: {unique_played_elements: {other}}}`, `{count: {ally_units: {min_tier}}}`, `{count: {ally_tiers: {}}}`, `{count: {prepares_this_turn: {}}}`, `{count: {enemy_kills_this_turn: {}}}`, `{count: {opponents: {}}}` (players − 1), `{sum: [values…]}` or `{min: [values…]}` ("max. 4" = `{min: [value, 4]}`). Unit `attack`/`health` may be values too (resolved once when the unit enters).
 
 **Targets** (`targeting.py`): `{side: any | ally | enemy, tiers: [1, 2, 3, 4] | with_ally_units}`. Tokens count as tier 1. Allies and enemies alike unless `side` says otherwise.
 
-**Conditions** (`conditions.py`): `played_this_turn {element | elements, min, other}`, `in_discard {element, min}`, `value_at_least {value, min}` (e.g. "invoke for 4"), `ally_tiers_at_least {min}`, `unique_played_elements_at_least {min, other}`, `played_matching {filter: non_primary | primary, min}`.
+**Conditions** (`conditions.py`): `played_this_turn {element | elements, min, other}`, `in_discard {element, min, other}`, `value_at_least {value, min}` (e.g. "invoke for 4"), `ally_tiers_at_least {min}`, `unique_played_elements_at_least {min, other}`, `played_matching {filter: non_primary | primary, min}`.
 
 An `if` block may carry `once_per_turn: true`: it's checked every time, fires the first time its condition is true, and then stays off until the end of the turn (tracked in `player.turn_flags`, per source unit).
 
@@ -453,6 +470,7 @@ Elements are shown as **icons**, never as colours, so they don't clash with play
 
 ## Conventions
 
+- Hand cards revealed by `reveal_for` are in `player.locked_cards` and can't be played this turn (`error.card_locked`).
 - Format with `ruff format`, lint with `ruff`. Type-check with `mypy --strict` on `engine/`.
 - Tests: `pytest`. Every effect primitive, condition and target selector has unit tests. Every card file is load-validated by a test.
 - Keep the engine deterministic. Use only the state's RNG.

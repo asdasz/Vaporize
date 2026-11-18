@@ -1,0 +1,11 @@
+# Shared market card 731 (legacy card number: 89).
+id: SHR-731
+number: 731
+type: influence
+cost: 8
+elements: [lightning]
+class: shared
+source: shared
+hand_eot: {discard_for_vp: 1}   # optional, chosen when ending the turn (ignores the 2-card minimum)
+effects:
+  - {do: gain_inf, amount: 5}

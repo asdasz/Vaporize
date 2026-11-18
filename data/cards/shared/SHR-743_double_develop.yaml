@@ -1,0 +1,11 @@
+# Shared market card 743 (legacy card number: 100).
+id: SHR-743
+number: 743
+type: influence
+cost: 10
+elements: []
+class: shared
+source: shared
+effects:
+  - {do: develop, cost_override: 0}
+  - {do: develop, cost_override: 0}

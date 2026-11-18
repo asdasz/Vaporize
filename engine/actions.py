@@ -100,6 +100,7 @@ class Refresh:
 @dataclass(frozen=True)
 class EndTurn:
     seat: int
+    hand_discards: tuple[str, ...] = ()  # hand cards with `hand_eot` the player chooses to discard (e.g. 731)
 
 
 @dataclass(frozen=True)
@@ -136,6 +137,8 @@ def check_play(state: GameState, catalog: Catalog, seat: int, card_uid: str) -> 
         raise IllegalAction("error.card_not_in_hand")
     if len(player.hand) <= MIN_HAND:
         raise IllegalAction("error.min_hand", min=MIN_HAND)
+    if card_uid in player.locked_cards:
+        raise IllegalAction("error.card_locked")
     cdef = catalog.card(card.def_id)
     if cdef.is_unit and not player.tiers[1].has_free():
         raise IllegalAction("error.tier_full", tier=1)
@@ -341,7 +344,11 @@ def apply_action(state: GameState, catalog: Catalog, action: Action) -> tuple[Ga
     if isinstance(action, EndTurn):
         _check_turn(state, action.seat)
         new_state = copy_state(state)
+        for uid in action.hand_discards:
+            card = state.players[action.seat].hand.find(uid)
+            if card is None or not catalog.card(card.def_id).hand_eot or action.hand_discards.count(uid) > 1:
+                raise IllegalAction("error.invalid_choice")
         new_state.undo_stack = []  # ending the turn commits it; nothing can be undone after this
-        end_turn(new_state, catalog, events)
+        end_turn(new_state, catalog, events, action.hand_discards)
         return new_state, events
     raise IllegalAction("error.unknown_action")

@@ -1,0 +1,10 @@
+# Shared market card 754 (legacy card number: 110).
+id: SHR-754
+number: 754
+type: spell
+cost: 3
+elements: [fire]
+class: shared
+source: shared
+effects:
+  - {do: boost_units, target: {side: ally}, extra_attacks: 1, all: true}

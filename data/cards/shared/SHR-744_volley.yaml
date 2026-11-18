@@ -1,0 +1,12 @@
+# Shared market card 744 (legacy card number: 101).
+id: SHR-744
+number: 744
+type: spell
+cost: 3
+elements: [fire]
+class: shared
+source: shared
+effects:
+  - if: {played_this_turn: {element: fire, min: 3, other: true}}
+    then: [{do: deal_damage_each_opponent, amount: {invoke: 3}, tiers: [1, 2, 3]}]
+    else: [{do: deal_damage_each_opponent, amount: {invoke: 1}, tiers: [1, 2, 3]}]

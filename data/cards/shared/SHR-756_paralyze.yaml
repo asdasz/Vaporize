@@ -1,0 +1,11 @@
+# Shared market card 756 (legacy card number: 114).
+id: SHR-756
+number: 756
+type: spell
+cost: 5
+elements: [lightning]
+class: shared
+source: shared
+effects:
+  - {do: gain_vp, amount: 1}
+  - {do: stun, target: {side: enemy}, units: {invoke: 0}}

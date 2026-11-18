@@ -1,0 +1,13 @@
+# Shared market card 736 (legacy card number: 93).
+id: SHR-736
+number: 736
+type: influence
+cost: 9
+elements: [shadow]
+class: shared
+source: shared
+effects:
+  - {do: gain_inf, amount: 1}
+  - if: {played_this_turn: {element: shadow, min: 2, other: true}}
+    then: [{do: disrupt, card_type: influence, count: 2}]
+    else: [{do: disrupt, card_type: influence, count: 1}]

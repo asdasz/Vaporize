@@ -1,0 +1,10 @@
+# Shared market card 761 (legacy card number: 118).
+id: SHR-761
+number: 761
+type: spell
+cost: 6
+elements: [fire, water]
+class: shared
+source: shared
+effects:
+  - {do: boost_units, target: {side: any}, attack: {invoke: 1}, kill_vp: 1}

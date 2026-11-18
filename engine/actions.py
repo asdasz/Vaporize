@@ -246,6 +246,22 @@ def _resolve_play(
     return new_state, events
 
 
+def _resolve_end_turn(
+    base: GameState, catalog: Catalog, seat: int, hand_discards: tuple[str, ...], answers: list[Any]
+) -> tuple[GameState, list[Event]]:
+    """End the turn; if an end-of-turn ability needs a choice, wait for it (replayed like a card)."""
+    new_state = copy_state(base)
+    new_state.undo_stack = []  # ending the turn commits it; nothing can be undone after this
+    events: list[Event] = []
+    try:
+        end_turn(new_state, catalog, events, hand_discards, answers)
+    except NeedChoice as need:
+        waiting = copy_state(base)
+        waiting.pending = PendingChoice(seat, "", list(answers), need.prompt, None, "end_turn", hand_discards)
+        return waiting, []
+    return new_state, events
+
+
 def _respond(state: GameState, catalog: Catalog, action: Respond) -> tuple[GameState, list[Event]]:
     _check_turn(state, action.seat)
     pending = state.pending
@@ -253,6 +269,8 @@ def _respond(state: GameState, catalog: Catalog, action: Respond) -> tuple[GameS
         raise IllegalAction("error.no_choice_pending")
     base = copy_state(state)
     base.pending = None
+    if pending.kind == "end_turn":
+        return _resolve_end_turn(base, catalog, pending.seat, pending.hand_discards, [*pending.answers, action.answer])
     return _resolve_play(
         base, catalog, pending.seat, pending.card_uid, [*pending.answers, action.answer], pending.swap
     )
@@ -268,6 +286,8 @@ def _cancel_choice(state: GameState, action: CancelChoice) -> tuple[GameState, l
     new_state = copy_state(state)
     new_state.pending = None
     card = state.players[pending.seat].hand.find(pending.card_uid)
+    if pending.kind == "end_turn":
+        return new_state, [Event("log.end_turn_cancelled", {"seat": pending.seat})]
     return new_state, [Event("log.play_cancelled", {"seat": pending.seat, "card": card.def_id if card else ""})]
 
 
@@ -343,12 +363,9 @@ def apply_action(state: GameState, catalog: Catalog, action: Action) -> tuple[Ga
         return new_state, events
     if isinstance(action, EndTurn):
         _check_turn(state, action.seat)
-        new_state = copy_state(state)
         for uid in action.hand_discards:
             card = state.players[action.seat].hand.find(uid)
             if card is None or not catalog.card(card.def_id).hand_eot or action.hand_discards.count(uid) > 1:
                 raise IllegalAction("error.invalid_choice")
-        new_state.undo_stack = []  # ending the turn commits it; nothing can be undone after this
-        end_turn(new_state, catalog, events, action.hand_discards)
-        return new_state, events
+        return _resolve_end_turn(state, catalog, action.seat, action.hand_discards, [])
     raise IllegalAction("error.unknown_action")

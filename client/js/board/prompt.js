@@ -122,7 +122,7 @@ function promptText(view, prompt) {
 export function promptPanel(view, store) {
   const pending = view.pending;
   if (!pending) return "";
-  const cardLabel = pending.card ? cardName(pending.card.id) : "";
+  const cardLabel = pending.kind === "end_turn" ? t("ui.pending.end_turn") : pending.card ? cardName(pending.card.id) : "";
   if (!pending.prompt) {
     return `<div class="prompt waiting">${t("ui.prompt.waiting", { player: playerName(view, pending.seat), card_name: cardLabel })}</div>`;
   }

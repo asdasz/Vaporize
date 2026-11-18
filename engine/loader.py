@@ -23,9 +23,12 @@ from engine.rules import CARD_TYPES, CLASS_TRIGGERS, ELEMENTS, SOURCES, UNIT_TRI
 CARD_ID_RE = re.compile(r"^[A-Z]{3}-[A-Z]?\d{2,3}$")
 CARD_KEYS = {
     "id", "number", "type", "cost", "elements", "class", "source", "copies",
-    "attack", "health", "effects", "triggers", "modifiers", "alt_cost", "hand_eot", "in_discard",
+    "attack", "health", "effects", "triggers", "modifiers", "alt_cost", "hand_eot", "in_discard", "pre_effects",
 }
-UNIT_MODIFIERS = {"spell_invoke_bonus", "extra_attacks", "develop_discount"}
+UNIT_MODIFIERS = {
+    "spell_invoke_bonus", "extra_attacks", "develop_discount", "thorns", "stun_on_attack",
+    "max_damage_per_hit", "prepare_before_invoke",
+}
 CLASS_MODIFIERS = {"spell_invoke_bonus", "element_swap_once_per_turn"}
 
 
@@ -86,6 +89,8 @@ def parse_card(raw: Any, where: str) -> tuple[CardDef | None, list[str]]:
 
     effects = raw.get("effects", []) or []
     errors += validate_effects(effects, f"{where}.effects")
+    pre_effects = raw.get("pre_effects", []) or []
+    errors += validate_effects(pre_effects, f"{where}.pre_effects")
     triggers_raw = raw.get("triggers", {}) or {}
     triggers: dict[str, tuple[dict[str, Any], ...]] = {}
     if not isinstance(triggers_raw, dict):
@@ -137,6 +142,7 @@ def parse_card(raw: Any, where: str) -> tuple[CardDef | None, list[str]]:
             effects=tuple(effects),
             triggers=triggers,
             modifiers=tuple(modifiers),
+            pre_effects=tuple(pre_effects),
             alt_cost=alt_cost,
             hand_eot=hand_eot,
             in_discard=in_discard,

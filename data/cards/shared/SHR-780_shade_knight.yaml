@@ -1,0 +1,10 @@
+# Shared market card 780 (legacy card number: 138).
+id: SHR-780
+number: 780
+type: unit
+cost: 5
+elements: [shadow]
+class: shared
+source: shared
+attack: 3
+health: 4

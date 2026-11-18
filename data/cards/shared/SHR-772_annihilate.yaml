@@ -1,0 +1,10 @@
+# Shared market card 772 (legacy card number: 130).
+id: SHR-772
+number: 772
+type: spell
+cost: 11
+elements: [shadow]
+class: shared
+source: shared
+effects:
+  - {do: destroy_tier}

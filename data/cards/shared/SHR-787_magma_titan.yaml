@@ -1,0 +1,15 @@
+# Shared market card 787 (legacy card number: 145).
+id: SHR-787
+number: 787
+type: unit
+cost: 6
+elements: [fire]
+class: shared
+source: shared
+attack: 1
+health: 4
+triggers:
+  on_develop:
+    - if: {in_discard: {element: fire, min: 4, other: true}}
+      then: [{do: deal_damage_tier, amount: 4, tiers: source, exclude_self: true}]
+      else: [{do: deal_damage_tier, amount: 2, tiers: source, exclude_self: true}]

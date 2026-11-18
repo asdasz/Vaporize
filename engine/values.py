@@ -6,6 +6,7 @@
 - {count: {unique_played_elements: {other: true}}}  different elements on cards played this turn
 - {sum: [v1, v2, ...]}
 - {min: [v1, v2, ...]}                              smallest value, e.g. "(max. 4)" = {min: [value, 4]}
+- {max: [...]}, {mul: [...]}, {div_ceil: [a, b]}    largest value, product, a / b rounded up
 - {count: {ally_units: {min_tier: 2}}}              your units on tier 2 or higher
 - {count: {prepares_this_turn: {}}}                 prepares you triggered this turn
 - {count: {ally_tiers: {}}}                         different tiers where you have a unit
@@ -29,6 +30,7 @@ COUNTERS = {
     "prepares_this_turn": set(),
     "enemy_kills_this_turn": set(),
     "opponents": set(),
+    "discard_cards": set(),
 }
 
 
@@ -41,7 +43,7 @@ def validate_value(value: Any, where: str) -> list[str]:
         (kind, arg), = value.items()
         if kind == "invoke" and isinstance(arg, int) and not isinstance(arg, bool):
             return []
-        if kind in ("sum", "min") and isinstance(arg, list) and arg:
+        if kind in ("sum", "min", "max", "mul", "div_ceil") and isinstance(arg, list) and arg:
             return [e for i, v in enumerate(arg) for e in validate_value(v, f"{where}.{kind}[{i}]")]
         if kind == "count" and isinstance(arg, dict) and len(arg) == 1:
             (counter, params), = arg.items()
@@ -75,6 +77,8 @@ def _count(ctx: EffectContext, counter: str, params: dict[str, Any]) -> int:
         return ctx.player.enemy_kills_this_turn
     if counter == "opponents":
         return len(ctx.state.players) - 1
+    if counter == "discard_cards":  # discard pile incl. cards played this turn
+        return len(ctx.player.discard) + len(ctx.player.in_play)
     raise ValueError(f"unknown counter {counter!r}")
 
 
@@ -88,6 +92,16 @@ def resolve_value(ctx: EffectContext, value: Any) -> int:
         return sum(resolve_value(ctx, v) for v in arg)
     if kind == "min":
         return min(resolve_value(ctx, v) for v in arg)
+    if kind == "max":
+        return max(resolve_value(ctx, v) for v in arg)
+    if kind == "mul":
+        result = 1
+        for v in arg:
+            result *= resolve_value(ctx, v)
+        return result
+    if kind == "div_ceil":  # [a, b] -> a / b rounded up
+        a, b = (resolve_value(ctx, v) for v in arg)
+        return -(-a // b)
     if kind == "count":
         (counter, params), = arg.items()
         return _count(ctx, counter, params)

@@ -1,0 +1,11 @@
+# Shared market card 767 (legacy card number: 124).
+id: SHR-767
+number: 767
+type: spell
+cost: 6
+elements: [lightning]
+class: shared
+source: shared
+effects:
+  - repeat: {min: [{invoke: 0}, 5]}
+    effects: [{do: deal_damage, amount: 2, target: {side: any}}]

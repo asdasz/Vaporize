@@ -1,0 +1,12 @@
+# Shared market card 775 (legacy card number: 133).
+id: SHR-775
+number: 775
+type: unit
+cost: 3
+elements: [wind]
+class: shared
+source: shared
+attack: 1
+health: 3
+triggers:
+  sot: [{do: prepare}]

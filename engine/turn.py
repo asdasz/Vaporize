@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from engine.catalog import Catalog
 from engine.context import EffectContext
 from engine.development import eot_vp
@@ -12,21 +14,39 @@ from engine.rules import HAND_SIZE, VP_GOAL
 from engine.state import GameState
 
 
-def _run_class_trigger(state: GameState, catalog: Catalog, seat: int, trigger: str, events: list[Event]) -> None:
+class Answers:
+    """Answers shared by every trigger resolved during one end of turn (replayed like a card)."""
+
+    def __init__(self, answers: list[Any] | None = None) -> None:
+        self.answers = list(answers or [])
+        self.index = 0
+
+
+def _run(state: GameState, catalog: Catalog, seat: int, source: Any, nodes: Any, events: list[Event], answers: Answers | None) -> None:
+    ctx = EffectContext(state, catalog, seat, source, events, answers.answers if answers else [], answers.index if answers else 0)
+    resolve_effects(ctx, nodes)
+    if answers:
+        answers.index = ctx.answer_index
+
+
+def _run_class_trigger(
+    state: GameState, catalog: Catalog, seat: int, trigger: str, events: list[Event], answers: Answers | None = None
+) -> None:
     cdef = catalog.cls(state.players[seat].class_id)
     for passive in cdef.passives:
         if passive.get("trigger") == trigger:
-            ctx = EffectContext(state, catalog, seat, None, events)
-            resolve_effects(ctx, passive.get("effects", []))
+            _run(state, catalog, seat, None, passive.get("effects", []), events, answers)
 
 
-def _run_unit_triggers(state: GameState, catalog: Catalog, seat: int, trigger: str, events: list[Event]) -> None:
+def _run_unit_triggers(
+    state: GameState, catalog: Catalog, seat: int, trigger: str, events: list[Event], answers: Answers | None = None
+) -> None:
     for _, unit in state.units_of(seat):
         if unit.is_token:
             continue
         nodes = catalog.card(unit.def_id).triggers.get(trigger, ())
         if nodes:
-            resolve_effects(EffectContext(state, catalog, seat, unit, events), nodes)
+            _run(state, catalog, seat, unit, nodes, events, answers)
 
 
 def start_turn(state: GameState, catalog: Catalog, events: list[Event]) -> None:
@@ -58,7 +78,16 @@ def score_units(state: GameState, catalog: Catalog, seat: int, events: list[Even
     return gained
 
 
-def end_turn(state: GameState, catalog: Catalog, events: list[Event], hand_discards: tuple[str, ...] = ()) -> None:
+def end_turn(
+    state: GameState,
+    catalog: Catalog,
+    events: list[Event],
+    hand_discards: tuple[str, ...] = (),
+    answers: list[Any] | None = None,
+) -> None:
+    """End the current player's turn. EOT triggers may ask questions (NeedChoice); the caller replays with
+    `answers`, like playing a card."""
+    shared = Answers(answers)
     player = state.current_player
     seat = player.seat
     # 1. Score: hand cards with an end-of-turn ability (chosen by the player), EOT effects, unit VP.
@@ -68,8 +97,9 @@ def end_turn(state: GameState, catalog: Catalog, events: list[Event], hand_disca
         player.discard.put_bottom(card)
         player.vp += vp
         events.append(Event("log.hand_eot_discard", {"seat": seat, "card": card.def_id, "vp": vp}))
-    _run_class_trigger(state, catalog, seat, "eot", events)
-    _run_unit_triggers(state, catalog, seat, "eot", events)
+    # Unit EOT abilities go before the class's (so e.g. a unit can still invoke with mana the Mage loses at EOT).
+    _run_unit_triggers(state, catalog, seat, "eot", events, shared)
+    _run_class_trigger(state, catalog, seat, "eot", events, shared)
     score_units(state, catalog, seat, events)
     # 2. Untap and remove one stun / freeze token.
     for _, unit in state.units_of(seat):
@@ -77,6 +107,8 @@ def end_turn(state: GameState, catalog: Catalog, events: list[Event], hand_disca
         unit.attacks_made = 0
         unit.temp_attack = 0  # "this turn" attack bonuses end
         unit.temp_extra_attacks = 0
+        unit.temp_any_tier = False
+        unit.temp_kill_vp = []
         for status in ("stun", "freeze"):
             if unit.status[status] > 0:
                 unit.status[status] -= 1

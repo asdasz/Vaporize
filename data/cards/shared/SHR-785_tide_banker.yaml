@@ -1,0 +1,12 @@
+# Shared market card 785 (legacy card number: 143).
+id: SHR-785
+number: 785
+type: unit
+cost: 8
+elements: [water]
+class: shared
+source: shared
+attack: 1
+health: {max: [{mul: [{invoke: 0}, 2]}, 1]}   # invoke x2, min. 1
+triggers:
+  sot: [{do: gain_inf, amount: 1}]

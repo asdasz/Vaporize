@@ -155,7 +155,10 @@
       "Put them back in any order"
     ],
     "order_hint": "Click the cards from top to bottom.",
-    "reset_order": "Reset"
+    "reset_order": "Reset",
+    "skip_kill": "Kill nothing",
+    "skip_sacrifice": "Don't",
+    "skip_market_card": "Resolve nothing"
   },
   "remove": {
     "title": "Remove a card from the game · {cost} inf",
@@ -192,5 +195,8 @@
     "title": "Before you end your turn",
     "discard_for_vp": "Discard {card_name} for {vp} VP",
     "confirm": "End turn"
+  },
+  "pending": {
+    "end_turn": "End of turn"
   }
 }

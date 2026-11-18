@@ -1,0 +1,16 @@
+# Shared market card 771 (legacy card number: 128).
+id: SHR-771
+number: 771
+type: spell
+cost: 10
+elements: [fire, lightning]
+class: shared
+source: shared
+effects:
+  - {do: deal_damage, amount: {mul: [{invoke: 0}, 2]}, target: {side: any}, split: true}
+  - if: {played_this_turn: {element: fire, min: 2, other: true}}
+    then:
+      - if: {card_kills_at_least: {min: 1}}
+        then: [{do: gain_vp, amount: 1}]
+  - if: {played_this_turn: {element: lightning, min: 2, other: true}}
+    then: [{do: status_damaged, status: stun}]

@@ -1,0 +1,14 @@
+# Shared market card 782 (legacy card number: 140).
+id: SHR-782
+number: 782
+type: unit
+cost: 6
+elements: [fire]
+class: shared
+source: shared
+attack: 2
+health: 4
+triggers:
+  eot:
+    - if: {played_this_turn: {element: fire, min: 2, other: true}}
+      then: [{do: deal_damage, amount: {invoke: 0}, target: {side: any}}]

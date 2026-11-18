@@ -1,0 +1,12 @@
+# Shared market card 786 (legacy card number: 144).
+id: SHR-786
+number: 786
+type: unit
+cost: 7
+elements: [water]
+class: shared
+source: shared
+attack: 2
+health: 5
+modifiers:
+  - max_damage_per_hit: 2

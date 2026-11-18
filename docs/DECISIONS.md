@@ -77,6 +77,26 @@ Rule interpretations and technical choices that aren't spelled out in `docs/RULE
 69. **758** counts any unit you kill (by attacks or card effects) while 758 is in your discard pile or played this turn.
 70. **759**: "2 wind cards" counts this turn's wind cards. 759 is fire, so it doesn't count itself.
 71. **760** "once for each enemy" = degrade players − 1 times (3 with 4 players), as Jan ruled. You choose any unit each time, and the same unit may be degraded again.
+72. **761** can boost any unit, but only your own units attack on your turn. The VP comes when that unit's attack kills a unit this turn.
+73. **762**: the returned unit goes back to its owner's hand without damage or tokens. Then a different random card from that hand is discarded (random, so it can't be undone).
+74. **763** ignores shields (it kills, it doesn't deal damage). It's optional per opponent, and tokens count as cost 0.
+75. **764**: other players draw right away, so their hands can go above 7.
+76. **765** may shield any units (yours or enemies'), up to [invoke], max. 2.
+77. **766**: the water count includes 766 itself (the discard pile includes cards played this turn).
+78. **767**: each hit is a separate damage instance, so you choose a target each time and a shield absorbs one hit.
+79. **769** copies the market card's effects as if you'd played it. Spells get the spell invoke bonus, but it doesn't count as a card you played (no element, no "played this turn"). Then that card goes to the removed pile.
+80. **770**: invoke/2 rounded up, + 1. Paying 3 inf is optional and must be affordable.
+81. **771**: "harmed" = actually lost HP (a shielded hit doesn't count).
+82. **772** kills every unit on the chosen tier, yours too.
+83. **773** gains the killed unit's current HP and VP = its tier − 1 (a tier 1 unit gives 0).
+84. **774**: the 10 cards are discard + played this turn. Units on the board don't count.
+85. **778**: the attacker takes 1 damage on every attack against 778, even if 778 dies.
+86. **781**: "any tier" means any tier, lower ones too, this turn.
+87. **782**: unit EOT abilities happen before the Mage's EOT mana loss, so 782 can invoke with the turn's mana. The prompt happens when you end the turn, and you can cancel back.
+88. **786** caps every single hit (attack or effect) at 2 damage.
+89. **787** damages the other units on the tier it enters, not itself. It fires whenever it's developed (action or card effect).
+90. **788**'s stun is added after each attack, if the target survives.
+91. **789** prepares once per invoke, before you choose how much mana to spend.
 
 ## Technical
 

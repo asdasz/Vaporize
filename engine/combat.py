@@ -54,7 +54,11 @@ def damage_unit(ctx: EffectContext, uid: str, amount: int) -> None:
         unit.status["shield"] -= 1
         ctx.emit("log.shield_absorbed", card=unit.def_id, owner=unit.owner)
         return
+    cap = min((int(m["max_damage_per_hit"]) for m in ctx.catalog.card(unit.def_id).modifiers if "max_damage_per_hit" in m), default=None)
+    if cap is not None:
+        amount = min(amount, cap)  # "takes max. N damage from a single source"
     unit.current_hp = (unit.current_hp or 0) - amount
+    ctx.damaged.append(unit.uid)
     ctx.emit("log.damage", card=unit.def_id, owner=unit.owner, amount=amount)
     if unit.current_hp <= 0:
         destroy_unit(ctx, unit)

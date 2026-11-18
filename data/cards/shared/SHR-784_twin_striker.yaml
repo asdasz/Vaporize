@@ -1,0 +1,12 @@
+# Shared market card 784 (legacy card number: 142).
+id: SHR-784
+number: 784
+type: unit
+cost: 6
+elements: [fire]
+class: shared
+source: shared
+attack: 2
+health: 4
+modifiers:
+  - extra_attacks: 1

@@ -1,0 +1,12 @@
+# Shared market card 763 (legacy card number: 121).
+id: SHR-763
+number: 763
+type: spell
+cost: 8
+elements: [shadow]
+class: shared
+source: shared
+effects:
+  - if: {played_this_turn: {element: shadow, min: 2, other: true}}
+    then: [{do: destroy_each_opponent, max_cost: 7}]
+    else: [{do: destroy_each_opponent, max_cost: 5}]

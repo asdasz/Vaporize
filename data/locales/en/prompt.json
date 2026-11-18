@@ -27,5 +27,10 @@
   "boost_unit": "Choose an ally unit to boost.",
   "stun_units": "Choose up to {count} unit(s) to stun.",
   "shield_units": "Choose up to {count} unit(s) to shield.",
-  "freeze_units": "Choose up to {count} unit(s) to freeze."
+  "freeze_units": "Choose up to {count} unit(s) to freeze.",
+  "bounce": "Choose an enemy unit to return to its owner's hand.",
+  "resolve_market_card": "Choose a shared-market card (cost {max_cost} or less) to resolve.",
+  "destroy": "Choose a unit of {player_name} to kill.",
+  "destroy_tier": "Choose a tier: every unit there is killed.",
+  "sacrifice": "You may kill another of your units."
 }

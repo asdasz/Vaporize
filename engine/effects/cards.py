@@ -261,3 +261,85 @@ def shuffle_into_deck(ctx: EffectContext, p: dict[str, Any]) -> None:
     if chosen:
         ctx.player.deck.shuffle(ctx.state.rng)
         ctx.emit("log.shuffled_into_deck", seat=ctx.seat, count=len(chosen))
+
+
+@effect("others_draw", required=("count",))
+def others_draw(ctx: EffectContext, p: dict[str, Any]) -> None:
+    """Every other player draws cards."""
+    count = resolve_value(ctx, p["count"])
+    for player in ctx.state.players:
+        if player.seat != ctx.seat:
+            draw_cards(ctx.state, player.seat, count, ctx.events)
+
+
+@effect("bounce", required=("target",), optional=("random_discard",))
+def bounce(ctx: EffectContext, p: dict[str, Any]) -> None:
+    """Return a unit to its owner's hand (tokens are removed instead). With `random_discard`, its owner then
+    discards a different random card from their hand."""
+    from engine.combat import find_unit
+    from engine.targeting import find_targets
+
+    targets = find_targets(ctx.state, ctx.seat, p["target"])
+    if not targets:
+        return
+    uid = ctx.ask(
+        Prompt(kind="choose_unit", key="prompt.bounce", params={}, options=tuple(u.uid for _, u in targets), allow_skip=True)
+    )
+    unit = find_unit(ctx.state, uid) if uid else None
+    if unit is None:
+        return
+    owner = ctx.state.players[unit.owner]
+    for container in (owner.tokens, *owner.tiers.values(), ctx.state.tier4):
+        if container.find(unit.uid):
+            container.take(unit.uid)
+            break
+    ctx.emit("log.unit_bounced", card=unit.def_id, owner=unit.owner)
+    if unit.is_token:
+        return
+    unit.reset_runtime()
+    owner.hand.put_bottom(unit)
+    if p.get("random_discard"):
+        others = [c for c in owner.hand if c.uid != unit.uid]
+        if others:
+            card = owner.hand.take(ctx.state.rng.choice(others).uid)
+            owner.discard.put_bottom(card)
+            ctx.emit("log.random_discard", owner=owner.seat, card=card.def_id)
+
+
+@effect("resolve_market_card", required=("max_cost",), optional=("card_types",))
+def resolve_market_card(ctx: EffectContext, p: dict[str, Any]) -> None:
+    """Resolve the effects of a shared-market card (of `card_types`, cost <= `max_cost`) as if you played it,
+    then discard that card from the market."""
+    from engine.market import reveal
+    from engine.resolver import resolve_effects
+
+    market = ctx.state.shared_market
+    types = p.get("card_types", ["influence", "spell"])
+    options = [
+        c for c in market.row.cards()
+        if ctx.catalog.card(c.def_id).type in types and ctx.catalog.card(c.def_id).cost <= p["max_cost"]
+    ]
+    if not options:
+        return
+    uid = ctx.ask(
+        Prompt(
+            kind="choose_card",
+            key="prompt.resolve_market_card",
+            params={"max_cost": p["max_cost"], "skip_key": "ui.prompt.skip_market_card"},
+            options=tuple(card_view(c, ctx.catalog) for c in options),
+            allow_skip=True,
+        )
+    )
+    if uid is None:
+        return
+    card = market.row.find(uid)
+    assert card is not None
+    child = ctx.child(card)  # its own invoke, keywords, etc.
+    resolve_effects(child, ctx.catalog.card(card.def_id).effects)
+    ctx.adopt(child)
+    ctx.kills += child.kills
+    slot = next(i for i, c in enumerate(market.row.slots) if c is not None and c.uid == uid)
+    market.row.take(uid)
+    market.removed.put_bottom(card)
+    ctx.emit("log.market_card_resolved", seat=ctx.seat, card=card.def_id)
+    reveal(ctx.state, market, "shared", slot, ctx.events)

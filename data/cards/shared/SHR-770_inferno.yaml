@@ -1,0 +1,14 @@
+# Shared market card 770 (legacy card number: 127).
+id: SHR-770
+number: 770
+type: spell
+cost: 10
+elements: [fire]
+class: shared
+source: shared
+effects:
+  - label: spare
+    choose_one:
+      - - {do: pay_inf, amount: 3, required: true}
+        - {do: deal_damage_all, amount: {sum: [{div_ceil: [{invoke: 0}, 2]}, 1]}, spare_allies: true}
+      - - {do: deal_damage_all, amount: {sum: [{div_ceil: [{invoke: 0}, 2]}, 1]}}

@@ -26,6 +26,12 @@ def resolve_effects(ctx: EffectContext, nodes: tuple[dict[str, Any], ...] | list
             branch = node.get("then", []) if evaluate_condition(ctx, node["if"]) else node.get("else", [])
             resolve_effects(ctx, branch)
             continue
+        if "repeat" in node:
+            from engine.values import resolve_value  # local import: values -> invoke -> context
+
+            for _ in range(resolve_value(ctx, node["repeat"])):
+                resolve_effects(ctx, node.get("effects", []))
+            continue
         if "choose_one" in node:
             options = node["choose_one"]
             card_id = ctx.source.def_id if ctx.source else None

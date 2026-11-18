@@ -23,6 +23,7 @@ class CardDef:
     effects: tuple[dict[str, Any], ...] = ()
     triggers: dict[str, tuple[dict[str, Any], ...]] = field(default_factory=dict)
     modifiers: tuple[dict[str, Any], ...] = ()  # static, while the unit is on the board
+    pre_effects: tuple[dict[str, Any], ...] = ()  # units: resolved before invoke-based stats are set
     alt_cost: dict[str, int] | None = None  # alternative way to buy, e.g. {"lose_vp": 3}
     hand_eot: dict[str, int] | None = None  # in hand at your end of turn, e.g. {"discard_for_vp": 1} (optional)
     in_discard: dict[str, int] | None = None  # while in your discard pile, e.g. {"vp_per_kill": 1}
@@ -53,6 +54,8 @@ class CardInstance:
     temp_attack: int = 0  # bonus attack until the end of its owner's turn
     attacks_made: int = 0  # attacks this turn (reset at its owner's end of turn)
     temp_extra_attacks: int = 0  # extra attacks granted for this turn
+    temp_any_tier: bool = False  # may attack any tier this turn
+    temp_kill_vp: list[list[int]] = field(default_factory=list)  # [[seat, vp]]: VP to seat if its attack kills this turn
 
     @property
     def attack_value(self) -> int:
@@ -69,3 +72,5 @@ class CardInstance:
         self.temp_attack = 0
         self.attacks_made = 0
         self.temp_extra_attacks = 0
+        self.temp_any_tier = False
+        self.temp_kill_vp = []

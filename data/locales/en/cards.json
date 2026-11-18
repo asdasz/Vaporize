@@ -367,5 +367,129 @@
   "SHR-760": {
     "name": "SHR 760 · Spell",
     "text": "**Degrade** a unit once for each enemy (players − 1 times). Draw a card."
+  },
+  "SHR-761": {
+    "name": "SHR 761 · Spell",
+    "text": "Any unit gains [**invoke**] + 1 attack this turn. If its attack kills a unit, gain 1 VP."
+  },
+  "SHR-762": {
+    "name": "SHR 762 · Spell",
+    "text": "Return target enemy unit to its owner's hand and discard a different random card from their hand."
+  },
+  "SHR-763": {
+    "name": "SHR 763 · Spell",
+    "text": "Kill a single unit of each other player with a cost of 5 or less (7 or less if you played at least 2 other shadow cards this turn)."
+  },
+  "SHR-764": {
+    "name": "SHR 764 · Spell",
+    "text": "Draw 3 cards. All other players draw 1 card."
+  },
+  "SHR-765": {
+    "name": "SHR 765 · Spell",
+    "text": "**Shield** [**invoke**] units (max. 2). Also gain 1 VP if you played 3 other water cards this turn."
+  },
+  "SHR-766": {
+    "name": "SHR 766 · Spell",
+    "text": "Gain 1 VP for each tier your units occupy. If there are at least 4 water cards in your discard pile, gain 1 inf as well."
+  },
+  "SHR-767": {
+    "name": "SHR 767 · Spell",
+    "text": "Deal 2 damage [**invoke**] times (max. 5)."
+  },
+  "SHR-768": {
+    "name": "SHR 768 · Spell",
+    "text": "Gain [**invoke**] VP (max. 3)."
+  },
+  "SHR-769": {
+    "name": "SHR 769 · Spell",
+    "text": "Resolve the effect of any influence or spell card in the shared market with cost less than 9, then discard that card from the market."
+  },
+  "SHR-770": {
+    "name": "SHR 770 · Spell",
+    "text": "Deal [**invoke**] / 2 + 1 (rounded up) damage to all units in the game. You may pay 3 inf so your units aren't harmed.",
+    "spare": [
+      "Pay 3 inf: your units aren't harmed",
+      "Harm all units"
+    ]
+  },
+  "SHR-771": {
+    "name": "SHR 771 · Spell",
+    "text": "Deal [**invoke**] × 2 damage **split** among all units. With 2 other fire cards played: gain 1 VP if this spell killed at least 1 unit. With 2 other lightning cards played: **stun** all units harmed this way."
+  },
+  "SHR-772": {
+    "name": "SHR 772 · Spell",
+    "text": "Kill all units on a chosen tier."
+  },
+  "SHR-773": {
+    "name": "SHR 773 · Unit",
+    "text": "**When played**: you may kill another of your units and give its HP to this unit. If you do, gain VP equal to the killed unit's tier − 1."
+  },
+  "SHR-774": {
+    "name": "SHR 774 · Unit",
+    "text": "**When played**: if there are at least 10 cards in your discard pile, **degrade** any unit."
+  },
+  "SHR-775": {
+    "name": "SHR 775 · Unit",
+    "text": "**Start of turn**: **Prepare**."
+  },
+  "SHR-776": {
+    "name": "SHR 776 · Unit",
+    "text": ""
+  },
+  "SHR-777": {
+    "name": "SHR 777 · Unit",
+    "text": "**When played**: **Prepare**."
+  },
+  "SHR-778": {
+    "name": "SHR 778 · Unit",
+    "text": "Deal 1 damage to every unit that attacks this unit."
+  },
+  "SHR-779": {
+    "name": "SHR 779 · Unit",
+    "text": "**When played**: **prepare** ×2 before setting its HP."
+  },
+  "SHR-780": {
+    "name": "SHR 780 · Unit",
+    "text": ""
+  },
+  "SHR-781": {
+    "name": "SHR 781 · Unit",
+    "text": "**When played**: if you played at least 2 other wind cards this turn, it gains +2 attack and may attack any tier this turn."
+  },
+  "SHR-782": {
+    "name": "SHR 782 · Unit",
+    "text": "**End of turn**: if you played at least 2 other fire cards this turn, deal [**invoke**] damage to any unit."
+  },
+  "SHR-783": {
+    "name": "SHR 783 · Unit",
+    "text": ""
+  },
+  "SHR-784": {
+    "name": "SHR 784 · Unit",
+    "text": "Can attack an extra time each turn."
+  },
+  "SHR-785": {
+    "name": "SHR 785 · Unit",
+    "text": "**Start of turn**: gain 1 inf."
+  },
+  "SHR-786": {
+    "name": "SHR 786 · Unit",
+    "text": "This unit takes at most 2 damage from a single source."
+  },
+  "SHR-787": {
+    "name": "SHR 787 · Unit",
+    "text": "**When developed**: deal 2 damage to all other units on the tier it enters (4 if you have at least 4 other fire cards in your discard pile)."
+  },
+  "SHR-788": {
+    "name": "SHR 788 · Unit",
+    "text": "Targets attacked by this unit are **stunned**. Attacks twice."
+  },
+  "SHR-789": {
+    "name": "SHR 789 · Unit",
+    "text": "Each time you use **invoke**, **prepare** first."
+  },
+  "SHR-790": {
+    "name": "SHR 790 · Unit",
+    "text": ""
   }
 }

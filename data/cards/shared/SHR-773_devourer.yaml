@@ -1,0 +1,12 @@
+# Shared market card 773 (legacy card number: 131).
+id: SHR-773
+number: 773
+type: unit
+cost: 5
+elements: [wind, shadow]
+class: shared
+source: shared
+attack: 3
+health: 3
+effects:
+  - {do: sacrifice_ally, transfer_hp: true, vp: tier_minus_one}

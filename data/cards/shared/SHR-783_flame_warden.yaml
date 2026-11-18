@@ -1,0 +1,10 @@
+# Shared market card 783 (legacy card number: 141).
+id: SHR-783
+number: 783
+type: unit
+cost: 6
+elements: [fire]
+class: shared
+source: shared
+attack: 3
+health: {invoke: 2}

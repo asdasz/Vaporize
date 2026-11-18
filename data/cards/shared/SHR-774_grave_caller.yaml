@@ -1,0 +1,13 @@
+# Shared market card 774 (legacy card number: 132).
+id: SHR-774
+number: 774
+type: unit
+cost: 3
+elements: [shadow]
+class: shared
+source: shared
+attack: 2
+health: 2
+effects:
+  - if: {discard_count_at_least: {min: 10}}
+    then: [{do: degrade, target: {side: any}}]

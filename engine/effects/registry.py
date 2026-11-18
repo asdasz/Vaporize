@@ -14,10 +14,10 @@ EffectFn = Callable[[EffectContext, dict[str, Any]], None]
 # Keys allowed on every effect node in addition to the effect's own params.
 COMMON_KEYS = frozenset({"do", "required"})
 # Params that hold a value expression (int or {invoke: N}).
-VALUE_PARAMS = frozenset({"amount", "count", "times"})
+VALUE_PARAMS = frozenset({"amount", "count", "times", "attack"})
 # Params that must be plain non-negative integers.
-INT_PARAMS = frozenset({"max_hp", "draw", "vp_per_kill", "element_amount", "cost_override", "heal", "damage", "attack", "extra_attacks", "up_to"})
-BOOL_PARAMS = frozenset({"exceed_limit", "split", "up_to_limit", "refund", "discard_any", "different", "spare_allies", "per_opponent", "rest_choice", "all"})
+INT_PARAMS = frozenset({"max_hp", "draw", "vp_per_kill", "element_amount", "cost_override", "heal", "damage", "extra_attacks", "up_to", "max_cost", "kill_vp"})
+BOOL_PARAMS = frozenset({"random_discard", "exceed_limit", "split", "up_to_limit", "refund", "discard_any", "different", "spare_allies", "per_opponent", "rest_choice", "all", "any_tier", "exclude_self", "transfer_hp"})
 
 
 # For effects marked `required: true`: can this effect happen at all right now? (state, seat, params)
@@ -69,6 +69,13 @@ def validate_effects(nodes: Any, where: str) -> list[str]:
         w = f"{where}[{i}]"
         if not isinstance(node, dict):
             errors.append(f"{w}: effect must be a mapping")
+            continue
+        if "repeat" in node:
+            from engine.values import validate_value
+
+            errors += validate_value(node["repeat"], f"{w}.repeat")
+            errors += validate_effects(node.get("effects", []), f"{w}.effects")
+            errors += [f"{w}: unknown key {k!r} in repeat" for k in sorted(node.keys() - {"repeat", "effects"})]
             continue
         if "choose_one" in node:
             extra = node.keys() - {"choose_one", "label"}
@@ -129,7 +136,7 @@ def _validate_params(node: dict[str, Any], where: str) -> list[str]:
         errors.append(f"{where}: unknown element {node['element']!r}")
     if "card_type" in node and node["card_type"] not in CARD_TYPES:
         errors.append(f"{where}: unknown card_type {node['card_type']!r}")
-    if "tiers" in node and node["tiers"] != "with_ally_units" and node.get("do") != "swap_units" and (
+    if "tiers" in node and node["tiers"] not in ("with_ally_units", "source") and node.get("do") != "swap_units" and (
         not isinstance(node["tiers"], list) or any(t not in (1, 2, 3, 4) for t in node["tiers"])
     ):
         errors.append(f"{where}: tiers must be a list of 1-4")
@@ -144,6 +151,10 @@ def _validate_params(node: dict[str, Any], where: str) -> list[str]:
     for key in ("then", "if_killed"):  # nested effect lists
         if key in node and "do" in node:
             errors += validate_effects(node[key], f"{where}.{key}")
+    if node.get("do") == "sacrifice_ally" and node.get("vp") not in (None, "tier_minus_one"):
+        errors.append(f"{where}: vp must be tier_minus_one")
+    if "card_types" in node and (not isinstance(node["card_types"], list) or any(t not in CARD_TYPES for t in node["card_types"])):
+        errors.append(f"{where}: card_types must be a list of card types")
     if "market" in node and node["market"] not in ("shared", "private", "all"):
         errors.append(f"{where}: market must be shared, private or all")
     if "status" in node and node["status"] not in ("shield", "stun", "freeze"):

@@ -85,10 +85,22 @@ def heal(ctx: EffectContext, p: dict[str, Any]) -> None:
         heal_unit(ctx, uid, amount, p.get("max_hp"))
 
 
-@effect("deal_damage_tier", required=("amount",), optional=("tiers", "status", "spare_allies"))
+@effect("deal_damage_tier", required=("amount",), optional=("tiers", "status", "spare_allies", "exclude_self"))
 def deal_damage_tier(ctx: EffectContext, p: dict[str, Any]) -> None:
     """Deal the damage to every unit (any owner) on one chosen tier. Optional `status` token for each of them
     first (e.g. stun), `spare_allies` skips your own units."""
+    if p.get("tiers") == "source":  # the tier this unit is on (e.g. "the tier it enters"), no choice
+        from engine.development import unit_tier
+
+        found = unit_tier(ctx.state, ctx.seat, ctx.source.uid) if ctx.source else None
+        if found is None:
+            return
+        units = [(t, u) for t, u in find_targets(ctx.state, ctx.seat, {"side": "any"}) if t == found[0]]
+        amount = resolve_value(ctx, p["amount"])
+        for _, unit in units:
+            if not (p.get("exclude_self") and unit.uid == ctx.source.uid):
+                damage_unit(ctx, unit.uid, amount)
+        return
     allowed = p.get("tiers", [1, 2, 3, 4])
     units = find_targets(ctx.state, ctx.seat, {"side": "any", "tiers": allowed})
     tiers = sorted({tier for tier, _ in units})
@@ -149,3 +161,108 @@ def deal_damage_each_opponent(ctx: EffectContext, p: dict[str, Any]) -> None:
         )
         if uid is not None:
             damage_unit(ctx, uid, amount)
+
+
+@effect("deal_damage_all", required=("amount",), optional=("spare_allies",))
+def deal_damage_all(ctx: EffectContext, p: dict[str, Any]) -> None:
+    """Deal the damage to every unit in the game (optionally not yours)."""
+    amount = resolve_value(ctx, p["amount"])
+    for _, unit in find_targets(ctx.state, ctx.seat, {"side": "any"}):
+        if not (p.get("spare_allies") and unit.owner == ctx.seat):
+            damage_unit(ctx, unit.uid, amount)
+
+
+@effect("status_damaged", required=("status",))
+def status_damaged(ctx: EffectContext, p: dict[str, Any]) -> None:
+    """Put a status token on every unit this card has harmed (lost HP), if it's still alive."""
+    from engine.combat import find_unit
+
+    for uid in dict.fromkeys(ctx.damaged):
+        unit = find_unit(ctx.state, uid)
+        if unit is not None:
+            unit.status[p["status"]] += 1
+            ctx.emit("log.status_added", card=unit.def_id, owner=unit.owner, status=p["status"], count=1)
+
+
+def _destroy_options(ctx: EffectContext, seat: int, max_cost: int | None) -> list[str]:
+    return [
+        u.uid
+        for _, u in ctx.state.units_of(seat)
+        if max_cost is None or u.is_token or ctx.catalog.card(u.def_id).cost <= max_cost
+    ]
+
+
+@effect("destroy_each_opponent", optional=("max_cost",))
+def destroy_each_opponent(ctx: EffectContext, p: dict[str, Any]) -> None:
+    """Kill one chosen unit of each other player (printed cost <= `max_cost`). Shields don't stop it."""
+    from engine.combat import destroy_unit, find_unit
+
+    for player in ctx.state.players:
+        if player.seat == ctx.seat:
+            continue
+        options = _destroy_options(ctx, player.seat, p.get("max_cost"))
+        if not options:
+            continue
+        uid = ctx.ask(
+            Prompt(
+                kind="choose_unit",
+                key="prompt.destroy",
+                params={"player_seat": player.seat, "max_cost": p.get("max_cost"), "skip_key": "ui.prompt.skip_kill"},
+                options=tuple(options),
+                allow_skip=True,
+            )
+        )
+        unit = find_unit(ctx.state, uid) if uid else None
+        if unit is not None:
+            destroy_unit(ctx, unit)
+
+
+@effect("destroy_tier")
+def destroy_tier(ctx: EffectContext, p: dict[str, Any]) -> None:
+    """Kill every unit on a chosen tier (yours too)."""
+    from engine.combat import destroy_unit
+
+    units = find_targets(ctx.state, ctx.seat, {"side": "any"})
+    tiers = sorted({t for t, _ in units})
+    if not tiers:
+        return
+    tier = ctx.ask(
+        Prompt(kind="choose_tier", key="prompt.destroy_tier", params={"skip_key": "ui.prompt.skip_kill"}, options=tuple(tiers), allow_skip=True)
+    )
+    if tier is None:
+        return
+    for t, unit in units:
+        if t == tier:
+            destroy_unit(ctx, unit)
+
+
+@effect("sacrifice_ally", optional=("transfer_hp", "vp"))
+def sacrifice_ally(ctx: EffectContext, p: dict[str, Any]) -> None:
+    """You may kill another of your units. `transfer_hp`: this unit gains its HP. `vp: tier_minus_one`: gain VP
+    equal to the killed unit's tier − 1."""
+    from engine.combat import destroy_unit
+
+    source_uid = ctx.source.uid if ctx.source else None
+    options = [(t, u) for t, u in ctx.state.units_of(ctx.seat) if u.uid != source_uid]
+    if not options:
+        return
+    uid = ctx.ask(
+        Prompt(
+            kind="choose_unit",
+            key="prompt.sacrifice",
+            params={"skip_key": "ui.prompt.skip_sacrifice"},
+            options=tuple(u.uid for _, u in options),
+            allow_skip=True,
+        )
+    )
+    if uid is None:
+        return
+    tier, unit = next((t, u) for t, u in options if u.uid == uid)
+    hp = unit.current_hp or 0
+    destroy_unit(ctx, unit)
+    if p.get("transfer_hp") and ctx.source is not None:
+        ctx.source.current_hp = (ctx.source.current_hp or 0) + hp
+        ctx.emit("log.heal", card=ctx.source.def_id, owner=ctx.source.owner, amount=hp)
+    if p.get("vp") == "tier_minus_one" and tier > 1:
+        ctx.player.vp += tier - 1
+        ctx.emit("log.gain_vp", seat=ctx.seat, amount=tier - 1)

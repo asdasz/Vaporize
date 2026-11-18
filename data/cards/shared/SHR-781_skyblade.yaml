@@ -1,0 +1,13 @@
+# Shared market card 781 (legacy card number: 139).
+id: SHR-781
+number: 781
+type: unit
+cost: 5
+elements: [wind]
+class: shared
+source: shared
+attack: 2
+health: 3
+effects:
+  - if: {played_this_turn: {element: wind, min: 2, other: true}}
+    then: [{do: boost_self, attack: 2, any_tier: true}]

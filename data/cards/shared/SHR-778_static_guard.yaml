@@ -1,0 +1,12 @@
+# Shared market card 778 (legacy card number: 136).
+id: SHR-778
+number: 778
+type: unit
+cost: 4
+elements: [lightning]
+class: shared
+source: shared
+attack: 0
+health: {invoke: 2}
+modifiers:
+  - thorns: 1

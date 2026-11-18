@@ -1,0 +1,13 @@
+# Shared market card 788 (legacy card number: 146).
+id: SHR-788
+number: 788
+type: unit
+cost: 8
+elements: [lightning]
+class: shared
+source: shared
+attack: 1
+health: {invoke: 3}
+modifiers:
+  - extra_attacks: 1
+  - stun_on_attack: true

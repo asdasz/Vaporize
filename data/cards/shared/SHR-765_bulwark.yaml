@@ -1,0 +1,12 @@
+# Shared market card 765 (legacy card number: 122).
+id: SHR-765
+number: 765
+type: spell
+cost: 5
+elements: [water]
+class: shared
+source: shared
+effects:
+  - {do: shield, target: {side: any}, units: {min: [{invoke: 0}, 2]}}
+  - if: {played_this_turn: {element: water, min: 3, other: true}}
+    then: [{do: gain_vp, amount: 1}]

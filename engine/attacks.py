@@ -38,7 +38,7 @@ def check_attack(state: GameState, seat: int, attacker_uid: str, target_uid: str
     target = _tier_of(state, target_uid)
     if target is None or target[0] == seat:
         raise IllegalAction("error.invalid_target")
-    if target[1] not in (tier, tier + 1):
+    if target[1] not in (tier, tier + 1) and not unit.temp_any_tier:
         raise IllegalAction("error.out_of_range")
 
 
@@ -50,13 +50,13 @@ def attack_targets(state: GameState, seat: int, attacker_uid: str) -> list[str]:
         return []
     found = _tier_of(state, attacker_uid)
     assert found is not None
-    tier = found[1]
+    tier, attacker = found[1], found[2]
     return [
         unit.uid
         for player in state.players
         if player.seat != seat
         for t, unit in state.units_of(player.seat)
-        if t in (tier, tier + 1)
+        if t in (tier, tier + 1) or attacker.temp_any_tier
     ]
 
 
@@ -80,8 +80,19 @@ def attack(state: GameState, catalog: Catalog, seat: int, attacker_uid: str, tar
     )
     attacker.attacks_made += 1
     attacker.tapped = attacker.attacks_made >= attacks_allowed(attacker, catalog)  # tapped when out of attacks
+    mods = catalog.card(attacker.def_id).modifiers
+    target_mods = catalog.card(target.def_id).modifiers
     damage_unit(ctx, target_uid, attacker.attack_value)
+    if not ctx.kills and any(m.get("stun_on_attack") for m in mods) and find_unit(state, target_uid):
+        target.status["stun"] += 1  # "targets attacked by this unit are stunned"
+        events.append(Event("log.status_added", {"card": target.def_id, "owner": target.owner, "status": "stun", "count": 1}))
+    thorns = sum(int(m.get("thorns", 0)) for m in target_mods)
+    if thorns and find_unit(state, attacker_uid):  # "deal 1 dmg to all units that attack this unit"
+        damage_unit(EffectContext(state, catalog, target.owner, target, events), attacker_uid, thorns)
     if ctx.kills:
+        for marked_seat, vp in attacker.temp_kill_vp:  # e.g. 761: "if this attack kills any unit, gain 1 VP"
+            state.players[marked_seat].vp += vp
+            events.append(Event("log.gain_vp", {"seat": marked_seat, "amount": vp}))
         player = state.players[seat]
         vp = sum(m["amount"] for m in player.turn_modifiers if m["kind"] == "vp_per_attack_kill")
         if vp:

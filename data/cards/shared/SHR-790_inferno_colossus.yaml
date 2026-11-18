@@ -1,0 +1,10 @@
+# Shared market card 790 (legacy card number: 148).
+id: SHR-790
+number: 790
+type: unit
+cost: 8
+elements: [fire]
+class: shared
+source: shared
+attack: 4
+health: {invoke: 5}

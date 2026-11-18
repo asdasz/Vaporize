@@ -76,8 +76,8 @@ def _pending(state: GameState, catalog: Catalog, viewer: int) -> dict[str, Any] 
     pending = state.pending
     if pending is None:
         return None
-    card = state.players[pending.seat].hand.find(pending.card_uid)
-    view: dict[str, Any] = {"seat": pending.seat, "card": card_view(card, catalog) if card else None}
+    card = state.players[pending.seat].hand.find(pending.card_uid) if pending.card_uid else None
+    view: dict[str, Any] = {"seat": pending.seat, "card": card_view(card, catalog) if card else None, "kind": pending.kind}
     if viewer == pending.seat:
         view["prompt"] = pending.prompt.to_dict()
         view["step"] = len(pending.answers)

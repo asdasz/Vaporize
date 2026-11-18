@@ -1,0 +1,12 @@
+# Shared market card 789 (legacy card number: 147).
+id: SHR-789
+number: 789
+type: unit
+cost: 8
+elements: [wind]
+class: shared
+source: shared
+attack: 1
+health: 5
+modifiers:
+  - prepare_before_invoke: true

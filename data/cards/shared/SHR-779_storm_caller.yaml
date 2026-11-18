@@ -1,0 +1,12 @@
+# Shared market card 779 (legacy card number: 137).
+id: SHR-779
+number: 779
+type: unit
+cost: 5
+elements: [wind]
+class: shared
+source: shared
+attack: 2
+health: {max: [{invoke: 0}, 1]}   # invoke, min. 1
+pre_effects:
+  - {do: prepare, times: 2}       # before its HP is set

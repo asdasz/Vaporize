@@ -46,6 +46,7 @@ def resolve_played_card(ctx: EffectContext, card: CardInstance) -> None:
 
     if cdef.is_unit:
         player.tiers[1].place(card)
+        resolve_effects(ctx, cdef.pre_effects)  # e.g. 779 "prepare x2 before setting its HP"
         attack = resolve_value(ctx, cdef.attack if cdef.attack is not None else 0)
         health = resolve_value(ctx, cdef.health if cdef.health is not None else 1)
         card.fixed_attack, card.fixed_health, card.current_hp = attack, health, health

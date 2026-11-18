@@ -30,6 +30,13 @@ def invoke(ctx: EffectContext) -> int:
         return ctx.invoke_value
     cdef = ctx.class_def
     mode = cdef.invoke.get("mode")
+    prepares = sum(1 for _, u in ctx.state.units_of(ctx.seat) for m in ctx.catalog.card(u.def_id).modifiers if m.get("prepare_before_invoke"))
+    if prepares:  # "each time you use invoke, prepare first"
+        from engine.resolver import resolve_effects  # local import: resolver imports effects
+
+        for _ in range(prepares):
+            ctx.player.prepares_this_turn += 1
+            resolve_effects(ctx, cdef.prepare)
     bonus = invoke_bonus(ctx)
     if mode == "spend_resource_any":
         spent = ctx.ask(

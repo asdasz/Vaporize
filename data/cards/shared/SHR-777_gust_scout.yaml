@@ -1,0 +1,12 @@
+# Shared market card 777 (legacy card number: 135).
+id: SHR-777
+number: 777
+type: unit
+cost: 4
+elements: [wind]
+class: shared
+source: shared
+attack: 3
+health: 2
+effects:
+  - {do: prepare}

@@ -1,0 +1,10 @@
+# Shared market card 762 (legacy card number: 120).
+id: SHR-762
+number: 762
+type: spell
+cost: 8
+elements: [all]
+class: shared
+source: shared
+effects:
+  - {do: bounce, target: {side: enemy}, random_discard: true}

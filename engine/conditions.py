@@ -64,6 +64,15 @@ def _played_matching(ctx: EffectContext, p: dict[str, Any]) -> bool:
     return sum(1 for x in ctx.player.played_this_turn if _matches(x.elements, p["filter"], primary)) >= p["min"]
 
 
+def _discard_count_at_least(ctx: EffectContext, p: dict[str, Any]) -> bool:
+    return len(ctx.player.discard) + len(ctx.player.in_play) >= p["min"]
+
+
+def _card_kills_at_least(ctx: EffectContext, p: dict[str, Any]) -> bool:
+    """Units destroyed by this card so far."""
+    return ctx.kills >= p["min"]
+
+
 # name -> (function, required params, optional params)
 _CONDITIONS: dict[str, tuple[ConditionFn, frozenset[str], frozenset[str]]] = {
     "played_this_turn": (_played_this_turn, frozenset({"min"}), frozenset({"element", "elements", "other"})),
@@ -72,6 +81,8 @@ _CONDITIONS: dict[str, tuple[ConditionFn, frozenset[str], frozenset[str]]] = {
     "ally_tiers_at_least": (_ally_tiers_at_least, frozenset({"min"}), frozenset()),
     "unique_played_elements_at_least": (_unique_played_elements_at_least, frozenset({"min"}), frozenset({"other"})),
     "played_matching": (_played_matching, frozenset({"filter", "min"}), frozenset()),
+    "discard_count_at_least": (_discard_count_at_least, frozenset({"min"}), frozenset()),
+    "card_kills_at_least": (_card_kills_at_least, frozenset({"min"}), frozenset()),
 }
 
 

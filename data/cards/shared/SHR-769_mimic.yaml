@@ -1,0 +1,10 @@
+# Shared market card 769 (legacy card number: 126).
+id: SHR-769
+number: 769
+type: spell
+cost: 9
+elements: []
+class: shared
+source: shared
+effects:
+  - {do: resolve_market_card, max_cost: 8, card_types: [influence, spell]}

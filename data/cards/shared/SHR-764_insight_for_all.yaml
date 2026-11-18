@@ -1,0 +1,11 @@
+# Shared market card 764 (legacy card number: 122).
+id: SHR-764
+number: 764
+type: spell
+cost: 9
+elements: [lightning]
+class: shared
+source: shared
+effects:
+  - {do: draw, count: 3}
+  - {do: others_draw, count: 1}

@@ -207,6 +207,7 @@ Rule notes the engine must respect:
 
 ## End of turn choices
 
+- End-of-turn abilities may ask questions (e.g. 782 invokes and picks a target). `EndTurn` is then replayed like a card: `state.pending.kind == "end_turn"` (with the chosen `hand_discards`), `Respond` continues, and `CancelChoice` goes back to before ending the turn. Unit EOT triggers run **before** the class's EOT passive.
 - `EndTurn(seat, hand_discards=(uid, …))`: hand cards with `hand_eot: {discard_for_vp: N}` (e.g. 731) that the player chooses to discard at the start of their end of turn, for N VP each. This may break the 2-card minimum (the card says so).
 - UI: if the hand has such cards, End turn first opens a small panel with a checkbox per card.
 
@@ -286,9 +287,13 @@ triggers:                # units: ongoing abilities
   on_damage_taken: []
   on_kill: []
   on_card_played: []     # after each card its owner plays (while this unit is on the board)
+  on_develop: []         # after this unit is developed (action or effect)
+
+pre_effects: []          # units: resolved before invoke-based stats are set (e.g. 779)
 
 modifiers:               # units: static, while on the board
-  - spell_invoke_bonus: 1
+  - spell_invoke_bonus: 1        # also: extra_attacks, develop_discount, thorns (damage to attackers),
+                                 # stun_on_attack, max_damage_per_hit, prepare_before_invoke
 
 alt_cost: {lose_vp: 3}   # optional: the card may also be bought by losing VP (Buy with pay: vp)
 hand_eot: {discard_for_vp: 1}   # optional: at your end of turn, may discard it from hand for VP
@@ -330,7 +335,7 @@ Initial primitive list (extend as cards require):
 | `gain_vp` | `amount` |
 | `prepare` | optional `times`, `exceed_limit` (resource may go past the class limit, up to `hard_max`) |
 | `deal_damage` | `amount`, `target`, optional `split: true` (or from `grant_keyword: split`), `if_killed: [effects]`, `different: true` (not a unit this card already hit) |
-| `deal_damage_tier` | `amount`, optional `tiers`, `status` (token on each first, e.g. stun), `spare_allies` |
+| `deal_damage_tier` | `amount`, optional `tiers` (or `source` = this unit's tier, no choice), `status` (token on each first), `spare_allies`, `exclude_self` |
 | `heal` | `amount`, `target`, optional `max_hp` (cap; never lowers HP) |
 | `shield` / `stun` / `freeze` | `target`, optional `count` (tokens), `units: N` (up to N different units), `all: true`, `heal` (HP for the chosen unit) |
 | `develop` | optional `cost_override` (e.g. 0 = free): develop one of your units |
@@ -352,8 +357,18 @@ Initial primitive list (extend as cards require):
 | `heal_all` | `amount`, `target`: HP for every matching unit |
 | `deal_damage_each_opponent` | `amount`, optional `tiers`: one chosen unit of each other player |
 | `swap_units` | optional `heal`, `damage`, `per_opponent`: swap the places of 2 units |
-| `boost_units` | `target`, optional `attack`, `extra_attacks`, `all`: this turn only |
+| `boost_units` | `target`, optional `attack` (value), `extra_attacks`, `all`, `kill_vp` (you gain VP if its attack kills this turn): this turn only |
 | `next_develop_discount` | — : your next development this turn costs 1 less per prepare this turn |
+| `boost_self` | optional `attack`, `any_tier`: the unit with this ability, this turn |
+| `pay_inf` | `amount` (use with `required: true`): pay inf as part of a card |
+| `others_draw` | `count`: every other player draws |
+| `bounce` | `target`, optional `random_discard`: unit back to its owner's hand (tokens are removed) |
+| `resolve_market_card` | `max_cost`, optional `card_types`: copy a shared-market card's effects, then discard it from the market |
+| `deal_damage_all` | `amount`, optional `spare_allies` |
+| `status_damaged` | `status`: token on every unit this card harmed |
+| `destroy_each_opponent` | optional `max_cost`: kill one unit of each other player (shields don't help) |
+| `destroy_tier` | — : kill every unit on a chosen tier |
+| `sacrifice_ally` | optional `transfer_hp`, `vp: tier_minus_one` |
 | `summon` | `attack`, `health`, `count` |
 | `grant_keyword` | `keyword`, optional `scope` (e.g. `split` with `scope: same_tier`, for the rest of this card) |
 
@@ -361,15 +376,15 @@ Invoke isn't an effect: it's a value. `{invoke: N}` asks the class's invoke once
 
 Card input in the format Jan uses (one row per printed card): `New card #`, `Current card #` (legacy, kept as a comment), `Element`, `Cost`, `Type`, `Affiliation`, `Card text`, `Attack`, `Health`.
 
-Control structures, handled by the resolver rather than registered as effects: `if` / `then` / `else` and `choose_one: [[effects…], [effects…]]` (a `choose_option` prompt; an option may be `[]` for "don't"; optional `label: name` picks the option texts `cards.<id>.<name>` when a card has several choices). `repeat` to come.
+Control structures, handled by the resolver rather than registered as effects: `if` / `then` / `else`, `repeat: <value>` + `effects` (e.g. "deal 2 dmg [invoke] times") and `choose_one: [[effects…], [effects…]]` (a `choose_option` prompt; an option may be `[]` for "don't"; optional `label: name` picks the option texts `cards.<id>.<name>` when a card has several choices).
 
 Turn modifiers (`player.turn_modifiers`) hold "this turn" effects such as "your next spell…". They're consumed by the next spell (`engine/playing.py`) or cleared at the end of the turn. Temporary attack bonuses live on the unit (`temp_attack`) and reset at its owner's end of turn.
 
-**Values** (`values.py`): an int, `{invoke: N}`, `{count: {played: {element, other}}}`, `{count: {unique_played_elements: {other}}}`, `{count: {ally_units: {min_tier}}}`, `{count: {ally_tiers: {}}}`, `{count: {prepares_this_turn: {}}}`, `{count: {enemy_kills_this_turn: {}}}`, `{count: {opponents: {}}}` (players − 1), `{sum: [values…]}` or `{min: [values…]}` ("max. 4" = `{min: [value, 4]}`). Unit `attack`/`health` may be values too (resolved once when the unit enters).
+**Values** (`values.py`): an int, `{invoke: N}`, `{count: {played: {element, other}}}`, `{count: {unique_played_elements: {other}}}`, `{count: {ally_units: {min_tier}}}`, `{count: {ally_tiers: {}}}`, `{count: {prepares_this_turn: {}}}`, `{count: {enemy_kills_this_turn: {}}}`, `{count: {opponents: {}}}` (players − 1), `{count: {discard_cards: {}}}`, `{sum: […]}`, `{mul: […]}`, `{max: […]}`, `{div_ceil: [a, b]}` or `{min: [values…]}` ("max. 4" = `{min: [value, 4]}`). Unit `attack`/`health` may be values too (resolved once when the unit enters).
 
 **Targets** (`targeting.py`): `{side: any | ally | enemy, tiers: [1, 2, 3, 4] | with_ally_units}`. Tokens count as tier 1. Allies and enemies alike unless `side` says otherwise.
 
-**Conditions** (`conditions.py`): `played_this_turn {element | elements, min, other}`, `in_discard {element, min, other}`, `value_at_least {value, min}` (e.g. "invoke for 4"), `ally_tiers_at_least {min}`, `unique_played_elements_at_least {min, other}`, `played_matching {filter: non_primary | primary, min}`.
+**Conditions** (`conditions.py`): `played_this_turn {element | elements, min, other}`, `in_discard {element, min, other}`, `value_at_least {value, min}` (e.g. "invoke for 4"), `ally_tiers_at_least {min}`, `unique_played_elements_at_least {min, other}`, `played_matching {filter: non_primary | primary, min}`, `discard_count_at_least {min}`, `card_kills_at_least {min}` (units killed by this card so far).
 
 An `if` block may carry `once_per_turn: true`: it's checked every time, fires the first time its condition is true, and then stays off until the end of the turn (tracked in `player.turn_flags`, per source unit).
 

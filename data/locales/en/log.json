@@ -51,5 +51,10 @@
   "shuffled_into_deck": "{player} shuffles {count} card(s) from the discard pile into their deck.",
   "units_swapped": "{player} swaps {a_name} and {b_name} ({owner_name}).",
   "unit_boosted": "{card_name} ({owner_name}) gets +{attack} attack and {extra} extra attack(s) this turn.",
-  "next_develop_discount": "{player}'s next development is cheaper this turn."
+  "next_develop_discount": "{player}'s next development is cheaper this turn.",
+  "end_turn_cancelled": "{player} goes back before ending the turn.",
+  "paid_inf": "{player} pays {amount} inf.",
+  "unit_bounced": "{card_name} ({owner_name}) returns to its owner's hand.",
+  "random_discard": "{owner_name} discards {card_name} at random.",
+  "market_card_resolved": "{player} copies {card_name} from the shared market."
 }

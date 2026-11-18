@@ -41,3 +41,20 @@ def gain_vp(ctx: EffectContext, p: dict[str, Any]) -> None:
     amount = resolve_value(ctx, p["amount"])
     ctx.player.vp += amount
     ctx.emit("log.gain_vp", seat=ctx.seat, amount=amount)
+
+
+def _can_pay(state: Any, seat: int, p: dict[str, Any]) -> bool:
+    amount = p["amount"]
+    return not isinstance(amount, int) or state.players[seat].inf >= amount
+
+
+@effect("pay_inf", required=("amount",), can_apply=_can_pay)
+def pay_inf(ctx: EffectContext, p: dict[str, Any]) -> None:
+    """Spend inf as part of a card (e.g. "you can pay 3 inf to …"). Fails if you can't pay."""
+    from engine.errors import IllegalAction
+
+    amount = resolve_value(ctx, p["amount"])
+    if ctx.player.inf < amount:
+        raise IllegalAction("error.not_enough_inf", cost=amount)
+    ctx.player.inf -= amount
+    ctx.emit("log.paid_inf", seat=ctx.seat, amount=amount)

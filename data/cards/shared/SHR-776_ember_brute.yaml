@@ -1,0 +1,10 @@
+# Shared market card 776 (legacy card number: 134).
+id: SHR-776
+number: 776
+type: unit
+cost: 4
+elements: [fire]
+class: shared
+source: shared
+attack: 2
+health: {invoke: 1}

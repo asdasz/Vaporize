@@ -87,6 +87,12 @@ def develop_unit(state: GameState, catalog: Catalog, seat: int, option: DevelopO
     events.append(
         Event("log.unit_developed", {"seat": seat, "card": card.def_id, "tier": option.to_tier, "cost": option.cost})
     )
+    nodes = catalog.card(card.def_id).triggers.get("on_develop", ())
+    if nodes:  # e.g. 787 "when developed: deal 2 dmg to all units in the tier it enters"
+        from engine.context import EffectContext
+        from engine.resolver import resolve_effects
+
+        resolve_effects(EffectContext(state, catalog, seat, card, events), nodes)
 
 
 def legal_develops(state: GameState, catalog: Catalog, seat: int) -> list[DevelopOption]:

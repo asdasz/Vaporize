@@ -1,0 +1,12 @@
+# Shared market card 726 (legacy card number: 84).
+id: SHR-726
+number: 726
+type: influence
+cost: 6
+elements: []
+class: shared
+source: shared
+alt_cost: {lose_vp: 3}     # may be bought by losing 3 VP instead of paying inf
+effects:
+  - do: gain_inf
+    amount: 4

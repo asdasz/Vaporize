@@ -23,6 +23,7 @@ class CardDef:
     effects: tuple[dict[str, Any], ...] = ()
     triggers: dict[str, tuple[dict[str, Any], ...]] = field(default_factory=dict)
     modifiers: tuple[dict[str, Any], ...] = ()  # static, while the unit is on the board
+    alt_cost: dict[str, int] | None = None  # alternative way to buy, e.g. {"lose_vp": 3}
 
     @property
     def is_unit(self) -> bool:

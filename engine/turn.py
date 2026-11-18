@@ -35,8 +35,12 @@ def start_turn(state: GameState, catalog: Catalog, events: list[Event]) -> None:
     player.played_this_turn = []
     player.turn_modifiers = []
     player.turn_flags = []
+    player.prepares_this_turn = 0
+    player.enemy_kills_this_turn = 0
     player.turn_modifiers = []
     player.turn_flags = []
+    player.prepares_this_turn = 0
+    player.enemy_kills_this_turn = 0
     player.free_refresh_used = False
     player.element_swap_used = False
     events.append(Event("log.turn_started", {"seat": player.seat, "round": state.round}))
@@ -74,6 +78,8 @@ def end_turn(state: GameState, catalog: Catalog, events: list[Event]) -> None:
     player.played_this_turn = []
     player.turn_modifiers = []
     player.turn_flags = []
+    player.prepares_this_turn = 0
+    player.enemy_kills_this_turn = 0
     # 4. Draw back up to 7.
     draw_up_to(state, seat, HAND_SIZE, events)
     events.append(Event("log.turn_ended", {"seat": seat}))

@@ -39,7 +39,7 @@ from server.codes import generate_code
 
 LOG_LIMIT = 60
 # Bump when engine state classes change, so old save files are ignored instead of half-loading.
-SAVE_VERSION = 4
+SAVE_VERSION = 6
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +77,7 @@ def parse_action(payload: dict[str, Any]) -> Action:
     if kind == "attack":
         return Attack(seat=seat, attacker_uid=str(payload.get("unit_uid")), target_uid=str(payload.get("target_uid")))
     if kind == "buy":
-        return Buy(seat=seat, market=str(payload.get("market")), slot=int(payload.get("slot", -1)))
+        return Buy(seat=seat, market=str(payload.get("market")), slot=int(payload.get("slot", -1)), pay=str(payload.get("pay") or "inf"))
     if kind == "refresh":
         return Refresh(seat=seat, market=str(payload.get("market")))
     if kind == "remove_card":

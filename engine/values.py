@@ -5,6 +5,11 @@
 - {count: {played: {element: fire, other: true}}}   cards played this turn with that element
 - {count: {unique_played_elements: {other: true}}}  different elements on cards played this turn
 - {sum: [v1, v2, ...]}
+- {min: [v1, v2, ...]}                              smallest value, e.g. "(max. 4)" = {min: [value, 4]}
+- {count: {ally_units: {min_tier: 2}}}              your units on tier 2 or higher
+- {count: {prepares_this_turn: {}}}                 prepares you triggered this turn
+- {count: {ally_tiers: {}}}                         different tiers where you have a unit
+- {count: {enemy_kills_this_turn: {}}}              enemy units you destroyed this turn
 """
 
 from __future__ import annotations
@@ -15,7 +20,14 @@ from engine.context import EffectContext
 from engine.invoke import invoke
 from engine.rules import ELEMENTS
 
-COUNTERS = {"played": {"element", "other"}, "unique_played_elements": {"other"}}
+COUNTERS = {
+    "played": {"element", "other"},
+    "unique_played_elements": {"other"},
+    "ally_units": {"min_tier"},
+    "ally_tiers": set(),
+    "prepares_this_turn": set(),
+    "enemy_kills_this_turn": set(),
+}
 
 
 def validate_value(value: Any, where: str) -> list[str]:
@@ -27,8 +39,8 @@ def validate_value(value: Any, where: str) -> list[str]:
         (kind, arg), = value.items()
         if kind == "invoke" and isinstance(arg, int) and not isinstance(arg, bool):
             return []
-        if kind == "sum" and isinstance(arg, list) and arg:
-            return [e for i, v in enumerate(arg) for e in validate_value(v, f"{where}.sum[{i}]")]
+        if kind in ("sum", "min") and isinstance(arg, list) and arg:
+            return [e for i, v in enumerate(arg) for e in validate_value(v, f"{where}.{kind}[{i}]")]
         if kind == "count" and isinstance(arg, dict) and len(arg) == 1:
             (counter, params), = arg.items()
             if counter not in COUNTERS or not isinstance(params, dict):
@@ -51,6 +63,14 @@ def _count(ctx: EffectContext, counter: str, params: dict[str, Any]) -> int:
         return sum(1 for els in _played(ctx, other) if params["element"] in els)
     if counter == "unique_played_elements":
         return len({e for els in _played(ctx, other) for e in els})
+    if counter == "ally_units":
+        return sum(1 for tier, _ in ctx.state.units_of(ctx.seat) if tier >= params.get("min_tier", 1))
+    if counter == "ally_tiers":
+        return len({tier for tier, _ in ctx.state.units_of(ctx.seat)})
+    if counter == "prepares_this_turn":
+        return ctx.player.prepares_this_turn
+    if counter == "enemy_kills_this_turn":
+        return ctx.player.enemy_kills_this_turn
     raise ValueError(f"unknown counter {counter!r}")
 
 
@@ -62,6 +82,8 @@ def resolve_value(ctx: EffectContext, value: Any) -> int:
         return max(0, invoke(ctx) + int(arg))
     if kind == "sum":
         return sum(resolve_value(ctx, v) for v in arg)
+    if kind == "min":
+        return min(resolve_value(ctx, v) for v in arg)
     if kind == "count":
         (counter, params), = arg.items()
         return _count(ctx, counter, params)

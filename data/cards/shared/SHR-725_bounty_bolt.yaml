@@ -1,0 +1,15 @@
+# Shared market card 725 (legacy card number: 83).
+id: SHR-725
+number: 725
+type: influence
+cost: 6
+elements: [fire]
+class: shared
+source: shared
+effects:
+  - do: gain_inf
+    amount: 2
+  - do: deal_damage
+    amount: 2
+    target: {side: any}
+    if_killed: [{do: gain_inf, amount: 2}]

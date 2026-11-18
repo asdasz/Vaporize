@@ -1,0 +1,14 @@
+# Shared market card 728 (legacy card number: 86).
+id: SHR-728
+number: 728
+type: influence
+cost: 7
+elements: [wind]
+class: shared
+source: shared
+effects:
+  - do: gain_inf
+    amount: 3
+  - do: scout
+    count: 4
+    discard_any: true

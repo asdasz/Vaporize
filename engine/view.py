@@ -12,7 +12,7 @@ from engine.development import eot_vp, legal_develops
 from engine.element_swap import has_element_swap, swap_available, swap_options
 from engine.removal import removable_cards
 from engine.attacks import legal_attacks
-from engine.market import legal_market, refresh_cost
+from engine.market import basic_price, legal_market, refresh_cost
 from engine.rules import ELEMENTS, MIN_HAND, SHARED_PRICE_MODIFIERS
 from engine.state import GameState, MarketState, PlayerState
 from engine.zones import SlotRow
@@ -99,6 +99,11 @@ def build_view(state: GameState, catalog: Catalog, viewer: int) -> dict[str, Any
         "players": [_player(state, catalog, p, viewer) for p in state.players],
         "tier4": _row(state.tier4, catalog),
         "shared_market": _market(state.shared_market, catalog, SHARED_PRICE_MODIFIERS),
+        "basic_supply": {
+            "count": len(state.basic_supply),
+            "card": card_view(state.basic_supply.top(), catalog) if state.basic_supply.top() else None,
+            "price": basic_price(state, catalog),
+        },
         "pending": _pending(state, catalog, viewer),
         "legal": {
             "playable": legal_plays(state, catalog, viewer) if free else [],

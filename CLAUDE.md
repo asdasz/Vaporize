@@ -51,8 +51,8 @@ vaporize/
 │   └── RULES.md                 # rulebook (source of truth)
 ├── data/
 │   ├── cards/
-│   │   ├── shared/              # shared-market cards
-│   │   │   └── SHR-001_spark.yaml
+│   │   ├── shared/              # shared-market cards (source: shared) and basic supply (source: basic)
+│   │   │   └── SHR-713_primary_inf.yaml
 │   │   ├── mage/
 │   │   │   ├── starter/         # MAG-S001 … MAG-S012
 │   │   │   └── private/         # MAG-P031 … MAG-P045 (private market)
@@ -100,7 +100,9 @@ vaporize/
 │   │   ├── cards.py             # draw, scout, play_from_discard
 │   │   ├── modifiers.py         # next_spell_invoke_bonus, next_spell_twice, boost_attack, vp_per_attack_kill
 │   │   ├── class_hooks.py       # prepare (delegates to ClassDef)
-│   │   └── …                    # status.py, movement.py, market.py, units.py to come
+│   │   ├── status.py            # shield, stun, freeze tokens
+│   │   ├── movement.py          # develop (effect, e.g. free), degrade (optional refund)
+│   │   └── …                    # market.py, units.py to come
 │   ├── conditions.py            # played_this_turn, in_discard, has_unit_on_tier, …
 │   ├── targeting.py             # target selectors (ally/enemy/any, tier ranges)
 │   ├── values.py                # value expressions: literal, invoke, invoke+N, count_of(…)
@@ -152,6 +154,7 @@ Every pile is its own explicit `Zone` object. Never infer a pile from a flag on 
 | `shared_market.deck` | hidden |
 | `shared_market.row` | 6 fixed slots, index 0 = leftmost (+1 inf), index 5 = rightmost (−1 inf) |
 | `shared_market.removed` | public; reshuffled into the deck when the deck runs out |
+| `basic_supply` | face-up pile of basic cards (701–712), buyable at any time at printed price; not part of the 6-card market, never refreshed |
 
 **Board**
 
@@ -184,7 +187,7 @@ Rule notes the engine must respect:
 
 ## Markets
 
-- `Buy(seat, market, slot)` with `market` = `shared` or `private` (your own only). Price = printed cost, in the shared market +1 for the leftmost slot and −1 for the rightmost. The card goes to your discard pile (owner = you) and a new card is revealed into the same slot.
+- `Buy(seat, market, slot, pay)` with `pay` = `inf` (default) or `vp` for cards with `alt_cost: {lose_vp: N}` (you need at least N VP; market price modifiers don't apply). `market` = `shared`, `private` (your own only) or `basic` (top card of the basic supply; `slot` is ignored, no price modifier, nothing is revealed so it's undoable). Price = printed cost, in the shared market +1 for the leftmost slot and −1 for the rightmost. The card goes to your discard pile (owner = you) and a new card is revealed into the same slot.
 - `Refresh(seat, market)`: the rightmost card goes to the market's removed pile, the others slide right, and a new card is revealed on the left. The first shared refresh each turn is free; every other refresh costs 1 inf.
 - When a market deck is empty, its removed pile is shuffled into a new deck.
 - Revealing a market card is hidden information, so a buy or refresh that reveals a card becomes a new undo checkpoint.
@@ -225,7 +228,7 @@ Some effects need a decision: how much to invoke, which unit to hit, which scout
 - `Respond(seat, answer)` replays the whole card from that state with all answers so far. Replay is deterministic because the RNG lives in the state. It either resolves completely (and pushes one undo entry) or stops at the next prompt.
 - `CancelChoice` drops the pending card. It isn't allowed once hidden cards were shown during this card (scout, draw, market reveal): `ctx.ask` then marks the prompt `cancellable: false`.
 - While a choice is pending, every other action is rejected with `error.choice_pending`.
-- Prompt kinds: `number` (min..max), `choose_unit` (uids), `choose_card` (card views), `split_damage` ({uid: amount}, optional `same_tier`), `choose_option` (index into `choose_one`), `choose_tier`. Optional (positive) effects set `allow_skip`, and the answer `null` skips them.
+- Prompt kinds: `number` (min..max), `choose_unit` (uids), `choose_card` (card views), `choose_cards` (list of uids, min..max), `split_damage` ({uid: amount}, optional `same_tier`), `choose_option` (index into `choose_one`), `choose_tier`. Optional (positive) effects set `allow_skip`, and the answer `null` skips them.
 - `params.skip_key` names the skip button (e.g. `ui.prompt.skip_damage` = "Deal no damage"), so a player can play a damage spell just to get rid of it without hurting their own units.
 - Only the acting player sees the prompt in their view. The others only see who is choosing and for which card.
 - A `number` prompt with a single possible value (e.g. invoke with 0 mana) is answered automatically.
@@ -254,7 +257,7 @@ type: spell              # influence | spell | unit
 cost: 0                  # printed buy cost
 elements: [fire]         # any of fire, water, wind, lightning, shadow; [all] for all five; [] for none
 class: mage              # or "shared"
-source: starter          # starter | private | shared
+source: starter          # starter | private | shared | basic
 copies: 2                # how many copies in the starting deck / market deck
 
 # units only
@@ -279,6 +282,8 @@ triggers:                # units: ongoing abilities
 
 modifiers:               # units: static, while on the board
   - spell_invoke_bonus: 1
+
+alt_cost: {lose_vp: 3}   # optional: the card may also be bought by losing VP (Buy with pay: vp)
 ```
 
 Choice text for `choose_one` lives in the locale too: `"options": ["Gain 4 inf", "Draw 2 cards", …]` next to `name` and `text`.
@@ -296,7 +301,7 @@ Display text (name, rules text) does **not** live in the card file. It lives in 
 From the rulebook: negative parts of a card are mandatory (and the card can't be played if they can't be met), positive and neutral parts are optional.
 
 - Effects are optional by default (the player may skip them).
-- Mark a mandatory effect with `required: true`. The engine checks every required effect before the card can be played.
+- Mark a mandatory effect with `required: true` (anywhere, also inside `if` / `choose_one` branches; a dry run follows the branch that would really happen). Its primitive must define `can_apply(state, seat, params)`; `check_play` refuses the card with `error.requirement_not_met` when it can't happen (e.g. 716 needs one of your units). A required effect's prompt has no skip (the effect gets `_required: true`).
 
 ## Effects
 
@@ -315,14 +320,17 @@ Initial primitive list (extend as cards require):
 | `gain_resource` / `lose_resource` | `amount` (class resource: mana, heat, …) |
 | `gain_vp` | `amount` |
 | `prepare` | optional `times`, `exceed_limit` (resource may go past the class limit, up to `hard_max`) |
-| `deal_damage` | `amount`, `target`, optional `split: true` (or split from `grant_keyword: split`) |
+| `deal_damage` | `amount`, `target`, optional `split: true` (or split from `grant_keyword: split`), `if_killed: [effects]` |
 | `deal_damage_tier` | `amount`, optional `tiers`: every unit on one chosen tier |
 | `heal` | `amount`, `target`, optional `max_hp` (cap; never lowers HP) |
-| `shield` / `stun` / `freeze` | `count`, `target` |
-| `develop` / `degrade` | `target`, optional `cost_override`, `tiers` |
+| `shield` / `stun` / `freeze` | `target`, optional `count` (tokens on one chosen unit) |
+| `develop` | optional `cost_override` (e.g. 0 = free): develop one of your units |
+| `degrade` | `target`, optional `refund` (gain the develop cost of the tier the unit leaves) |
 | `draw` | `count` |
-| `scout` | `count`, optional `draw: 1` (draw one of the scouted cards) |
+| `scout` | `count`, optional `draw: 1` (draw one of them) or `discard_any: true` (discard any of them; the rest stay on top in order) |
 | `play_from_discard` | optional `card_type`: play a card from your discard pile not played this turn |
+| `discard_from_hand` | optional `then`: you may discard 1 hand card (keeps the 2-card minimum); if you do, resolve `then` |
+| `move_played_to_deck` | optional `element`, `position` (top/bottom): you may put one of your other cards played this turn into your deck |
 | `next_spell_invoke_bonus` | `amount`, optional `element` + `element_amount` (printed elements) |
 | `next_spell_twice` | optional `vp_per_kill`: next spell resolves twice with the same invoke value |
 | `boost_attack` | `amount`: your units gain attack until end of turn |
@@ -340,11 +348,11 @@ Control structures, handled by the resolver rather than registered as effects: `
 
 Turn modifiers (`player.turn_modifiers`) hold "this turn" effects such as "your next spell…". They're consumed by the next spell (`engine/playing.py`) or cleared at the end of the turn. Temporary attack bonuses live on the unit (`temp_attack`) and reset at its owner's end of turn.
 
-**Values** (`values.py`): an int, `{invoke: N}`, `{count: {played: {element, other}}}`, `{count: {unique_played_elements: {other}}}`, or `{sum: [values…]}`. Unit `attack`/`health` may be values too (resolved once when the unit enters).
+**Values** (`values.py`): an int, `{invoke: N}`, `{count: {played: {element, other}}}`, `{count: {unique_played_elements: {other}}}`, `{count: {ally_units: {min_tier}}}`, `{count: {ally_tiers: {}}}`, `{count: {prepares_this_turn: {}}}`, `{count: {enemy_kills_this_turn: {}}}`, `{sum: [values…]}` or `{min: [values…]}` ("max. 4" = `{min: [value, 4]}`). Unit `attack`/`health` may be values too (resolved once when the unit enters).
 
 **Targets** (`targeting.py`): `{side: any | ally | enemy, tiers: [1, 2, 3, 4] | with_ally_units}`. Tokens count as tier 1. Allies and enemies alike unless `side` says otherwise.
 
-**Conditions** (`conditions.py`): `played_this_turn {element, min, other}`, `in_discard {element, min}`, `value_at_least {value, min}` (e.g. "invoke for 4"), `ally_tiers_at_least {min}`, `unique_played_elements_at_least {min, other}`, `played_matching {filter: non_primary, min}`.
+**Conditions** (`conditions.py`): `played_this_turn {element | elements, min, other}`, `in_discard {element, min}`, `value_at_least {value, min}` (e.g. "invoke for 4"), `ally_tiers_at_least {min}`, `unique_played_elements_at_least {min, other}`, `played_matching {filter: non_primary | primary, min}`.
 
 An `if` block may carry `once_per_turn: true`: it's checked every time, fires the first time its condition is true, and then stays off until the end of the turn (tracked in `player.turn_flags`, per source unit).
 

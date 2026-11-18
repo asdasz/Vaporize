@@ -1,0 +1,14 @@
+# Shared market card 724 (legacy card number: 82).
+id: SHR-724
+number: 724
+type: influence
+cost: 5
+elements: [water, lightning]
+class: shared
+source: shared
+effects:
+  - do: gain_inf
+    amount: 2
+  - do: degrade
+    target: {side: ally}
+    refund: true            # gain the develop cost of the tier it leaves

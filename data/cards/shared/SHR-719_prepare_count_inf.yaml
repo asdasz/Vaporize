@@ -1,0 +1,12 @@
+# Shared market card 719 (legacy card number: 77).
+id: SHR-719
+number: 719
+type: influence
+cost: 4
+elements: [lightning]
+class: shared
+source: shared
+effects:
+  - do: prepare
+  - do: gain_inf
+    amount: {min: [{count: {prepares_this_turn: {}}}, 5]}

@@ -15,6 +15,7 @@ export function sharedMarket(view) {
         affordable: myTurn && entry ? entry.price <= me.inf : null,
         showModifier: true,
         buy: buyable.has(slot) ? { market: "shared", slot } : null,
+        altBuy: altFor(legal, "shared", slot),
       }),
     )
     .join("");
@@ -24,7 +25,24 @@ export function sharedMarket(view) {
         <h3>${t("ui.market.shared")} <span class="muted">· ${t("ui.market.deck", { count: m.deck_count })} · ${t("ui.market.removed", { count: m.removed_count })}</span></h3>
         ${refreshButton("shared", legal.shared_refresh)}
       </div>
-      <div class="market-row">${piles("shared", m)}${cards}</div>
+      <div class="market-row">${piles("shared", m)}${cards}${basicSupply(view, legal)}</div>
+    </div>`;
+}
+
+// The basic supply: a separate pile you can always buy from, at its printed price.
+function basicSupply(view, legal) {
+  const b = view.basic_supply;
+  if (!b) return "";
+  const card = b.card
+    ? marketCard(
+        { card: b.card, price: b.price, modifier: 0 },
+        { affordable: legal.basic_buy ?? null, buy: legal.basic_buy ? { market: "basic", slot: 0 } : null, altBuy: altFor(legal, "basic", 0) },
+      )
+    : `<div class="mcard empty">${t("ui.market.basic_empty")}</div>`;
+  return `
+    <div class="basic-supply">
+      <div class="label">${t("ui.market.basic")} · ${t("ui.market.basic_left", { count: b.count })}</div>
+      <div class="basic-stack ${b.count > 1 ? "stacked" : ""}">${card}</div>
     </div>`;
 }
 
@@ -63,6 +81,7 @@ export function privateMarkets(view, store) {
               affordable: myTurn && entry ? entry.price <= p.inf : null,
               ownerSeat: p.seat,
               buy: mine && (view.legal.market?.private_buy || []).includes(slot) ? { market: "private", slot } : null,
+              altBuy: mine ? altFor(view.legal.market || {}, "private", slot) : null,
             }),
           )
           .join("");
@@ -88,3 +107,5 @@ function refreshButton(market, cost) {
   const label = cost === 0 ? t("ui.market.refresh_free") : t("ui.market.refresh", { cost });
   return `<button class="refresh-btn" data-action="refresh" data-market="${market}">${icon("refresh")}${label}</button>`;
 }
+
+const altFor = (legal, market, slot) => (legal.alt_buy || []).find((a) => a.market === market && a.slot === slot) || null;

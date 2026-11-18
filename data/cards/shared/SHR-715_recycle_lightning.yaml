@@ -1,0 +1,16 @@
+# Shared market card 715 (legacy card number: 73).
+id: SHR-715
+number: 715
+type: influence
+cost: 4
+elements: [lightning]
+class: shared
+source: shared
+effects:
+  - do: gain_inf
+    amount: 2
+  - if: {played_this_turn: {element: lightning, min: 2, other: true}}
+    then:
+      - do: move_played_to_deck
+        element: lightning
+        position: bottom

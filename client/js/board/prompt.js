@@ -57,6 +57,18 @@ function chooseCardBody(prompt) {
   return `<div class="prompt-row wrap">${prompt.options.map((card) => handCard(card, { choose: true })).join("")}</div>`;
 }
 
+function chooseCardsBody(prompt, draft) {
+  const picked = new Set(draft.cards || []);
+  const tiles = prompt.options
+    .map((card) => `<div class="pick-tile ${picked.has(card.uid) ? "picked" : ""}" data-action="toggle-card" data-uid="${card.uid}">${handCard(card, { still: true })}</div>`)
+    .join("");
+  const ok = picked.size >= prompt.min && picked.size <= prompt.max;
+  return `
+    <div class="prompt-row wrap">${tiles}</div>
+    <div class="prompt-row"><span class="label">${t("ui.prompt.selected", { count: picked.size })}</span>
+      <button class="primary" data-action="confirm-cards" ${ok ? "" : "disabled"}>${icon("check")}${t("ui.prompt.confirm")}</button></div>`;
+}
+
 function chooseOptionBody(prompt) {
   const card = prompt.params.card;
   return `<div class="prompt-row wrap">${prompt.options
@@ -73,6 +85,7 @@ function chooseTierBody(prompt) {
 function promptText(prompt) {
   const params = { ...prompt.params };
   if (params.resource) params.resource_name = resourceName(params.resource);
+  if (params.position) params.position = t(`ui.positions.${params.position}`);
   return t(prompt.key, params);
 }
 
@@ -90,6 +103,7 @@ export function promptPanel(view, store) {
   else if (prompt.kind === "choose_unit") body = chooseUnitBody(view, prompt);
   else if (prompt.kind === "split_damage") body = splitBody(view, prompt, draft);
   else if (prompt.kind === "choose_card") body = chooseCardBody(prompt);
+  else if (prompt.kind === "choose_cards") body = chooseCardsBody(prompt, draft);
   else if (prompt.kind === "choose_option") body = chooseOptionBody(prompt);
   else if (prompt.kind === "choose_tier") body = chooseTierBody(prompt);
   const skipLabel = t(prompt.params.skip_key || "ui.prompt.skip");

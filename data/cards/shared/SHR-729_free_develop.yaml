@@ -1,0 +1,13 @@
+# Shared market card 729 (legacy card number: 87).
+id: SHR-729
+number: 729
+type: influence
+cost: 7
+elements: [wind]
+class: shared
+source: shared
+effects:
+  - do: gain_inf
+    amount: 1
+  - do: develop
+    cost_override: 0

@@ -47,7 +47,13 @@
     "refresh_free": "Free refresh",
     "buy_hint": "Buy for {price} inf",
     "deck_pile": "Deck",
-    "removed_pile": "Removed"
+    "removed_pile": "Removed",
+    "basic": "Basic supply",
+    "basic_left": "{count} left",
+    "basic_name": "basic supply",
+    "basic_empty": "Empty",
+    "buy_vp": "or −{vp} VP",
+    "buy_vp_hint": "Buy by losing {vp} VP"
   },
   "panel": {
     "inf": "Inf",
@@ -133,7 +139,13 @@
     "skip_heal": "Give no HP",
     "skip_draw": "Draw nothing",
     "skip_play": "Play nothing",
-    "tier": "Tier {tier}"
+    "tier": "Tier {tier}",
+    "skip_discard": "Don't discard",
+    "skip_move": "Keep it",
+    "skip_status": "Skip",
+    "skip_degrade": "Don't degrade",
+    "skip_develop": "Don't develop",
+    "selected": "{count} selected"
   },
   "remove": {
     "title": "Remove a card from the game · {cost} inf",
@@ -161,5 +173,9 @@
     "done": "Done",
     "hint": "Free, once per turn. Applies when you play the card.",
     "marked": "Will be played as {elements}"
+  },
+  "positions": {
+    "top": "top",
+    "bottom": "bottom"
   }
 }

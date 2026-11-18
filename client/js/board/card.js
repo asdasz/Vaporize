@@ -56,8 +56,9 @@ export function miniUnit(card, { target = false, assigned = 0, develop = null, c
 
 export const emptySlot = (label = "") => `<div class="slot">${esc(label)}</div>`;
 
-// opts.buy: {market, slot} when the viewer can buy this card now (click to buy)
-export function marketCard(entry, { affordable = null, showModifier = false, ownerSeat = null, buy = null } = {}) {
+// opts.buy: {market, slot} when the viewer can buy this card now (click to buy);
+// opts.altBuy: {market, slot, vp} when it can be bought by losing VP instead
+export function marketCard(entry, { affordable = null, showModifier = false, ownerSeat = null, buy = null, altBuy = null } = {}) {
   if (!entry) return `<div class="mcard empty">${t("ui.market.empty")}</div>`;
   const { card, price, modifier } = entry;
   const priceClass = affordable === true ? "ok" : "";
@@ -70,6 +71,7 @@ export function marketCard(entry, { affordable = null, showModifier = false, own
       <div class="name">${elementIcons(card.elements)}<span>${esc(cardName(card.id))}</span></div>
       <div class="mtext">${rulesText(card.id)}</div>
       <span class="price ${priceClass}">${price} ${mod}</span>
+      ${altBuy ? `<button class="alt-buy" data-action="buy-vp" data-market="${altBuy.market}" data-slot="${altBuy.slot}" title="${t("ui.market.buy_vp_hint", { vp: altBuy.vp })}">${t("ui.market.buy_vp", { vp: altBuy.vp })}</button>` : ""}
     </div>`;
 }
 

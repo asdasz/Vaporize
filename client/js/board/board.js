@@ -56,7 +56,10 @@ export function renderBoard(root, view, store, handlers) {
     else if (action === "confirm-remove") handlers.removeCard(el.dataset.uid);
     else if (action === "confirm-no") handlers.removal({ confirm: null });
     else if (action === "choose-option") handlers.respond(Number(el.dataset.value));
+    else if (action === "buy-vp") handlers.buy(el.dataset.market, Number(el.dataset.slot), "vp");
     else if (action === "buy") handlers.buy(el.dataset.market, Number(el.dataset.slot));
+    else if (action === "toggle-card") handlers.toggleCard(el.dataset.uid);
+    else if (action === "confirm-cards") handlers.confirmCards();
     else if (action === "refresh") handlers.refresh(el.dataset.market);
     else if (action === "select-attacker") handlers.selectAttacker(el.dataset.uid);
     else if (action === "attack-target") handlers.attack(el.dataset.uid);

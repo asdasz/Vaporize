@@ -1,0 +1,11 @@
+# Basic supply card 702 (no legacy number).
+id: SHR-702
+number: 702
+type: influence
+cost: 3
+elements: []
+class: shared
+source: basic
+effects:
+  - do: gain_inf
+    amount: 2

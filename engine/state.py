@@ -49,6 +49,8 @@ class PlayerState:
     turn_modifiers: list[dict[str, Any]] = field(default_factory=list)
     # Keys of `once_per_turn` abilities that already fired this turn.
     turn_flags: list[str] = field(default_factory=list)
+    prepares_this_turn: int = 0  # every prepare triggered this turn (start-of-turn ones included)
+    enemy_kills_this_turn: int = 0  # enemy units destroyed by this player's cards or units this turn
     free_refresh_used: bool = False
     element_swap_used: bool = False
 
@@ -65,6 +67,7 @@ class UndoEntry:
 class GameState:
     players: list[PlayerState]
     shared_market: MarketState
+    basic_supply: Zone  # face-up pile of basic cards, buyable at any time (not part of the 6-card market)
     tier4: SlotRow
     rng: random.Random
     seed: int

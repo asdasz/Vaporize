@@ -23,7 +23,7 @@ from engine.rules import CARD_TYPES, CLASS_TRIGGERS, ELEMENTS, SOURCES, UNIT_TRI
 CARD_ID_RE = re.compile(r"^[A-Z]{3}-[A-Z]?\d{2,3}$")
 CARD_KEYS = {
     "id", "number", "type", "cost", "elements", "class", "source", "copies",
-    "attack", "health", "effects", "triggers", "modifiers",
+    "attack", "health", "effects", "triggers", "modifiers", "alt_cost",
 }
 UNIT_MODIFIERS = {"spell_invoke_bonus"}
 CLASS_MODIFIERS = {"spell_invoke_bonus", "element_swap_once_per_turn"}
@@ -107,6 +107,12 @@ def parse_card(raw: Any, where: str) -> tuple[CardDef | None, list[str]]:
         if not isinstance(mod, dict) or not mod.keys() <= UNIT_MODIFIERS:
             errors.append(f"{where}.modifiers[{i}]: known modifiers are {sorted(UNIT_MODIFIERS)}")
 
+    alt_cost = raw.get("alt_cost")
+    if alt_cost is not None and (
+        not isinstance(alt_cost, dict) or alt_cost.keys() != {"lose_vp"} or not isinstance(alt_cost["lose_vp"], int)
+    ):
+        errors.append(f"{where}: alt_cost must be {{lose_vp: N}}")
+
     if errors:
         return None, errors
     return (
@@ -124,6 +130,7 @@ def parse_card(raw: Any, where: str) -> tuple[CardDef | None, list[str]]:
             effects=tuple(effects),
             triggers=triggers,
             modifiers=tuple(modifiers),
+            alt_cost=alt_cost,
         ),
         [],
     )
@@ -198,9 +205,9 @@ def load_catalog(data_dir: Path) -> Catalog:
         if not path.stem.startswith(card.id + "_"):
             errors.append(f"{where}: file name must start with '{card.id}_'")
         rel = path.relative_to(data_dir / "cards").parts
-        if card.source == "shared":
+        if card.source in ("shared", "basic"):
             if rel[0] != "shared" or card.card_class != "shared":
-                errors.append(f"{where}: shared cards live in cards/shared/ with class: shared")
+                errors.append(f"{where}: shared and basic cards live in cards/shared/ with class: shared")
         elif rel[:2] != (card.card_class, card.source):
             errors.append(f"{where}: expected location cards/{card.card_class}/{card.source}/")
         if card.id in cards:

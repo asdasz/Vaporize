@@ -27,5 +27,10 @@
   "out_of_range": "Units can only attack enemies on the same tier or one tier higher.",
   "swap_not_allowed": "Your class can't change elements.",
   "swap_used": "You already changed an element this turn.",
-  "swap_invalid": "That element change isn't allowed."
+  "swap_invalid": "That element change isn't allowed.",
+  "requirement_not_met": "You can't play this card: its mandatory part can't happen (e.g. you need a unit).",
+  "cannot_refresh_basic": "The basic supply can't be refreshed.",
+  "no_alt_cost": "This card has no alternative cost.",
+  "not_enough_vp": "You need {vp} VP for that.",
+  "unknown_payment": "Unknown way to pay."
 }

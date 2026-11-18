@@ -20,6 +20,8 @@ def card_view(card: CardInstance, catalog: Catalog) -> dict[str, Any]:
         "elements": list(elements_of(card, catalog)),
         "owner": card.owner,
     }
+    if cdef.alt_cost:
+        view["alt_cost"] = dict(cdef.alt_cost)
     if cdef.is_unit:
         view.update(
             attack=card.attack_value if card.fixed_attack is not None else cdef.attack,

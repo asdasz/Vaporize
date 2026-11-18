@@ -17,7 +17,7 @@ def draw(ctx: EffectContext, p: dict[str, Any]) -> None:
     draw_cards(ctx.state, ctx.seat, resolve_value(ctx, p["count"]), ctx.events)
 
 
-@effect("scout", required=("count",), optional=("draw",))
+@effect("scout", required=("count",), optional=("draw", "discard_any"))
 def scout(ctx: EffectContext, p: dict[str, Any]) -> None:
     """Look at the top X cards (fewer if the deck is short). With `draw: 1`, draw one of them;
     the rest stay on top in the same order."""
@@ -31,6 +31,23 @@ def scout(ctx: EffectContext, p: dict[str, Any]) -> None:
     if not cards:
         return
     ctx.emit("log.scouted", seat=ctx.seat, count=len(cards))
+    if p.get("discard_any"):
+        chosen = ctx.ask(
+            Prompt(
+                kind="choose_cards",
+                key="prompt.scout_discard",
+                params={"count": len(cards)},
+                options=tuple(card_view(c, ctx.catalog) for c in cards),
+                min=0,
+                max=len(cards),
+                cancellable=False,
+            )
+        )
+        for uid in chosen:
+            ctx.player.discard.put_bottom(deck.take(uid))
+        if chosen:
+            ctx.emit("log.scout_discarded", seat=ctx.seat, count=len(chosen))
+        return
     if not p.get("draw"):
         return
     uid = ctx.ask(
@@ -76,3 +93,61 @@ def play_from_discard(ctx: EffectContext, p: dict[str, Any]) -> None:
     card = ctx.player.discard.take(uid)
     ctx.emit("log.played_from_discard", seat=ctx.seat, card=card.def_id)
     play_card_from_effect(ctx, card)
+
+
+@effect("discard_from_hand", optional=("then",))
+def discard_from_hand(ctx: EffectContext, p: dict[str, Any]) -> None:
+    """You may discard 1 card from your hand (keeping the 2-card minimum). If you do, resolve `then`."""
+    from engine.resolver import resolve_effects  # local import: resolver imports this package
+    from engine.rules import MIN_HAND
+
+    hand = ctx.player.hand
+    if len(hand) <= MIN_HAND:
+        return
+    uid = ctx.ask(
+        Prompt(
+            kind="choose_card",
+            key="prompt.discard_from_hand",
+            params={"skip_key": "ui.prompt.skip_discard"},
+            options=tuple(card_view(c, ctx.catalog) for c in hand),
+            allow_skip=True,
+        )
+    )
+    if uid is None:
+        return
+    card = hand.take(uid)
+    ctx.player.discard.put_bottom(card)
+    ctx.emit("log.discarded_from_hand", seat=ctx.seat, card=card.def_id)
+    resolve_effects(ctx, p.get("then", []))
+
+
+@effect("move_played_to_deck", optional=("element", "position"))
+def move_played_to_deck(ctx: EffectContext, p: dict[str, Any]) -> None:
+    """You may put one of your other cards played this turn (optionally of an element) on top/bottom of your deck."""
+    from engine.elements import elements_of
+
+    source_uid = ctx.source.uid if ctx.source else None
+    element = p.get("element")
+    options = [
+        c for c in ctx.player.in_play if c.uid != source_uid and (element is None or element in elements_of(c, ctx.catalog))
+    ]
+    if not options:
+        return
+    uid = ctx.ask(
+        Prompt(
+            kind="choose_card",
+            key="prompt.move_played_to_deck",
+            params={"skip_key": "ui.prompt.skip_move", "position": p.get("position", "bottom")},
+            options=tuple(card_view(c, ctx.catalog) for c in options),
+            allow_skip=True,
+        )
+    )
+    if uid is None:
+        return
+    card = ctx.player.in_play.take(uid)
+    card.effective_elements = None
+    if p.get("position", "bottom") == "top":
+        ctx.player.deck.put_top(card)
+    else:
+        ctx.player.deck.put_bottom(card)
+    ctx.emit("log.moved_to_deck", seat=ctx.seat, card=card.def_id, position=p.get("position", "bottom"))

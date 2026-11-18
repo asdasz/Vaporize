@@ -14,10 +14,14 @@ EffectFn = Callable[[EffectContext, dict[str, Any]], None]
 # Keys allowed on every effect node in addition to the effect's own params.
 COMMON_KEYS = frozenset({"do", "required"})
 # Params that hold a value expression (int or {invoke: N}).
-VALUE_PARAMS = frozenset({"amount", "count"})
+VALUE_PARAMS = frozenset({"amount", "count", "times"})
 # Params that must be plain non-negative integers.
-INT_PARAMS = frozenset({"max_hp", "draw", "times", "vp_per_kill", "element_amount"})
-BOOL_PARAMS = frozenset({"exceed_limit", "split", "up_to_limit"})
+INT_PARAMS = frozenset({"max_hp", "draw", "vp_per_kill", "element_amount", "cost_override"})
+BOOL_PARAMS = frozenset({"exceed_limit", "split", "up_to_limit", "refund", "discard_any"})
+
+
+# For effects marked `required: true`: can this effect happen at all right now? (state, seat, params)
+CanApplyFn = Callable[[Any, int, dict[str, Any]], bool]
 
 
 @dataclass(frozen=True)
@@ -26,18 +30,23 @@ class EffectSpec:
     fn: EffectFn
     required: frozenset[str]
     optional: frozenset[str]
+    can_apply: CanApplyFn | None = None
 
 
 _REGISTRY: dict[str, EffectSpec] = {}
 
 
 def effect(
-    name: str, *, required: tuple[str, ...] = (), optional: tuple[str, ...] = ()
+    name: str,
+    *,
+    required: tuple[str, ...] = (),
+    optional: tuple[str, ...] = (),
+    can_apply: CanApplyFn | None = None,
 ) -> Callable[[EffectFn], EffectFn]:
     def decorator(fn: EffectFn) -> EffectFn:
         if name in _REGISTRY:
             raise ValueError(f"effect {name!r} registered twice")
-        _REGISTRY[name] = EffectSpec(name, fn, frozenset(required), frozenset(optional))
+        _REGISTRY[name] = EffectSpec(name, fn, frozenset(required), frozenset(optional), can_apply)
         return fn
 
     return decorator
@@ -85,6 +94,8 @@ def validate_effects(nodes: Any, where: str) -> list[str]:
             errors.append(f"{w}: unknown effect {name!r}")
             continue
         spec = _REGISTRY[name]
+        if node.get("required") and spec.can_apply is None:
+            errors.append(f"{w} ({name}): this effect can't be marked required (no can_apply check)")
         params = node.keys() - COMMON_KEYS
         errors += [f"{w} ({name}): missing {k!r}" for k in sorted(spec.required - params)]
         errors += [
@@ -123,6 +134,13 @@ def _validate_params(node: dict[str, Any], where: str) -> list[str]:
         errors.append(f"{where}: unknown keyword {node['keyword']!r}")
     if "scope" in node and node["scope"] not in ("same_tier",):
         errors.append(f"{where}: unknown scope {node['scope']!r}")
+    if "position" in node and node["position"] not in ("top", "bottom"):
+        errors.append(f"{where}: position must be top or bottom")
+    for key in ("then", "if_killed"):
+        if key in node and "do" in node:
+            errors += validate_effects(node[key], f"{where}.{key}")
+    if "status" in node and node["status"] not in ("shield", "stun", "freeze"):
+        errors.append(f"{where}: unknown status {node['status']!r}")
     if "required" in node and not isinstance(node["required"], bool):
         errors.append(f"{where}: 'required' must be true or false")
     return errors

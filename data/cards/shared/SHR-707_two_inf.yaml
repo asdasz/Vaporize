@@ -1,0 +1,11 @@
+# Basic supply card 707 (no legacy number).
+id: SHR-707
+number: 707
+type: influence
+cost: 3
+elements: []
+class: shared
+source: basic
+effects:
+  - do: gain_inf
+    amount: 2

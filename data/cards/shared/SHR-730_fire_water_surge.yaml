@@ -1,0 +1,16 @@
+# Shared market card 730 (legacy card number: 88).
+id: SHR-730
+number: 730
+type: influence
+cost: 7
+elements: [fire, water]
+class: shared
+source: shared
+effects:
+  - if: {played_this_turn: {elements: [fire, water], min: 4, other: true}}
+    then:
+      - {do: gain_inf, amount: 4}
+      - {do: prepare, times: 2}
+    else:
+      - {do: gain_inf, amount: 3}
+      - {do: prepare}

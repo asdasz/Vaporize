@@ -1,0 +1,13 @@
+# Shared market card 720 (legacy card number: 78).
+id: SHR-720
+number: 720
+type: influence
+cost: 5
+elements: [fire]
+class: shared
+source: shared
+effects:
+  - do: gain_inf
+    amount: {min: [{invoke: 0}, 4]}
+  - do: discard_from_hand
+    then: [{do: gain_inf, amount: 2}]

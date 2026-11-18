@@ -12,7 +12,11 @@ from engine.targeting import find_targets
 from engine.values import resolve_value
 
 
-@effect("deal_damage", required=("amount", "target"), optional=("split",))
+def _has_targets(state: Any, seat: int, p: dict[str, Any]) -> bool:
+    return bool(find_targets(state, seat, p["target"]))
+
+
+@effect("deal_damage", required=("amount", "target"), optional=("split", "if_killed"), can_apply=_has_targets)
 def deal_damage(ctx: EffectContext, p: dict[str, Any]) -> None:
     amount = resolve_value(ctx, p["amount"])
     if amount <= 0:
@@ -44,14 +48,19 @@ def deal_damage(ctx: EffectContext, p: dict[str, Any]) -> None:
             key="prompt.deal_damage",
             params={"amount": amount, "skip_key": "ui.prompt.skip_damage"},
             options=tuple(unit.uid for _, unit in targets),
-            allow_skip=True,
+            allow_skip=not p.get("_required"),
         )
     )
     if uid is not None:
+        kills_before = ctx.kills
         damage_unit(ctx, uid, amount)
+        if ctx.kills > kills_before and p.get("if_killed"):
+            from engine.resolver import resolve_effects  # local import: resolver imports this package
+
+            resolve_effects(ctx, p["if_killed"])
 
 
-@effect("heal", required=("amount", "target"), optional=("max_hp",))
+@effect("heal", required=("amount", "target"), optional=("max_hp",), can_apply=_has_targets)
 def heal(ctx: EffectContext, p: dict[str, Any]) -> None:
     amount = resolve_value(ctx, p["amount"])
     if amount <= 0:

@@ -1,0 +1,11 @@
+# Basic supply card 704 (no legacy number).
+id: SHR-704
+number: 704
+type: influence
+cost: 3
+elements: []
+class: shared
+source: basic
+effects:
+  - do: gain_inf
+    amount: 2

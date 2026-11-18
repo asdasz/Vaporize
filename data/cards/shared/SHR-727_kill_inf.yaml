@@ -1,0 +1,11 @@
+# Shared market card 727 (legacy card number: 85).
+id: SHR-727
+number: 727
+type: influence
+cost: 6
+elements: [fire]
+class: shared
+source: shared
+effects:
+  - do: gain_inf
+    amount: {min: [{sum: [3, {count: {enemy_kills_this_turn: {}}}]}, 5]}

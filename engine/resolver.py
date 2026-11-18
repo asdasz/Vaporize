@@ -36,4 +36,6 @@ def resolve_effects(ctx: EffectContext, nodes: tuple[dict[str, Any], ...] | list
             continue
         spec = get_effect(node["do"])
         params = {k: v for k, v in node.items() if k not in COMMON_KEYS}
+        if node.get("required"):
+            params["_required"] = True  # mandatory (negative) part of the card: it can't be skipped
         spec.fn(ctx, params)

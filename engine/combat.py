@@ -30,6 +30,8 @@ def destroy_unit(ctx: EffectContext, unit: CardInstance) -> None:
                 break
     ctx.emit("log.unit_destroyed", card=unit.def_id, owner=unit.owner)
     ctx.kills += 1
+    if unit.owner != ctx.seat:
+        ctx.player.enemy_kills_this_turn += 1
     if not unit.is_token:
         unit.reset_runtime()
         owner.discard.put_bottom(unit)

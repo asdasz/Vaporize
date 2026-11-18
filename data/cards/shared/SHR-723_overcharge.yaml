@@ -1,0 +1,18 @@
+# Shared market card 723 (legacy card number: 81).
+id: SHR-723
+number: 723
+type: influence
+cost: 5
+elements: [lightning]
+class: shared
+source: shared
+effects:
+  - if: {in_discard: {element: lightning, min: 4}}   # discard pile includes cards played this turn
+    then: [{do: gain_inf, amount: 5}]
+    else:
+      - do: deal_damage                 # mandatory unless the condition holds
+        required: true
+        amount: 3
+        target: {side: ally}
+      - do: gain_inf
+        amount: 5

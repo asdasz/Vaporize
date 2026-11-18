@@ -16,7 +16,7 @@ SHARED_PRICE_MODIFIERS = (1, 0, 0, 0, 0, -1)
 
 ELEMENTS = ("fire", "water", "wind", "lightning", "shadow")
 CARD_TYPES = ("influence", "spell", "unit")
-SOURCES = ("starter", "private", "shared")
+SOURCES = ("starter", "private", "shared", "basic")  # basic = always-available supply pile
 STATUSES = ("shield", "stun", "freeze")
 UNIT_TRIGGERS = ("sot", "eot", "on_damage_taken", "on_kill", "on_card_played")
 CLASS_TRIGGERS = ("sot", "eot")

@@ -32,6 +32,7 @@ def new_game(catalog: Catalog, seats: list[tuple[str, str]], seed: int) -> tuple
     state = GameState(
         players=[],
         shared_market=MarketState(Zone("shared.deck"), SlotRow("shared.row", SHARED_MARKET_SIZE), Zone("shared.removed")),
+        basic_supply=Zone("basic"),
         tier4=SlotRow("tier4", len(seats) - 1),
         rng=random.Random(seed),
         seed=seed,
@@ -66,6 +67,7 @@ def new_game(catalog: Catalog, seats: list[tuple[str, str]], seed: int) -> tuple
     state.shared_market.deck.cards = _instances(state, catalog.shared_cards(), -1)
     state.shared_market.deck.shuffle(state.rng)
     _reveal(state.shared_market)
+    state.basic_supply.cards = _instances(state, catalog.basic_cards(), -1)
 
     for seat in range(len(seats)):
         draw_cards(state, seat, STARTING_HAND, events)

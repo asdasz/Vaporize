@@ -41,6 +41,24 @@ Rule interpretations and technical choices that aren't spelled out in `docs/RULE
 33. **Attacks** follow the rulebook: same tier or one higher, enemy units only, attacker taps, damage = attack, no strike back.
 34. **Refreshed-out market cards** go to the market's face-up removed pile, which sits on the left next to the deck. They don't go straight back into the deck: the removed pile is shuffled into a new deck only when the deck runs out (rulebook).
 35. **Mage element swap** (Jan's ruling): free, once per turn, chosen when playing a card. A two-element card can't end up with the same element twice. All-element cards can't change, and "all" can't be chosen. A card with no element can't change either. The swap lasts while the card is in play (units keep it while on the board) and resets when the card goes to the discard pile.
+36. **Basic supply (701–712)** is a separate face-up pile, buyable at any time for its printed cost (3). It's never part of the 6-card shared market and can't be refreshed. When it's empty, it's empty.
+37. **713** counts cards with at least one of your class's primary elements (Mage: fire, water) played this turn, including element swaps.
+38. **714** "any unit" means allies and enemies on any tier, and it can be skipped.
+39. **715** only moves a card played this turn that's still in the "played" zone (units on the board can't be moved). The moved card's effects stay, and it still counts as played this turn.
+40. **716** is a mandatory cost: the card can't be played without one of your units to damage. A shield on that unit still absorbs the hit.
+41. **717 / 720** are influence cards, so their invoke gets no spell bonus. "(max. 4)" caps the inf, not the mana you can spend.
+42. **719** counts every prepare triggered this turn, including start-of-turn prepares and this card's own.
+43. **720**'s optional discard respects the 2-card minimum, so a card can only be discarded if you'd still have 2 or more.
+44. **721**'s shield goes on one of your own units, and can be skipped.
+45. **722** counts different tiers with at least one of your units (tokens count as tier 1). Prepares respect the mana limit.
+46. **723**: "in your discard pile" includes cards played this turn and 723 itself. With 4+ lightning there, no damage and no unit needed. Otherwise the 3 damage to your unit is mandatory.
+47. **724**'s refund = the develop cost of the tier the unit leaves (T2→T1: 3, T3→T2: 4, T4→T3: 5, from the owner's class). Degrading needs a free spot below. Units on tier 1 and undeveloped tokens can't degrade.
+48. **725** hits any unit on any tier. +2 inf only if that damage destroys it.
+49. **726**: buying it by losing 3 VP needs at least 3 VP. It's a flat 3 VP, with no market price modifier.
+50. **727** counts enemy units destroyed by you this turn (attacks and card effects).
+51. **728**: discarded scouted cards go to your discard pile, and the rest stay on top in the same order. Once you've seen them, the play can't be cancelled.
+52. **729**'s free develop still needs a free spot and a unit that isn't frozen.
+53. **730** counts other cards played this turn with fire **or** water (a card with both counts once). Prepare respects the limit.
 
 ## Technical
 

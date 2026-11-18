@@ -14,6 +14,7 @@ from engine.attacks import attack
 from engine.context import EffectContext
 from engine.development import check_develop, develop_unit
 from engine.element_swap import check_swap, swapped_elements
+from engine.effects.registry import get_effect
 from engine.errors import IllegalAction
 from engine.events import Event
 from engine.history import copy_state, reveals_information, snapshot
@@ -22,7 +23,8 @@ from engine.prompts import NeedChoice, PendingChoice
 from engine.removal import remove_card
 from engine.playing import resolve_played_card
 from engine.rules import MIN_HAND
-from engine.state import GameState, UndoEntry
+from engine.conditions import evaluate_condition
+from engine.state import GameState, PlayedCard, UndoEntry
 from engine.turn import end_turn
 
 __all__ = [
@@ -84,8 +86,9 @@ class Buy:
     """Buy the card in `slot` of the shared market or your private market."""
 
     seat: int
-    market: str  # shared | private
+    market: str  # shared | private | basic
     slot: int
+    pay: str = "inf"  # inf | vp (cards with an alternative VP cost)
 
 
 @dataclass(frozen=True)
@@ -133,9 +136,52 @@ def check_play(state: GameState, catalog: Catalog, seat: int, card_uid: str) -> 
         raise IllegalAction("error.card_not_in_hand")
     if len(player.hand) <= MIN_HAND:
         raise IllegalAction("error.min_hand", min=MIN_HAND)
-    if catalog.card(card.def_id).is_unit and not player.tiers[1].has_free():
+    cdef = catalog.card(card.def_id)
+    if cdef.is_unit and not player.tiers[1].has_free():
         raise IllegalAction("error.tier_full", tier=1)
+    if _has_required(cdef.effects) and not _requirements_ok(state, catalog, seat, card):
+        raise IllegalAction("error.requirement_not_met")  # a mandatory (negative) part can't happen
     return card
+
+
+def _has_required(nodes: Any) -> bool:
+    for node in nodes:
+        if node.get("required"):
+            return True
+        if "if" in node and (_has_required(node.get("then", [])) or _has_required(node.get("else", []))):
+            return True
+        if "choose_one" in node and any(_has_required(opt) for opt in node["choose_one"]):
+            return True
+    return False
+
+
+def _requirements_ok(state: GameState, catalog: Catalog, seat: int, card: CardInstance) -> bool:
+    """Dry run: with the card counted as played, could every mandatory effect on the chosen path happen?"""
+    trial = copy_state(state)
+    player = trial.players[seat]
+    played = player.hand.take(card.uid)
+    player.in_play.put_bottom(played)
+    player.played_this_turn.append(PlayedCard(played.uid, played.def_id, catalog.card(played.def_id).elements))
+    return _nodes_ok(EffectContext(trial, catalog, seat, played, []), catalog.card(card.def_id).effects)
+
+
+def _nodes_ok(ctx: EffectContext, nodes: Any) -> bool:
+    for node in nodes:
+        if "if" in node:
+            try:
+                ok = _nodes_ok(ctx, node.get("then", []) if evaluate_condition(ctx, node["if"]) else node.get("else", []))
+            except NeedChoice:  # the condition needs a choice (e.g. invoke): fine if either branch is possible
+                ok = _nodes_ok(ctx, node.get("then", [])) or _nodes_ok(ctx, node.get("else", []))
+            if not ok:
+                return False
+        elif "choose_one" in node:
+            if not any(_nodes_ok(ctx, option) for option in node["choose_one"]):
+                return False
+        elif node.get("required"):
+            spec = get_effect(node["do"])
+            if spec.can_apply is not None and not spec.can_apply(ctx.state, ctx.seat, node):
+                return False
+    return True
 
 
 def legal_plays(state: GameState, catalog: Catalog, seat: int) -> list[str]:
@@ -284,7 +330,7 @@ def apply_action(state: GameState, catalog: Catalog, action: Action) -> tuple[Ga
             label = unit.def_id if unit else ""
             attack(new_state, catalog, action.seat, action.attacker_uid, action.target_uid, events)
         elif isinstance(action, Buy):
-            buy(new_state, catalog, action.seat, action.market, action.slot, events)
+            buy(new_state, catalog, action.seat, action.market, action.slot, events, action.pay)
         else:
             refresh(new_state, action.seat, action.market, events)
         if reveals_information(events):

@@ -13,12 +13,14 @@ ConditionFn = Callable[[EffectContext, dict[str, Any]], bool]
 
 
 def _played_this_turn(ctx: EffectContext, p: dict[str, Any]) -> bool:
-    """Counts cards played earlier this turn (plus this one unless `other: true`)."""
+    """Counts cards played earlier this turn (plus this one unless `other: true`) with `element`,
+    or with any of `elements`."""
     source_uid = ctx.source.uid if ctx.source else None
+    wanted = set(p["elements"]) if "elements" in p else {p["element"]}
     count = sum(
         1
         for played in ctx.player.played_this_turn
-        if p["element"] in played.elements and not (p.get("other") and played.uid == source_uid)
+        if wanted & set(played.elements) and not (p.get("other") and played.uid == source_uid)
     )
     return count >= p["min"]
 
@@ -50,6 +52,8 @@ def _unique_played_elements_at_least(ctx: EffectContext, p: dict[str, Any]) -> b
 def _matches(elements: tuple[str, ...], filt: str, primary: tuple[str, ...]) -> bool:
     if filt == "non_primary":
         return any(e not in primary for e in elements)
+    if filt == "primary":
+        return any(e in primary for e in elements)
     return False
 
 
@@ -61,7 +65,7 @@ def _played_matching(ctx: EffectContext, p: dict[str, Any]) -> bool:
 
 # name -> (function, required params, optional params)
 _CONDITIONS: dict[str, tuple[ConditionFn, frozenset[str], frozenset[str]]] = {
-    "played_this_turn": (_played_this_turn, frozenset({"element", "min"}), frozenset({"other"})),
+    "played_this_turn": (_played_this_turn, frozenset({"min"}), frozenset({"element", "elements", "other"})),
     "in_discard": (_in_discard, frozenset({"element", "min"}), frozenset()),
     "value_at_least": (_value_at_least, frozenset({"value", "min"}), frozenset()),
     "ally_tiers_at_least": (_ally_tiers_at_least, frozenset({"min"}), frozenset()),
@@ -81,11 +85,15 @@ def validate_condition(cond: Any, where: str) -> list[str]:
         return [f"{where}.{name}: params must be a mapping"]
     errors = [f"{where}.{name}: missing {k!r}" for k in sorted(required - params.keys())]
     errors += [f"{where}.{name}: unknown param {k!r}" for k in sorted(params.keys() - required - optional)]
+    if name == "played_this_turn" and ("element" in params) == ("elements" in params):
+        errors.append(f"{where}.{name}: give exactly one of 'element' or 'elements'")
+    if "elements" in params and (not isinstance(params["elements"], list) or any(e not in ELEMENTS for e in params["elements"])):
+        errors.append(f"{where}.{name}: 'elements' must be a list of elements")
     if "element" in params and params["element"] not in ELEMENTS:
         errors.append(f"{where}.{name}: unknown element {params['element']!r}")
     if "min" in params and not isinstance(params["min"], int):
         errors.append(f"{where}.{name}: 'min' must be an integer")
-    if "filter" in params and params["filter"] not in ("non_primary",):
+    if "filter" in params and params["filter"] not in ("non_primary", "primary"):
         errors.append(f"{where}.{name}: unknown filter {params['filter']!r}")
     if "value" in params:
         from engine.values import validate_value

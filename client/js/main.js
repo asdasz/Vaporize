@@ -24,7 +24,7 @@ function syncDraft(view) {
   const p = view.pending;
   const key = p && p.prompt ? `${p.card?.uid}:${p.step}` : null;
   if (!key) store.draft = null;
-  else if (!store.draft || store.draft.key !== key) store.draft = { key, value: p.prompt.max, split: {} };
+  else if (!store.draft || store.draft.key !== key) store.draft = { key, value: p.prompt.max, split: {}, cards: [] };
 }
 
 // Hand order is cosmetic and kept per game + seat in the browser (sessionStorage, memory fallback).
@@ -184,7 +184,16 @@ const handlers = {
     draw();
   },
   pickRemove: (uid) => handlers.removal({ confirm: uid }), // every removal asks for confirmation
-  buy: (market, slot) => act({ type: "buy", seat: store.seat, market, slot }),
+  buy: (market, slot, pay = "inf") => act({ type: "buy", seat: store.seat, market, slot, pay }),
+  toggleCard: (uid) => {
+    if (!store.draft) return;
+    const cards = new Set(store.draft.cards || []);
+    if (cards.has(uid)) cards.delete(uid);
+    else cards.add(uid);
+    store.draft.cards = [...cards];
+    draw();
+  },
+  confirmCards: () => store.draft && handlers.respond([...(store.draft.cards || [])]),
   refresh: (market) => act({ type: "refresh", seat: store.seat, market }),
   selectAttacker: (uid) => {
     store.attacker = store.attacker === uid ? null : uid;

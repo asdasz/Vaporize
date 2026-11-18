@@ -5,14 +5,16 @@ from __future__ import annotations
 from engine.catalog import Catalog
 from engine.errors import IllegalAction
 from engine.events import Event
-from engine.rules import SHARED_PRICE_MODIFIERS
+from engine.cards import CardInstance
+from engine.rules import PRIVATE_MARKET_SIZE, SHARED_MARKET_SIZE, SHARED_PRICE_MODIFIERS
 from engine.state import GameState, MarketState
 
-MARKETS = ("shared", "private")
+MARKETS = ("shared", "private", "basic")  # basic = the basic supply pile (buy only, no refresh)
 REFRESH_COST = 1
 
 
 def get_market(state: GameState, seat: int, market: str) -> MarketState:
+    """The shared market or the player's private market (not the basic pile)."""
     if market == "shared":
         return state.shared_market
     if market == "private":
@@ -20,7 +22,14 @@ def get_market(state: GameState, seat: int, market: str) -> MarketState:
     raise IllegalAction("error.unknown_market")
 
 
+def basic_price(state: GameState, catalog: Catalog) -> int | None:
+    top = state.basic_supply.top()
+    return catalog.card(top.def_id).cost if top else None
+
+
 def price(state: GameState, catalog: Catalog, seat: int, market: str, slot: int) -> int | None:
+    if market == "basic":
+        return basic_price(state, catalog)
     m = get_market(state, seat, market)
     if not 0 <= slot < len(m.row) or m.row.slots[slot] is None:
         return None
@@ -43,27 +52,64 @@ def reveal(state: GameState, market: MarketState, name: str, slot: int, events: 
     events.append(Event("log.market_revealed", {"market": name, "card": card.def_id}))
 
 
-def check_buy(state: GameState, catalog: Catalog, seat: int, market: str, slot: int) -> int:
+def _card_at(state: GameState, seat: int, market: str, slot: int) -> CardInstance | None:
+    if market == "basic":
+        return state.basic_supply.top()
+    m = get_market(state, seat, market)
+    return m.row.slots[slot] if 0 <= slot < len(m.row) else None
+
+
+def check_buy(state: GameState, catalog: Catalog, seat: int, market: str, slot: int, pay: str = "inf") -> int:
+    """Returns the inf to pay (0 when paying with VP)."""
     cost = price(state, catalog, seat, market, slot)
     if cost is None:
         raise IllegalAction("error.empty_slot")
+    if pay == "vp":
+        card = _card_at(state, seat, market, slot)
+        alt = catalog.card(card.def_id).alt_cost if card else None
+        if not alt:
+            raise IllegalAction("error.no_alt_cost")
+        if state.players[seat].vp < alt["lose_vp"]:
+            raise IllegalAction("error.not_enough_vp", vp=alt["lose_vp"])
+        return 0
+    if pay != "inf":
+        raise IllegalAction("error.unknown_payment")
     if state.players[seat].inf < cost:
         raise IllegalAction("error.not_enough_inf", cost=cost)
     return cost
 
 
-def buy(state: GameState, catalog: Catalog, seat: int, market: str, slot: int, events: list[Event]) -> None:
-    """Pay the price; the card goes to your discard pile and a new card is revealed in its place."""
-    cost = check_buy(state, catalog, seat, market, slot)
+def _pay(state: GameState, catalog: Catalog, seat: int, card: CardInstance, cost: int, pay: str, market: str, events: list[Event]) -> None:
+    player = state.players[seat]
+    if pay == "vp":
+        lose = (catalog.card(card.def_id).alt_cost or {})["lose_vp"]
+        player.vp -= lose
+        events.append(Event("log.card_bought_vp", {"seat": seat, "card": card.def_id, "vp": lose, "market": market}))
+    else:
+        player.inf -= cost
+        events.append(Event("log.card_bought", {"seat": seat, "card": card.def_id, "price": cost, "market": market}))
+
+
+def buy(
+    state: GameState, catalog: Catalog, seat: int, market: str, slot: int, events: list[Event], pay: str = "inf"
+) -> None:
+    """Pay the price (or the card's alternative VP cost); the card goes to your discard pile and a new card
+    is revealed in its place."""
+    cost = check_buy(state, catalog, seat, market, slot, pay)
+    player = state.players[seat]
+    if market == "basic":  # always the top card of the basic pile, printed price, nothing revealed
+        card = state.basic_supply.draw()
+        card.owner = seat
+        _pay(state, catalog, seat, card, cost, pay, market, events)
+        player.discard.put_bottom(card)
+        return
     m = get_market(state, seat, market)
     card = m.row.slots[slot]
     assert card is not None
     m.row.slots[slot] = None
     card.owner = seat
-    player = state.players[seat]
-    player.inf -= cost
+    _pay(state, catalog, seat, card, cost, pay, market, events)
     player.discard.put_bottom(card)
-    events.append(Event("log.card_bought", {"seat": seat, "card": card.def_id, "price": cost, "market": market}))
     reveal(state, m, market, slot, events)
 
 
@@ -75,6 +121,8 @@ def refresh_cost(state: GameState, seat: int, market: str) -> int:
 
 
 def check_refresh(state: GameState, seat: int, market: str) -> int:
+    if market == "basic":
+        raise IllegalAction("error.cannot_refresh_basic")
     m = get_market(state, seat, market)
     if all(c is None for c in m.row.slots) and m.deck.is_empty() and m.removed.is_empty():
         raise IllegalAction("error.empty_market")
@@ -104,7 +152,20 @@ def refresh(state: GameState, seat: int, market: str, events: list[Event]) -> No
 
 def legal_market(state: GameState, catalog: Catalog, seat: int) -> dict[str, object]:
     out: dict[str, object] = {}
-    for name in MARKETS:
+    basic = basic_price(state, catalog)
+    out["basic_buy"] = basic is not None and basic <= state.players[seat].inf
+    alt: list[dict[str, object]] = []
+    for name, slots in (("shared", range(SHARED_MARKET_SIZE)), ("private", range(PRIVATE_MARKET_SIZE)), ("basic", range(1))):
+        for i in slots:
+            try:
+                check_buy(state, catalog, seat, name, i, "vp")
+            except IllegalAction:
+                continue
+            card = _card_at(state, seat, name, i)
+            assert card is not None
+            alt.append({"market": name, "slot": i, "vp": (catalog.card(card.def_id).alt_cost or {})["lose_vp"]})
+    out["alt_buy"] = alt
+    for name in ("shared", "private"):
         m = get_market(state, seat, name)
         out[f"{name}_buy"] = [
             i for i in range(len(m.row)) if (c := price(state, catalog, seat, name, i)) is not None and c <= state.players[seat].inf

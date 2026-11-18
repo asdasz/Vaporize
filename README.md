@@ -37,9 +37,10 @@ mypy
 - [x] Mage private market cards (031–045)
 - [x] Remove a card (from hand, played this turn or discard) on the 1, 1, 2, 2, … cost track
 - [x] Markets: buy, refresh (shared refresh free once per turn)
-- [ ] Shared market cards
+- [x] Basic supply pile (701–712, always buyable)
+- [ ] Shared market cards (in batches of 10: 713–730 done)
 - [x] Units: develop (tier up for 3/4/5 inf, shared Tier 4) and VP scoring by tier at end of turn
 - [x] Units: attacks (same tier or one higher)
-- [ ] Status effects from cards (stun, freeze, shield)
+- [x] Status effects from cards (shield, stun, freeze)
 - [x] Mage element swap passive (free, once per turn)
 - [ ] Online lobby with 6-character join codes over WebSockets

@@ -115,5 +115,125 @@
   "MAG-P045": {
     "name": "MAG 045 · Unit",
     "text": "Add +1 to your spells' invoke values."
+  },
+  "SHR-701": {
+    "name": "SHR 701 · Influence",
+    "text": "Gain 2 inf."
+  },
+  "SHR-702": {
+    "name": "SHR 702 · Influence",
+    "text": "Gain 2 inf."
+  },
+  "SHR-703": {
+    "name": "SHR 703 · Influence",
+    "text": "Gain 2 inf."
+  },
+  "SHR-704": {
+    "name": "SHR 704 · Influence",
+    "text": "Gain 2 inf."
+  },
+  "SHR-705": {
+    "name": "SHR 705 · Influence",
+    "text": "Gain 2 inf."
+  },
+  "SHR-706": {
+    "name": "SHR 706 · Influence",
+    "text": "Gain 2 inf."
+  },
+  "SHR-707": {
+    "name": "SHR 707 · Influence",
+    "text": "Gain 2 inf."
+  },
+  "SHR-708": {
+    "name": "SHR 708 · Influence",
+    "text": "Gain 2 inf."
+  },
+  "SHR-709": {
+    "name": "SHR 709 · Influence",
+    "text": "Gain 2 inf."
+  },
+  "SHR-710": {
+    "name": "SHR 710 · Influence",
+    "text": "Gain 2 inf."
+  },
+  "SHR-711": {
+    "name": "SHR 711 · Influence",
+    "text": "Gain 2 inf."
+  },
+  "SHR-712": {
+    "name": "SHR 712 · Influence",
+    "text": "Gain 2 inf."
+  },
+  "SHR-713": {
+    "name": "SHR 713 · Influence",
+    "text": "Gain 2 inf. If you played at least 4 cards with your primary elements this turn, gain 3 instead."
+  },
+  "SHR-714": {
+    "name": "SHR 714 · Influence",
+    "text": "Gain 2 inf and give any unit 1 HP."
+  },
+  "SHR-715": {
+    "name": "SHR 715 · Influence",
+    "text": "Gain 2 inf. If you played at least 2 other lightning cards this turn, you may put one of them on the bottom of your deck."
+  },
+  "SHR-716": {
+    "name": "SHR 716 · Influence",
+    "text": "Deal 1 damage to your unit to gain 3 inf."
+  },
+  "SHR-717": {
+    "name": "SHR 717 · Influence",
+    "text": "**Prepare**, then gain [**invoke**] inf (max. 4)."
+  },
+  "SHR-718": {
+    "name": "SHR 718 · Influence",
+    "text": "Gain 1 inf, +1 for each of your units on tiers 2 or higher (max. 4)."
+  },
+  "SHR-719": {
+    "name": "SHR 719 · Influence",
+    "text": "**Prepare**, then gain 1 inf for each prepare triggered this turn (max. 5)."
+  },
+  "SHR-720": {
+    "name": "SHR 720 · Influence",
+    "text": "Gain [**invoke**] inf (max. 4). You may discard 1 card from your hand to gain 2 more inf."
+  },
+  "SHR-721": {
+    "name": "SHR 721 · Influence",
+    "text": "Gain 2 inf and **shield** one of your units."
+  },
+  "SHR-722": {
+    "name": "SHR 722 · Influence",
+    "text": "Gain 1 inf and **prepare** once for each tier where you have a unit (max. 3)."
+  },
+  "SHR-723": {
+    "name": "SHR 723 · Influence",
+    "text": "Deal 3 damage to your unit and gain 5 inf. If there are at least 4 lightning cards in your discard pile, don't deal the damage."
+  },
+  "SHR-724": {
+    "name": "SHR 724 · Influence",
+    "text": "Gain 2 inf. You may **degrade** one of your units to gain the inf used for its development."
+  },
+  "SHR-725": {
+    "name": "SHR 725 · Influence",
+    "text": "Gain 2 inf. Then deal 2 damage to a chosen unit. If this kills it, gain 2 more inf."
+  },
+  "SHR-726": {
+    "name": "SHR 726 · Influence",
+    "text": "Gain 4 inf. You can buy this card by losing 3 VP instead of paying its normal cost."
+  },
+  "SHR-727": {
+    "name": "SHR 727 · Influence",
+    "text": "Gain 3 inf, +1 for each enemy unit killed this turn (max. 5 total)."
+  },
+  "SHR-728": {
+    "name": "SHR 728 · Influence",
+    "text": "Gain 3 inf. **Scout** 4 and discard any number of them."
+  },
+  "SHR-729": {
+    "name": "SHR 729 · Influence",
+    "text": "Gain 1 inf and **develop** a unit for free."
+  },
+  "SHR-730": {
+    "name": "SHR 730 · Influence",
+    "text": "Gain 3 inf and **prepare**. If you played at least 4 other fire or water cards this turn, gain 4 inf and **prepare** ×2 instead."
   }
 }

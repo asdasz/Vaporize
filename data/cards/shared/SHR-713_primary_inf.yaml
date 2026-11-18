@@ -1,0 +1,12 @@
+# Shared market card 713 (legacy card number: 71).
+id: SHR-713
+number: 713
+type: influence
+cost: 3
+elements: []
+class: shared
+source: shared
+effects:
+  - if: {played_matching: {filter: primary, min: 4}}   # cards with your primary elements played this turn
+    then: [{do: gain_inf, amount: 3}]
+    else: [{do: gain_inf, amount: 2}]

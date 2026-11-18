@@ -1,0 +1,11 @@
+# Basic supply card 710 (no legacy number).
+id: SHR-710
+number: 710
+type: influence
+cost: 3
+elements: []
+class: shared
+source: basic
+effects:
+  - do: gain_inf
+    amount: 2

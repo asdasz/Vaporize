@@ -1,0 +1,11 @@
+# Shared market card 718 (legacy card number: 76).
+id: SHR-718
+number: 718
+type: influence
+cost: 3
+elements: [water]
+class: shared
+source: shared
+effects:
+  - do: gain_inf
+    amount: {min: [{sum: [1, {count: {ally_units: {min_tier: 2}}}]}, 4]}

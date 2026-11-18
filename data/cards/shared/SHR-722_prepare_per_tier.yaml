@@ -1,0 +1,13 @@
+# Shared market card 722 (legacy card number: 80).
+id: SHR-722
+number: 722
+type: influence
+cost: 4
+elements: [wind]
+class: shared
+source: shared
+effects:
+  - do: gain_inf
+    amount: 1
+  - do: prepare
+    times: {min: [{count: {ally_tiers: {}}}, 3]}

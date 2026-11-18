@@ -1,0 +1,12 @@
+# Shared market card 717 (legacy card number: 75).
+id: SHR-717
+number: 717
+type: influence
+cost: 4
+elements: [wind]
+class: shared
+source: shared
+effects:
+  - do: prepare
+  - do: gain_inf
+    amount: {min: [{invoke: 0}, 4]}

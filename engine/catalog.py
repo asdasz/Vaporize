@@ -33,3 +33,7 @@ class Catalog:
 
     def shared_cards(self) -> list[CardDef]:
         return self._select("shared", "shared")
+
+    def basic_cards(self) -> list[CardDef]:
+        """The basic supply: a separate face-up pile that can always be bought from."""
+        return self._select("shared", "basic")

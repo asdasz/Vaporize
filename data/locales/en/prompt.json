@@ -6,5 +6,13 @@
   "scout_draw": "You look at the top {count} card(s) of your deck. Choose one to draw.",
   "choose_one": "Choose one.",
   "deal_damage_tier": "Choose a tier: every unit there takes {amount} damage.",
-  "play_from_discard": "Choose a spell from your discard pile to play."
+  "play_from_discard": "Choose a spell from your discard pile to play.",
+  "discard_from_hand": "You may discard a card from your hand.",
+  "move_played_to_deck": "You may put one of these cards on the {position} of your deck.",
+  "shield": "Choose a unit to shield.",
+  "stun": "Choose a unit to stun.",
+  "freeze": "Choose a unit to freeze.",
+  "degrade": "You may degrade a unit.",
+  "develop": "Choose a unit to develop.",
+  "scout_discard": "You look at the top {count} card(s). Choose any to discard; the rest stay on top in the same order."
 }

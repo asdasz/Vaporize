@@ -12,7 +12,7 @@ from typing import Any
 
 from engine.errors import IllegalAction
 
-PROMPT_KINDS = ("number", "choose_unit", "choose_card", "split_damage", "choose_option", "choose_tier")
+PROMPT_KINDS = ("number", "choose_unit", "choose_card", "choose_cards", "split_damage", "choose_option", "choose_tier")
 
 
 @dataclass(frozen=True)
@@ -30,7 +30,7 @@ class Prompt:
     cancellable: bool = True  # False once hidden information has been shown (e.g. scout)
 
     def option_ids(self) -> list[str]:
-        if self.kind == "choose_card":
+        if self.kind in ("choose_card", "choose_cards"):
             return [str(o["uid"]) for o in self.options]
         return [str(o) for o in self.options]
 
@@ -48,6 +48,12 @@ class Prompt:
             if str(answer) not in self.option_ids():
                 raise IllegalAction("error.invalid_choice")
             return str(answer)
+        if self.kind == "choose_cards":  # any number of the options (min..max), answer = list of uids
+            if not isinstance(answer, list) or len(set(map(str, answer))) != len(answer):
+                raise IllegalAction("error.invalid_choice")
+            if not set(map(str, answer)) <= set(self.option_ids()) or not self.min <= len(answer) <= self.max:
+                raise IllegalAction("error.invalid_choice")
+            return [str(a) for a in answer]
         if self.kind in ("choose_option", "choose_tier"):
             if isinstance(answer, bool) or not isinstance(answer, int) or answer not in self.options:
                 raise IllegalAction("error.invalid_choice")

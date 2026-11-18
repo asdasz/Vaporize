@@ -1,0 +1,15 @@
+# Shared market card 716 (legacy card number: 74).
+id: SHR-716
+number: 716
+type: influence
+cost: 3
+elements: [fire]
+class: shared
+source: shared
+effects:
+  - do: deal_damage          # mandatory: needs one of your units
+    required: true
+    amount: 1
+    target: {side: ally}
+  - do: gain_inf
+    amount: 3

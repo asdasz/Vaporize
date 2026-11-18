@@ -36,5 +36,11 @@
   "next_spell_twice": "{player}'s next spell will resolve twice.",
   "attack_boosted": "{player}'s units gain +{amount} attack this turn.",
   "played_from_discard": "{player} plays {card_name} from the discard pile.",
-  "element_swapped": "{player} treats {card_name} as {to_name} instead of {from_name}."
+  "element_swapped": "{player} treats {card_name} as {to_name} instead of {from_name}.",
+  "discarded_from_hand": "{player} discards {card_name} from their hand.",
+  "moved_to_deck": "{player} puts {card_name} on the {position} of their deck.",
+  "status_added": "{card_name} ({owner_name}) gets {count} {status_name} token(s).",
+  "unit_degraded": "{card_name} ({owner_name}) is degraded to Tier {tier}.",
+  "scout_discarded": "{player} discards {count} scouted card(s).",
+  "card_bought_vp": "{player} buys {card_name} by losing {vp} VP."
 }

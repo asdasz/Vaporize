@@ -27,7 +27,8 @@ CARD_KEYS = {
 }
 UNIT_MODIFIERS = {
     "spell_invoke_bonus", "extra_attacks", "develop_discount", "thorns", "stun_on_attack",
-    "max_damage_per_hit", "prepare_before_invoke",
+    "max_damage_per_hit", "prepare_before_invoke", "taunt", "cleave", "freeze_on_attack", "ally_thorns",
+    "ally_damage_reduction", "cheat_death", "shuffle_on_death",
 }
 CLASS_MODIFIERS = {"spell_invoke_bonus", "element_swap_once_per_turn"}
 

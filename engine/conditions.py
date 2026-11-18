@@ -73,6 +73,17 @@ def _card_kills_at_least(ctx: EffectContext, p: dict[str, Any]) -> bool:
     return ctx.kills >= p["min"]
 
 
+def _source_on_tier(ctx: EffectContext, p: dict[str, Any]) -> bool:
+    """The unit with this ability stands on `tier`."""
+    if ctx.source is None:
+        return False
+    return any(u.uid == ctx.source.uid and t == p["tier"] for t, u in ctx.state.units_of(ctx.seat))
+
+
+def _removed_this_turn(ctx: EffectContext, p: dict[str, Any]) -> bool:
+    return ctx.player.removals_this_turn >= p["min"]
+
+
 # name -> (function, required params, optional params)
 _CONDITIONS: dict[str, tuple[ConditionFn, frozenset[str], frozenset[str]]] = {
     "played_this_turn": (_played_this_turn, frozenset({"min"}), frozenset({"element", "elements", "other"})),
@@ -83,6 +94,8 @@ _CONDITIONS: dict[str, tuple[ConditionFn, frozenset[str], frozenset[str]]] = {
     "played_matching": (_played_matching, frozenset({"filter", "min"}), frozenset()),
     "discard_count_at_least": (_discard_count_at_least, frozenset({"min"}), frozenset()),
     "card_kills_at_least": (_card_kills_at_least, frozenset({"min"}), frozenset()),
+    "source_on_tier": (_source_on_tier, frozenset({"tier"}), frozenset()),
+    "removed_this_turn": (_removed_this_turn, frozenset({"min"}), frozenset()),
 }
 
 

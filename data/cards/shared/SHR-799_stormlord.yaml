@@ -1,0 +1,25 @@
+# Shared market card 799 (legacy card number: 157).
+id: SHR-799
+number: 799
+type: unit
+cost: 10
+elements: [wind, lightning]
+class: shared
+source: shared
+attack: 2
+health: 6
+effects:
+  - if: {in_discard: {element: wind, min: 3}}
+    then:
+      - if: {in_discard: {element: lightning, min: 3}}
+        then:
+          - label: tier3
+            choose_one:
+              - [{do: move_self_to_tier, tier: 3, required: true}]
+              - []
+        else: &paid
+          - label: tier3_paid
+            choose_one:
+              - [{do: pay_inf, amount: 3, required: true}, {do: move_self_to_tier, tier: 3, required: true}]
+              - []
+    else: *paid

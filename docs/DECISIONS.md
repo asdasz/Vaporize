@@ -97,6 +97,18 @@ Rule interpretations and technical choices that aren't spelled out in `docs/RULE
 89. **787** damages the other units on the tier it enters, not itself. It fires whenever it's developed (action or card effect).
 90. **788**'s stun is added after each attack, if the target survives.
 91. **789** prepares once per invoke, before you choose how much mana to spend.
+92. **791**: its owner gains the VP every time it takes damage and survives, even on another player's turn.
+93. **793** shuffles the most recent shadow card from your discard pile into your deck automatically (the owner may not be the active player, so there's no prompt).
+94. **795** is always shuffled back into your deck when it dies (automatic, no prompt).
+95. **797 / 786**: damage reduction applies first, then the per-hit cap. A hit reduced to 0 does nothing.
+96. **798**: an enemy attacking any of your units takes 1 damage per 798 you have. It stacks with 778's own thorns.
+97. **799**: it enters on tier 1 first (needs a free tier 1 spot), then may move to tier 3 if there's a free spot there.
+98. **801**'s taunt covers attacks and enemy card effects that choose a unit, not "all units on a tier" effects.
+99. **802** counts elements that appear on at least 2 *other* cards played this turn (each card counts an element once).
+100. **803**: its attack hits every enemy unit on the target's tier (not your own units). With 4+ water in your discard pile, they're frozen.
+101. **804** affects influence cards played *after* it this turn.
+102. **807** counts 807 itself (it's fire and wind and in "played this turn"). Each point is a separate 1-damage / 1-HP choice.
+103. **810**: VP can't go below 0.
 
 ## Technical
 

@@ -185,6 +185,7 @@ Rule notes the engine must respect:
 - `Attack(seat, attacker_uid, target_uid)`: an untapped own unit with attack > 0 and no stun token hits an **enemy** unit on the same tier or one tier higher. Damage = attack (`fixed_attack + temp_attack`); shields absorb the hit; the target doesn't strike back. The attacker becomes tapped and untaps at the end of its owner's turn.
 - If the target is destroyed: `vp_per_attack_kill` turn modifiers pay VP and the attacker's `on_kill` trigger runs.
 - A unit attacks once per turn, plus static `extra_attacks` modifiers and `temp_extra_attacks` granted this turn (`boost_units`). `attacks_made` counts; the unit is tapped when it runs out. Both reset at its owner's end of turn.
+- `taunt` units (set from the modifier when they enter): enemies can't target that player's other units, by attacks or by effects, while they could target the taunting unit instead (`error.must_target_taunt`).
 - Undoable. The view lists `legal.attacks = {attacker_uid: [target uids]}`. UI: click a green-outlined own unit to select it (blue), then click a red-tinted enemy to attack. Clicking anywhere else drops the selection.
 
 ## Markets
@@ -293,7 +294,9 @@ pre_effects: []          # units: resolved before invoke-based stats are set (e.
 
 modifiers:               # units: static, while on the board
   - spell_invoke_bonus: 1        # also: extra_attacks, develop_discount, thorns (damage to attackers),
-                                 # stun_on_attack, max_damage_per_hit, prepare_before_invoke
+                                 # stun_on_attack, freeze_on_attack, max_damage_per_hit, prepare_before_invoke,
+                                 # taunt, cleave {freeze_if}, ally_thorns, ally_damage_reduction,
+                                 # cheat_death {element, min}, shuffle_on_death
 
 alt_cost: {lose_vp: 3}   # optional: the card may also be bought by losing VP (Buy with pay: vp)
 hand_eot: {discard_for_vp: 1}   # optional: at your end of turn, may discard it from hand for VP
@@ -369,6 +372,10 @@ Initial primitive list (extend as cards require):
 | `destroy_each_opponent` | optional `max_cost`: kill one unit of each other player (shields don't help) |
 | `destroy_tier` | — : kill every unit on a chosen tier |
 | `sacrifice_ally` | optional `transfer_hp`, `vp: tier_minus_one` |
+| `heal_self` | `amount`: the unit with this ability gains HP |
+| `move_self_to_tier` | `tier` (needs a free spot; usable with `required`) |
+| `others_lose_vp` | `amount` (never below 0) |
+| `influence_bonus` | `amount`: each other influence card played later this turn gives extra inf |
 | `summon` | `attack`, `health`, `count` |
 | `grant_keyword` | `keyword`, optional `scope` (e.g. `split` with `scope: same_tier`, for the rest of this card) |
 
@@ -380,11 +387,11 @@ Control structures, handled by the resolver rather than registered as effects: `
 
 Turn modifiers (`player.turn_modifiers`) hold "this turn" effects such as "your next spell…". They're consumed by the next spell (`engine/playing.py`) or cleared at the end of the turn. Temporary attack bonuses live on the unit (`temp_attack`) and reset at its owner's end of turn.
 
-**Values** (`values.py`): an int, `{invoke: N}`, `{count: {played: {element, other}}}`, `{count: {unique_played_elements: {other}}}`, `{count: {ally_units: {min_tier}}}`, `{count: {ally_tiers: {}}}`, `{count: {prepares_this_turn: {}}}`, `{count: {enemy_kills_this_turn: {}}}`, `{count: {opponents: {}}}` (players − 1), `{count: {discard_cards: {}}}`, `{sum: […]}`, `{mul: […]}`, `{max: […]}`, `{div_ceil: [a, b]}` or `{min: [values…]}` ("max. 4" = `{min: [value, 4]}`). Unit `attack`/`health` may be values too (resolved once when the unit enters).
+**Values** (`values.py`): an int, `{invoke: N}`, `{count: {played: {element, other}}}`, `{count: {unique_played_elements: {other}}}`, `{count: {ally_units: {min_tier}}}`, `{count: {ally_tiers: {}}}`, `{count: {prepares_this_turn: {}}}`, `{count: {enemy_kills_this_turn: {}}}`, `{count: {opponents: {}}}` (players − 1), `{count: {discard_cards: {}}}`, `{count: {discard_element: {element}}}`, `{count: {vp: {}}}`, `{count: {elements_at_least_twice: {other}}}`, `{sum: […]}`, `{mul: […]}`, `{max: […]}`, `{div_ceil: [a, b]}`, `{div_floor: [a, b]}` or `{min: [values…]}` ("max. 4" = `{min: [value, 4]}`). Unit `attack`/`health` may be values too (resolved once when the unit enters).
 
 **Targets** (`targeting.py`): `{side: any | ally | enemy, tiers: [1, 2, 3, 4] | with_ally_units}`. Tokens count as tier 1. Allies and enemies alike unless `side` says otherwise.
 
-**Conditions** (`conditions.py`): `played_this_turn {element | elements, min, other}`, `in_discard {element, min, other}`, `value_at_least {value, min}` (e.g. "invoke for 4"), `ally_tiers_at_least {min}`, `unique_played_elements_at_least {min, other}`, `played_matching {filter: non_primary | primary, min}`, `discard_count_at_least {min}`, `card_kills_at_least {min}` (units killed by this card so far).
+**Conditions** (`conditions.py`): `played_this_turn {element | elements, min, other}`, `in_discard {element, min, other}`, `value_at_least {value, min}` (e.g. "invoke for 4"), `ally_tiers_at_least {min}`, `unique_played_elements_at_least {min, other}`, `played_matching {filter: non_primary | primary, min}`, `discard_count_at_least {min}`, `card_kills_at_least {min}` (units killed by this card so far), `source_on_tier {tier}`, `removed_this_turn {min}`.
 
 An `if` block may carry `once_per_turn: true`: it's checked every time, fires the first time its condition is true, and then stays off until the end of the turn (tracked in `player.turn_flags`, per source unit).
 

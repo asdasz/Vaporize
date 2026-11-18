@@ -266,3 +266,10 @@ def sacrifice_ally(ctx: EffectContext, p: dict[str, Any]) -> None:
     if p.get("vp") == "tier_minus_one" and tier > 1:
         ctx.player.vp += tier - 1
         ctx.emit("log.gain_vp", seat=ctx.seat, amount=tier - 1)
+
+
+@effect("heal_self", required=("amount",))
+def heal_self(ctx: EffectContext, p: dict[str, Any]) -> None:
+    """The unit with this ability gains HP (no cap)."""
+    if ctx.source is not None:
+        heal_unit(ctx, ctx.source.uid, resolve_value(ctx, p["amount"]))

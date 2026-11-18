@@ -1,0 +1,12 @@
+# Shared market card 803 (legacy card number: 160).
+id: SHR-803
+number: 803
+type: unit
+cost: 10
+elements: [water, fire]
+class: shared
+source: shared
+attack: 2
+health: 7
+modifiers:
+  - cleave: {freeze_if: {element: water, min: 4}}   # its attack hits every enemy unit on the target's tier

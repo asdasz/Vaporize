@@ -1,0 +1,13 @@
+# Shared market card 807 (legacy card number: 193).
+id: SHR-807
+number: 807
+type: spell
+cost: 5
+elements: [fire, wind]
+class: shared
+source: shared
+effects:
+  - repeat: {count: {discard_element: {element: fire}}}
+    effects: [{do: deal_damage, amount: 1, target: {side: enemy}}]
+  - repeat: {div_floor: [{count: {discard_element: {element: wind}}}, 2]}
+    effects: [{do: heal, amount: 1, target: {side: ally}}]

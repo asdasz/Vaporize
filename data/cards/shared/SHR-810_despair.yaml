@@ -1,0 +1,10 @@
+# Shared market card 810 (legacy card number: 196).
+id: SHR-810
+number: 810
+type: spell
+cost: 7
+elements: [shadow]
+class: shared
+source: shared
+effects:
+  - {do: others_lose_vp, amount: 2}

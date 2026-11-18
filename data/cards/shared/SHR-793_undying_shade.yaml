@@ -1,0 +1,12 @@
+# Shared market card 793 (legacy card number: 151).
+id: SHR-793
+number: 793
+type: unit
+cost: 9
+elements: [shadow]
+class: shared
+source: shared
+attack: 4
+health: 4
+modifiers:
+  - cheat_death: {element: shadow, min: 2}

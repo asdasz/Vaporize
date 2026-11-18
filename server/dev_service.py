@@ -39,7 +39,7 @@ from server.codes import generate_code
 
 LOG_LIMIT = 60
 # Bump when engine state classes change, so old save files are ignored instead of half-loading.
-SAVE_VERSION = 8
+SAVE_VERSION = 9
 
 logger = logging.getLogger(__name__)
 

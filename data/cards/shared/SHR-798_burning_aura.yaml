@@ -1,0 +1,12 @@
+# Shared market card 798 (legacy card number: 156).
+id: SHR-798
+number: 798
+type: unit
+cost: 6
+elements: [fire]
+class: shared
+source: shared
+attack: 2
+health: {max: [{invoke: 0}, 1]}   # invoke, min. 1
+modifiers:
+  - ally_thorns: 1

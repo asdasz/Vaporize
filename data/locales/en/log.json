@@ -56,5 +56,9 @@
   "paid_inf": "{player} pays {amount} inf.",
   "unit_bounced": "{card_name} ({owner_name}) returns to its owner's hand.",
   "random_discard": "{owner_name} discards {card_name} at random.",
-  "market_card_resolved": "{player} copies {card_name} from the shared market."
+  "market_card_resolved": "{player} copies {card_name} from the shared market.",
+  "cheated_death": "{card_name} ({owner_name}) survives with 1 HP.",
+  "shuffled_on_death": "{card_name} ({owner_name}) is shuffled back into its owner's deck.",
+  "unit_moved": "{card_name} ({owner_name}) moves to Tier {tier}.",
+  "lose_vp": "{player} loses {amount} VP."
 }

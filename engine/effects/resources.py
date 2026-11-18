@@ -58,3 +58,22 @@ def pay_inf(ctx: EffectContext, p: dict[str, Any]) -> None:
         raise IllegalAction("error.not_enough_inf", cost=amount)
     ctx.player.inf -= amount
     ctx.emit("log.paid_inf", seat=ctx.seat, amount=amount)
+
+
+@effect("others_lose_vp", required=("amount",))
+def others_lose_vp(ctx: EffectContext, p: dict[str, Any]) -> None:
+    """Every other player loses VP (never below 0)."""
+    amount = resolve_value(ctx, p["amount"])
+    for player in ctx.state.players:
+        if player.seat != ctx.seat:
+            lost = min(player.vp, amount)
+            player.vp -= lost
+            ctx.emit("log.lose_vp", seat=player.seat, amount=lost)
+
+
+@effect("influence_bonus", required=("amount",))
+def influence_bonus(ctx: EffectContext, p: dict[str, Any]) -> None:
+    """Each other influence card you play later this turn gives `amount` extra inf."""
+    ctx.player.turn_modifiers.append(
+        {"kind": "influence_bonus", "amount": resolve_value(ctx, p["amount"]), "source": ctx.source.uid if ctx.source else None}
+    )

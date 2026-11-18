@@ -51,6 +51,7 @@ def remove_card(state: GameState, catalog: Catalog, seat: int, uid: str, events:
     player.removed.put_bottom(card)
     player.inf -= cost
     player.removal_index += 1
+    player.removals_this_turn += 1
     events.append(Event("log.card_removed", {"seat": seat, "card": card.def_id, "cost": cost}))
     return card
 

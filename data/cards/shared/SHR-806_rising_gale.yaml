@@ -1,0 +1,12 @@
+# Shared market card 806 (legacy card number: 192).
+id: SHR-806
+number: 806
+type: unit
+cost: 7
+elements: [wind]
+class: shared
+source: shared
+attack: 2
+health: {invoke: 2}
+triggers:
+  on_develop: [{do: prepare}]

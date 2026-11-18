@@ -1,0 +1,10 @@
+# Shared market card 804 (legacy card number: 190).
+id: SHR-804
+number: 804
+type: influence
+cost: 4
+elements: [wind]
+class: shared
+source: shared
+effects:
+  - {do: influence_bonus, amount: 1}

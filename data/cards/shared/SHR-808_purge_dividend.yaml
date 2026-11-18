@@ -1,0 +1,12 @@
+# Shared market card 808 (legacy card number: 194).
+id: SHR-808
+number: 808
+type: influence
+cost: 5
+elements: [lightning]
+class: shared
+source: shared
+effects:
+  - if: {removed_this_turn: {min: 1}}
+    then: [{do: gain_inf, amount: 4}]
+    else: [{do: gain_inf, amount: 3}]

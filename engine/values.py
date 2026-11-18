@@ -31,6 +31,9 @@ COUNTERS = {
     "enemy_kills_this_turn": set(),
     "opponents": set(),
     "discard_cards": set(),
+    "discard_element": {"element"},
+    "vp": set(),
+    "elements_at_least_twice": {"other"},
 }
 
 
@@ -43,7 +46,7 @@ def validate_value(value: Any, where: str) -> list[str]:
         (kind, arg), = value.items()
         if kind == "invoke" and isinstance(arg, int) and not isinstance(arg, bool):
             return []
-        if kind in ("sum", "min", "max", "mul", "div_ceil") and isinstance(arg, list) and arg:
+        if kind in ("sum", "min", "max", "mul", "div_ceil", "div_floor") and isinstance(arg, list) and arg:
             return [e for i, v in enumerate(arg) for e in validate_value(v, f"{where}.{kind}[{i}]")]
         if kind == "count" and isinstance(arg, dict) and len(arg) == 1:
             (counter, params), = arg.items()
@@ -79,6 +82,17 @@ def _count(ctx: EffectContext, counter: str, params: dict[str, Any]) -> int:
         return len(ctx.state.players) - 1
     if counter == "discard_cards":  # discard pile incl. cards played this turn
         return len(ctx.player.discard) + len(ctx.player.in_play)
+    if counter == "discard_element":  # cards of an element in your discard pile (incl. played this turn)
+        from engine.elements import elements_of
+
+        return sum(1 for c in (*ctx.player.discard, *ctx.player.in_play) if params["element"] in elements_of(c, ctx.catalog))
+    if counter == "vp":
+        return ctx.player.vp
+    if counter == "elements_at_least_twice":  # elements that appear on 2+ (other) cards played this turn
+        from collections import Counter
+
+        counts = Counter(e for els in _played(ctx, other) for e in set(els))
+        return sum(1 for n in counts.values() if n >= 2)
     raise ValueError(f"unknown counter {counter!r}")
 
 
@@ -102,6 +116,9 @@ def resolve_value(ctx: EffectContext, value: Any) -> int:
     if kind == "div_ceil":  # [a, b] -> a / b rounded up
         a, b = (resolve_value(ctx, v) for v in arg)
         return -(-a // b)
+    if kind == "div_floor":  # [a, b] -> a / b rounded down ("1 for each 5 VP")
+        a, b = (resolve_value(ctx, v) for v in arg)
+        return a // b
     if kind == "count":
         (counter, params), = arg.items()
         return _count(ctx, counter, params)

@@ -33,5 +33,6 @@
   "no_alt_cost": "This card has no alternative cost.",
   "not_enough_vp": "You need {vp} VP for that.",
   "unknown_payment": "Unknown way to pay.",
-  "card_locked": "You revealed this card: it can't be played this turn."
+  "card_locked": "You revealed this card: it can't be played this turn.",
+  "must_target_taunt": "You must target the unit that protects the others."
 }

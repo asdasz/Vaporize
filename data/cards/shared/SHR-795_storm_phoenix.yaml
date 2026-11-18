@@ -1,0 +1,12 @@
+# Shared market card 795 (legacy card number: 153).
+id: SHR-795
+number: 795
+type: unit
+cost: 9
+elements: [lightning]
+class: shared
+source: shared
+attack: 6
+health: 4
+modifiers:
+  - shuffle_on_death: true

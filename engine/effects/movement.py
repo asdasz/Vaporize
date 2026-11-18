@@ -151,3 +151,21 @@ def find_unit_by(state: GameState, uid: str) -> CardInstance:
     unit = find_unit(state, uid)
     assert unit is not None
     return unit
+
+
+def _can_move_self(state: GameState, seat: int, p: dict[str, Any]) -> bool:
+    return _row(state, seat, p["tier"]).has_free()
+
+
+@effect("move_self_to_tier", required=("tier",), can_apply=_can_move_self)
+def move_self_to_tier(ctx: EffectContext, p: dict[str, Any]) -> None:
+    """Move the unit with this ability straight to `tier` (needs a free spot), e.g. 799."""
+    from engine.development import unit_tier
+
+    unit = ctx.source
+    found = unit_tier(ctx.state, ctx.seat, unit.uid) if unit else None
+    if found is None or not _row(ctx.state, ctx.seat, p["tier"]).has_free():
+        raise IllegalAction("error.tier_full", tier=p["tier"])
+    _row(ctx.state, ctx.seat, found[0]).take(unit.uid)
+    _row(ctx.state, ctx.seat, p["tier"]).place(unit)
+    ctx.emit("log.unit_moved", card=unit.def_id, owner=unit.owner, tier=p["tier"])

@@ -1,0 +1,12 @@
+# Shared market card 796 (legacy card number: 154).
+id: SHR-796
+number: 796
+type: unit
+cost: 10
+elements: []
+class: shared
+source: shared
+attack: 1
+health: {invoke: 3}
+modifiers:
+  - develop_discount: 1

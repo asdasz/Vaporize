@@ -1,0 +1,12 @@
+# Shared market card 794 (legacy card number: 152).
+id: SHR-794
+number: 794
+type: unit
+cost: 7
+elements: [lightning]
+class: shared
+source: shared
+attack: 3
+health: 4
+effects:
+  - {do: heal_self, amount: {div_floor: [{count: {vp: {}}}, 5]}}

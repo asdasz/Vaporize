@@ -1,0 +1,12 @@
+# Shared market card 797 (legacy card number: 155).
+id: SHR-797
+number: 797
+type: unit
+cost: 8
+elements: [lightning]
+class: shared
+source: shared
+attack: 1
+health: 3
+modifiers:
+  - ally_damage_reduction: 1

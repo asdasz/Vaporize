@@ -1,0 +1,12 @@
+# Shared market card 791 (legacy card number: 149).
+id: SHR-791
+number: 791
+type: unit
+cost: 8
+elements: [water]
+class: shared
+source: shared
+attack: 1
+health: {invoke: 3}
+triggers:
+  on_damage_taken: [{do: gain_vp, amount: 1}]   # only if it survives (its owner gains the VP)

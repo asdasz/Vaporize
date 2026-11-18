@@ -1,0 +1,12 @@
+# Shared market card 802 (legacy card number: 159).
+id: SHR-802
+number: 802
+type: unit
+cost: 7
+elements: [all]
+class: shared
+source: shared
+attack: 3
+health: 2
+effects:
+  - {do: heal_self, amount: {mul: [{count: {elements_at_least_twice: {other: true}}}, 2]}}

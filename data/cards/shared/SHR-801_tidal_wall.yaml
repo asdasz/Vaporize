@@ -1,0 +1,12 @@
+# Shared market card 801 (legacy card number: 158).
+id: SHR-801
+number: 801
+type: unit
+cost: 8
+elements: [water]
+class: shared
+source: shared
+attack: 0
+health: {max: [{mul: [{invoke: 0}, 2]}, 1]}   # invoke x2, min. 1
+modifiers:
+  - taunt: true

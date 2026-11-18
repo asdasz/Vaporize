@@ -10,6 +10,7 @@ from engine.context import EffectContext
 from engine.errors import IllegalAction
 from engine.events import Event
 from engine.resolver import resolve_effects
+from engine.targeting import apply_taunt
 from engine.state import GameState
 
 
@@ -40,6 +41,8 @@ def check_attack(state: GameState, seat: int, attacker_uid: str, target_uid: str
         raise IllegalAction("error.invalid_target")
     if target[1] not in (tier, tier + 1) and not unit.temp_any_tier:
         raise IllegalAction("error.out_of_range")
+    if target_uid not in attack_targets(state, seat, attacker_uid):
+        raise IllegalAction("error.must_target_taunt")
 
 
 def attack_targets(state: GameState, seat: int, attacker_uid: str) -> list[str]:
@@ -51,13 +54,13 @@ def attack_targets(state: GameState, seat: int, attacker_uid: str) -> list[str]:
     found = _tier_of(state, attacker_uid)
     assert found is not None
     tier, attacker = found[1], found[2]
-    return [
-        unit.uid
-        for player in state.players
-        if player.seat != seat
-        for t, unit in state.units_of(player.seat)
-        if t in (tier, tier + 1) or attacker.temp_any_tier
-    ]
+    targets: list[str] = []
+    for player in state.players:
+        if player.seat == seat:
+            continue
+        reachable = [(t, u) for t, u in state.units_of(player.seat) if t in (tier, tier + 1) or attacker.temp_any_tier]
+        targets += [u.uid for _, u in apply_taunt(reachable)]
+    return targets
 
 
 def legal_attacks(state: GameState, seat: int) -> dict[str, list[str]]:
@@ -82,11 +85,26 @@ def attack(state: GameState, catalog: Catalog, seat: int, attacker_uid: str, tar
     attacker.tapped = attacker.attacks_made >= attacks_allowed(attacker, catalog)  # tapped when out of attacks
     mods = catalog.card(attacker.def_id).modifiers
     target_mods = catalog.card(target.def_id).modifiers
-    damage_unit(ctx, target_uid, attacker.attack_value)
-    if not ctx.kills and any(m.get("stun_on_attack") for m in mods) and find_unit(state, target_uid):
-        target.status["stun"] += 1  # "targets attacked by this unit are stunned"
-        events.append(Event("log.status_added", {"card": target.def_id, "owner": target.owner, "status": "stun", "count": 1}))
+    hit = [target]
+    cleave = next((m["cleave"] for m in mods if "cleave" in m), None)
+    if cleave is not None:  # e.g. 803 "on attack: deal dmg to all units in a row"
+        tier = _tier_of(state, target_uid)[1]
+        hit = [u for p in state.players if p.seat != seat for t, u in state.units_of(p.seat) if t == tier]
+    for unit in hit:
+        damage_unit(ctx, unit.uid, attacker.attack_value)
+    statuses = [s_ for s_, key in (("stun", "stun_on_attack"), ("freeze", "freeze_on_attack")) if any(m.get(key) for m in mods)]
+    if isinstance(cleave, dict) and "freeze_if" in cleave:
+        cond = cleave["freeze_if"]
+        piles = (*state.players[seat].discard, *state.players[seat].in_play)
+        if sum(1 for c in piles if cond["element"] in catalog.card(c.def_id).elements) >= cond["min"]:
+            statuses.append("freeze")
+    for unit in hit:
+        if find_unit(state, unit.uid):
+            for status in statuses:  # "targets attacked by this unit are stunned / frozen"
+                unit.status[status] += 1
+                events.append(Event("log.status_added", {"card": unit.def_id, "owner": unit.owner, "status": status, "count": 1}))
     thorns = sum(int(m.get("thorns", 0)) for m in target_mods)
+    thorns += sum(int(m.get("ally_thorns", 0)) for _, u in state.units_of(target.owner) for m in catalog.card(u.def_id).modifiers)
     if thorns and find_unit(state, attacker_uid):  # "deal 1 dmg to all units that attack this unit"
         damage_unit(EffectContext(state, catalog, target.owner, target, events), attacker_uid, thorns)
     if ctx.kills:

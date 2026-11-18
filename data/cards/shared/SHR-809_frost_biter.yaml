@@ -1,0 +1,12 @@
+# Shared market card 809 (legacy card number: 195).
+id: SHR-809
+number: 809
+type: unit
+cost: 4
+elements: [water]
+class: shared
+source: shared
+attack: 1
+health: 4
+modifiers:
+  - freeze_on_attack: true

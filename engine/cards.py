@@ -55,6 +55,7 @@ class CardInstance:
     attacks_made: int = 0  # attacks this turn (reset at its owner's end of turn)
     temp_extra_attacks: int = 0  # extra attacks granted for this turn
     temp_any_tier: bool = False  # may attack any tier this turn
+    taunt: bool = False  # set from the `taunt` modifier when it enters: enemies must target it first
     temp_kill_vp: list[list[int]] = field(default_factory=list)  # [[seat, vp]]: VP to seat if its attack kills this turn
 
     @property
@@ -74,3 +75,4 @@ class CardInstance:
         self.temp_extra_attacks = 0
         self.temp_any_tier = False
         self.temp_kill_vp = []
+        self.taunt = False

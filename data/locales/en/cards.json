@@ -491,5 +491,97 @@
   "SHR-790": {
     "name": "SHR 790 · Unit",
     "text": ""
+  },
+  "SHR-791": {
+    "name": "SHR 791 · Unit",
+    "text": "Whenever this unit takes damage and survives, gain 1 VP."
+  },
+  "SHR-792": {
+    "name": "SHR 792 · Unit",
+    "text": "**End of turn**: gain 1 VP, or 2 if this unit is on tier 4."
+  },
+  "SHR-793": {
+    "name": "SHR 793 · Unit",
+    "text": "When it would die, if you have at least 2 shadow cards in your discard pile, it survives with 1 HP and you shuffle 1 of those cards into your deck."
+  },
+  "SHR-794": {
+    "name": "SHR 794 · Unit",
+    "text": "**When played**: gains 1 HP for each 5 VP you have."
+  },
+  "SHR-795": {
+    "name": "SHR 795 · Unit",
+    "text": "Whenever this unit dies, it's shuffled back into your deck instead of going to your discard pile."
+  },
+  "SHR-796": {
+    "name": "SHR 796 · Unit",
+    "text": "Your development costs are decreased by 1."
+  },
+  "SHR-797": {
+    "name": "SHR 797 · Unit",
+    "text": "While this unit is in play, all your units take 1 less damage from every source."
+  },
+  "SHR-798": {
+    "name": "SHR 798 · Unit",
+    "text": "While this unit is in play, enemy units take 1 damage when they attack your units."
+  },
+  "SHR-799": {
+    "name": "SHR 799 · Unit",
+    "text": "**When played**: you may pay 3 inf to put it on tier 3. You don't pay if your discard pile contains at least 3 wind and 3 lightning cards.",
+    "tier3": [
+      "Put it on tier 3 (free)",
+      "Leave it on tier 1"
+    ],
+    "tier3_paid": [
+      "Pay 3 inf: put it on tier 3",
+      "Leave it on tier 1"
+    ]
+  },
+  "SHR-801": {
+    "name": "SHR 801 · Unit",
+    "text": "Enemy units can't target any of your other units if they can target this one instead."
+  },
+  "SHR-802": {
+    "name": "SHR 802 · Unit",
+    "text": "**When played**: gains 2 HP for each element that appears at least twice on your other cards played this turn."
+  },
+  "SHR-803": {
+    "name": "SHR 803 · Unit",
+    "text": "**On attack**: deal damage to all enemy units on that tier. If you have at least 4 water cards in your discard pile, **freeze** them."
+  },
+  "SHR-804": {
+    "name": "SHR 804 · Influence",
+    "text": "Each other influence card you play this turn gives you 1 extra inf."
+  },
+  "SHR-805": {
+    "name": "SHR 805 · Spell",
+    "text": "Gain 2 VP and deal 2 damage to any unit."
+  },
+  "SHR-806": {
+    "name": "SHR 806 · Unit",
+    "text": "**When developed**: **Prepare**."
+  },
+  "SHR-807": {
+    "name": "SHR 807 · Spell",
+    "text": "Deal 1 damage to any enemy unit for each fire card in your discard pile. Give 1 HP to any ally unit for each 2 wind cards in your discard pile."
+  },
+  "SHR-808": {
+    "name": "SHR 808 · Influence",
+    "text": "Gain 3 inf, or 4 if you removed a card from your deck this turn."
+  },
+  "SHR-809": {
+    "name": "SHR 809 · Unit",
+    "text": "**Freeze** the units this unit attacks."
+  },
+  "SHR-810": {
+    "name": "SHR 810 · Spell",
+    "text": "All other players lose 2 VP."
+  },
+  "SHR-811": {
+    "name": "SHR 811 · Spell",
+    "text": "Choose one: gain 3 inf; or gain 1 VP.",
+    "options": [
+      "Gain 3 inf",
+      "Gain 1 VP"
+    ]
   }
 }

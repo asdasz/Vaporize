@@ -1,0 +1,15 @@
+# Shared market card 792 (legacy card number: 150).
+id: SHR-792
+number: 792
+type: unit
+cost: 9
+elements: [water]
+class: shared
+source: shared
+attack: 0
+health: {invoke: 2}
+triggers:
+  eot:
+    - if: {source_on_tier: {tier: 4}}
+      then: [{do: gain_vp, amount: 2}]
+      else: [{do: gain_vp, amount: 1}]

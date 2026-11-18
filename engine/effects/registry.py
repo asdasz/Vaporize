@@ -16,7 +16,7 @@ COMMON_KEYS = frozenset({"do", "required"})
 # Params that hold a value expression (int or {invoke: N}).
 VALUE_PARAMS = frozenset({"amount", "count", "times", "attack"})
 # Params that must be plain non-negative integers.
-INT_PARAMS = frozenset({"max_hp", "draw", "vp_per_kill", "element_amount", "cost_override", "heal", "damage", "extra_attacks", "up_to", "max_cost", "kill_vp"})
+INT_PARAMS = frozenset({"tier", "max_hp", "draw", "vp_per_kill", "element_amount", "cost_override", "heal", "damage", "extra_attacks", "up_to", "max_cost", "kill_vp"})
 BOOL_PARAMS = frozenset({"random_discard", "exceed_limit", "split", "up_to_limit", "refund", "discard_any", "different", "spare_allies", "per_opponent", "rest_choice", "all", "any_tier", "exclude_self", "transfer_hp"})
 
 

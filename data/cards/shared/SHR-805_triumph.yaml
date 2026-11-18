@@ -1,0 +1,11 @@
+# Shared market card 805 (legacy card number: 191).
+id: SHR-805
+number: 805
+type: spell
+cost: 7
+elements: []
+class: shared
+source: shared
+effects:
+  - {do: gain_vp, amount: 2}
+  - {do: deal_damage, amount: 2, target: {side: any}}

@@ -38,5 +38,14 @@ def find_targets(state: GameState, seat: int, spec: dict[str, Any]) -> list[tupl
             continue
         if side == "enemy" and player.seat == seat:
             continue
-        found += [(tier, unit) for tier, unit in state.units_of(player.seat) if tier in tiers]
+        units = [(tier, unit) for tier, unit in state.units_of(player.seat) if tier in tiers]
+        if player.seat != seat:
+            units = apply_taunt(units)
+        found += units
     return found
+
+
+def apply_taunt(units: list[tuple[int, CardInstance]]) -> list[tuple[int, CardInstance]]:
+    """Enemy units can't target another of a player's units if they could target one with `taunt` instead."""
+    taunting = [(t, u) for t, u in units if u.taunt]
+    return taunting or units

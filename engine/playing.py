@@ -50,6 +50,7 @@ def resolve_played_card(ctx: EffectContext, card: CardInstance) -> None:
         attack = resolve_value(ctx, cdef.attack if cdef.attack is not None else 0)
         health = resolve_value(ctx, cdef.health if cdef.health is not None else 1)
         card.fixed_attack, card.fixed_health, card.current_hp = attack, health, health
+        card.taunt = any(m.get("taunt") for m in cdef.modifiers)
         ctx.emit("log.unit_played", seat=seat, card=cdef.id, tier=1)
     else:
         player.in_play.put_bottom(card)
@@ -57,6 +58,10 @@ def resolve_played_card(ctx: EffectContext, card: CardInstance) -> None:
 
     for _ in range(2 if twice else 1):
         resolve_effects(ctx, cdef.effects)
+    bonus = sum(m["amount"] for m in player.turn_modifiers if m["kind"] == "influence_bonus" and m.get("source") != card.uid)
+    if bonus and cdef.type == "influence":  # e.g. 804 "each other influence card you play this turn gives 1 extra inf"
+        player.inf += bonus
+        ctx.emit("log.gain_inf", seat=seat, amount=bonus)
     if vp_per_kill and ctx.kills:
         player.vp += vp_per_kill * ctx.kills
         ctx.emit("log.gain_vp", seat=seat, amount=vp_per_kill * ctx.kills)

@@ -1,12 +1,18 @@
 import { api } from "./api.js";
 import { loadLocale } from "./i18n.js";
 import { renderSetup } from "./setup.js";
+import { rememberName, renderLobby, renderPlayerForm, renderStart } from "./lobby.js";
 import { renderBoard } from "./board/board.js";
 import { numberLabel } from "./board/prompt.js";
 
 const app = document.getElementById("app");
 
 const store = {
+  online: null, // {code, token} when playing in an online room (you only ever see your own seat)
+  room: null, // the room's lobby view while it hasn't started
+  roomVersion: null, // last room/game version seen (polling)
+  roomCopied: false, // "Copied!" on the share button
+  roomError: null, // error key shown in the lobby
   gameId: null,
   seat: 0, // seat we're viewing as (hot-seat)
   follow: true, // auto-switch to the current player
@@ -34,7 +40,7 @@ function syncDraft(view) {
 
 // Hand order is cosmetic and kept per game + seat in the browser (sessionStorage, memory fallback).
 const memoryOrders = new Map();
-const orderKey = () => `vaporize.handOrder.${store.gameId}.${store.seat}`;
+const orderKey = () => `vaporize.handOrder.${store.online ? store.online.code : store.gameId}.${store.seat}`;
 
 function loadHandOrder() {
   try {
@@ -65,19 +71,67 @@ function applyHandOrder(view) {
   saveHandOrder(hand.map((c) => c.uid));
 }
 
+// Your token for an online room lives in this tab only (sessionStorage), so two tabs can be two players.
+const memoryTokens = new Map();
+const tokenKey = (code) => `vaporize.room.${code}`;
+
+function loadToken(code) {
+  try {
+    return sessionStorage.getItem(tokenKey(code)) || memoryTokens.get(code) || null;
+  } catch {
+    return memoryTokens.get(code) || null;
+  }
+}
+
+function saveToken(code, token) {
+  memoryTokens.set(code, token);
+  try {
+    if (token) sessionStorage.setItem(tokenKey(code), token);
+    else sessionStorage.removeItem(tokenKey(code));
+  } catch {
+    /* storage unavailable */
+  }
+}
+
 function setUrl() {
   const params = new URLSearchParams();
+  if (store.online) params.set("room", store.online.code);
   if (store.gameId) params.set("game", store.gameId);
-  if (!store.follow) params.set("seat", String(store.seat));
+  if (store.gameId && !store.follow) params.set("seat", String(store.seat));
   history.replaceState(null, "", params.toString() ? `?${params}` : location.pathname);
 }
 
-async function refresh() {
+async function loadView() {
+  if (store.online) {
+    const { code, token } = store.online;
+    const room = await api.roomView(code, token);
+    store.roomVersion = room.version;
+    if (room.status === "lobby") {
+      store.room = room;
+      return null;
+    }
+    store.room = null;
+    const view = await api.roomGame(code, token);
+    store.seat = view.you;
+    store.follow = false;
+    return view;
+  }
   let view = await api.getView(store.gameId, store.seat);
   if (store.follow && view.phase !== "game_over" && view.current !== store.seat) {
     store.seat = view.current;
     view = await api.getView(store.gameId, store.seat);
   }
+  return view;
+}
+
+async function refresh() {
+  const view = await loadView();
+  if (!view) {
+    setUrl();
+    drawLobby();
+    return;
+  }
+  store.roomVersion = view.version;
   applyHandOrder(view);
   syncDraft(view);
   // Drop a chosen swap that's no longer possible (card played or gone, swap used, not our turn).
@@ -91,11 +145,56 @@ async function refresh() {
 }
 
 function draw() {
+  app.onsubmit = null;
   renderBoard(app, store.view, store, handlers);
+}
+
+function drawLobby() {
+  store.view = null;
+  renderLobby(app, store.room, {
+    copied: store.roomCopied,
+    errorKey: store.roomError,
+    onCopy: async (link) => {
+      try {
+        await navigator.clipboard.writeText(link);
+      } catch {
+        app.querySelector("[data-link]")?.select(); // no clipboard access: select it for Cmd+C
+      }
+      store.roomCopied = true;
+      drawLobby();
+    },
+    onStart: () => roomCall(() => api.roomStart(store.online.code, store.online.token)),
+    onClass: (classId) => roomCall(() => api.roomUpdate(store.online.code, store.online.token, { class_id: classId })),
+    onLeave: async () => {
+      const { code, token } = store.online;
+      await api.roomLeave(code, token).catch(() => {});
+      saveToken(code, null);
+      showStart();
+    },
+  });
+}
+
+// A lobby request, then reload the room (or show the error in the lobby).
+async function roomCall(fn) {
+  try {
+    await fn();
+    store.roomError = null;
+  } catch (err) {
+    if (!err.key) return handleFailure(err);
+    store.roomError = err.key;
+  }
+  await refresh().catch(handleFailure);
 }
 
 // Server errors: a 404 means the game is gone (e.g. server restarted without a save file).
 function handleFailure(err) {
+  if (store.online && (err.status === 404 || err.status === 403)) {
+    const { code } = store.online;
+    saveToken(code, null);
+    if (err.status === 403) showJoin(code, "error.not_in_room"); // token no longer valid: join again
+    else showStart(err.key === "error.room_not_found" ? "ui.lobby.room_gone" : "ui.setup.game_lost");
+    return;
+  }
   if (err.status === 404) {
     showSetup("ui.setup.game_lost");
     return;
@@ -135,11 +234,15 @@ let polling = false;
 const busy = () => actionsInFlight > 0 || app.dataset.dragging === "1";
 
 async function poll() {
-  if (polling || !store.gameId || !store.view || document.hidden || busy()) return;
+  const active = store.online ? store.view || store.room : store.gameId && store.view;
+  if (polling || !active || document.hidden || busy()) return;
   polling = true;
   try {
-    const { version } = await api.getVersion(store.gameId);
-    if (version !== store.view.version && !busy()) await refresh();
+    const { version } = store.online
+      ? await api.roomVersion(store.online.code, store.online.token)
+      : await api.getVersion(store.gameId);
+    const seen = store.online ? store.roomVersion : store.view.version;
+    if (version !== seen && !busy()) await refresh();
   } catch (err) {
     if (err.status === 404) handleFailure(err);
   } finally {
@@ -151,9 +254,11 @@ setInterval(poll, POLL_MS);
 document.addEventListener("visibilitychange", poll);
 
 async function sendAction(action) {
-  if (!store.gameId) return;
+  if (!store.gameId && !store.online) return;
   try {
-    const res = await api.act(store.gameId, action);
+    const res = store.online
+      ? await api.roomAct(store.online.code, store.online.token, action)
+      : await api.act(store.gameId, action);
     store.error = res.ok ? null : res.error;
     if (res.ok && action.type === "end_turn") {
       store.openMarket = "self";
@@ -166,7 +271,72 @@ async function sendAction(action) {
   }
 }
 
+function leaveScreens() {
+  store.online = null;
+  store.room = null;
+  store.gameId = null;
+  store.view = null;
+  store.roomError = null;
+  store.roomCopied = false;
+}
+
+async function classIds() {
+  try {
+    return (await api.listClasses()).classes;
+  } catch {
+    return ["mage"];
+  }
+}
+
+// Start screen: Host game / Join game / local hot-seat test game.
+function showStart(noticeKey = null) {
+  leaveScreens();
+  setUrl();
+  renderStart(app, { noticeKey, onHost: () => showHost(), onJoin: () => showJoin(), onLocal: () => showSetup() });
+}
+
+async function showHost() {
+  renderPlayerForm(app, {
+    mode: "host",
+    classes: await classIds(),
+    onBack: () => showStart(),
+    onSubmit: async ({ name, classId }) => {
+      const { code, token } = await api.hostRoom(name, classId);
+      rememberName(name);
+      saveToken(code, token);
+      await enterRoom(code, token);
+    },
+  });
+}
+
+async function showJoin(code = "", noticeKey = null) {
+  leaveScreens();
+  if (code) history.replaceState(null, "", `?room=${code}`);
+  renderPlayerForm(app, {
+    mode: "join",
+    code,
+    noticeKey,
+    classes: await classIds(),
+    onBack: () => showStart(),
+    onSubmit: async ({ code: joinCode, name, classId }) => {
+      const res = await api.joinRoom(joinCode, name, classId); // errors (room full, …) show in the form
+      rememberName(name);
+      saveToken(res.code, res.token);
+      await enterRoom(res.code, res.token);
+    },
+  });
+}
+
+async function enterRoom(code, token) {
+  leaveScreens();
+  store.online = { code, token };
+  store.follow = false;
+  await refresh().catch(handleFailure);
+}
+
 function showSetup(noticeKey = null) {
+  store.online = null;
+  store.room = null;
   store.gameId = null;
   store.view = null;
   setUrl();
@@ -330,14 +500,19 @@ const handlers = {
     }
     draw();
   },
-  newGame: () => showSetup(),
+  newGame: () => showStart(),
 };
 
 async function start() {
   await loadLocale("en");
   const params = new URLSearchParams(location.search);
+  const roomCode = (params.get("room") || "").toUpperCase();
+  if (roomCode) {
+    const token = loadToken(roomCode);
+    return token ? enterRoom(roomCode, token) : showJoin(roomCode); // a shared link: join that room
+  }
   const gameId = params.get("game");
-  if (!gameId) return showSetup();
+  if (!gameId) return showStart();
   store.gameId = gameId;
   if (params.has("seat")) {
     store.seat = Number(params.get("seat"));

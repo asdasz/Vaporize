@@ -26,3 +26,16 @@ class ActionRequest(BaseModel):
     swap: Optional[dict[str, str]] = None  # play_card: {"from": element, "to": element}
     hand_discards: Optional[list[str]] = None  # end_turn: hand cards to discard with their EOT ability
     answer: Any = None  # respond: number, uid, {uid: damage} or null (skip)
+
+
+class RoomPlayerRequest(BaseModel):
+    """Host or join a room, or change your own name / class in the lobby."""
+
+    name: Optional[str] = Field(default=None, max_length=40)
+    class_id: Optional[str] = None
+
+
+class RoomActionRequest(ActionRequest):
+    """A game action in an online room. The seat comes from the player's token, so it's optional here."""
+
+    seat: int = Field(default=0, ge=0, le=3)

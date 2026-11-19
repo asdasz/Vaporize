@@ -121,16 +121,16 @@ vaporize/
 │   ├── dev_service.py           # temporary hot-seat dev games (HTTP)
 │   ├── stats.py                 # market statistics recorder (SQLite locally, Turso in production)
 │   ├── codes.py                 # 6-char join codes
-│   ├── rooms.py                 # (planned) lobby rooms over WebSockets
+│   ├── rooms.py                 # online lobby rooms: host / join / start, one token per player
 │   └── protocol.py              # message schemas (client ⇄ server)
 ├── client/
 │   ├── index.html
 │   ├── css/
 │   └── js/
 │       ├── main.js
-│       ├── net.js               # WebSocket wrapper
+│       ├── api.js               # HTTP client (dev games + online rooms)
 │       ├── i18n.js              # t(key, params)
-│       ├── lobby.js             # create / join screen
+│       ├── lobby.js             # start screen (Host / Join / local test), host & join forms, room lobby
 │       └── board/               # one module per UI region (see UI design): table, seats, markets, panel, log, …
 └── tests/
     ├── effects/                 # one test file per effect module
@@ -464,12 +464,15 @@ Class-specific rules that don't fit the generic primitives go in `engine/classes
 
 ## Online play
 
-- **Lobby:** "Create game" makes a room and returns a 6-character code (uppercase letters and digits, without the ambiguous characters 0/O and 1/I). Other players use "Join game" with that code and a display name.
-- 2–4 players. The host chooses when to start. Classes are picked in the lobby, and each class can be picked once.
-- Rooms live in memory. A player who reconnects with the same session token gets their seat back.
-- One WebSocket per player. After each action the server broadcasts a fresh `PlayerView` to every player, plus the new `Event`s for animation and the log.
-- The dev start screen picks a class per seat (`GET /api/dev/classes`, `POST /api/dev/games {players, classes}`); classes may repeat there.
-- Until the WebSocket lobby exists, dev games (`server/dev_service.py`) carry a `version` that goes up after every successful action. Each window polls `GET /api/dev/games/{id}/version` once a second and reloads its view when it changed (not while its own action is in flight, a card is being dragged or the tab is hidden).
+- **Start screen:** *Host game*, *Join game*, and a small link to the local hot-seat test game (the old dev setup).
+- **Host:** name + class → `POST /api/rooms` creates a room with a 6-character code (uppercase letters and digits, without 0/O and 1/I) and returns a private player token. The lobby shows the share link `/?room=CODE` with a Copy button.
+- **Join:** opening the link (or typing the code) asks for a name and class → `POST /api/rooms/{code}/join`. Seats follow join order. A 5th player gets `error.room_full` ("All seats in this game are taken."); joining a started game gives `error.room_started`.
+- **Lobby:** everyone sees the players (2–4 seats, empty ones dashed) and can change their own class. The host's *Start game* button is enabled from 2 players; the host may also wait for a 3rd and 4th. Non-hosts can leave; the host leaving closes the room.
+- **Playing:** `GET /api/rooms/{code}/game` and `POST /api/rooms/{code}/actions` with the token in the `X-Player-Token` header. The server takes the seat from the token, so you only ever see your own hand and act for your own seat. Online games are hidden from the dev endpoints (`/api/dev/games/...`). The client keeps the token in `sessionStorage` (per tab: two tabs can be two players; reloading keeps your seat).
+- **Updates:** for now every client polls `GET /api/rooms/{code}/version` once a second (lobby and game) and reloads when it changed, like the dev games. WebSockets can replace polling later without changing the engine.
+- Classes may repeat in a room for now (only two classes exist). Once there are 4+ classes, enforce one of each.
+- Rooms are saved with the dev games (`.devgames.pkl`), so a local server restart keeps them; a redeploy on Northflank doesn't.
+- The dev hot-seat mode stays: `GET /api/dev/classes`, `POST /api/dev/games {players, classes}`, any seat via "Viewing as". Dev games carry a `version` that each window polls (`GET /api/dev/games/{id}/version`), not while its own action is in flight, a card is being dragged or the tab is hidden.
 
 ## Market statistics
 

@@ -19,9 +19,10 @@ export function topbar(view, store) {
         <span class="dot" style="background:${seatColor(view.current)}"></span> ${esc(playerName(view, view.current))}</span>
       <span class="players">${players}</span>
       <span class="controls">
+        ${store.online ? `<span class="label">${t("ui.topbar.online")}</span>` : `
         <label>${t("ui.topbar.viewing_as")} <select data-change="seat">${seatOptions}</select></label>
-        <label><input type="checkbox" data-change="follow" ${store.follow ? "checked" : ""}> ${t("ui.topbar.follow_turn")}</label>
-        <button data-action="new-game">${t("ui.topbar.new_game")}</button>
+        <label><input type="checkbox" data-change="follow" ${store.follow ? "checked" : ""}> ${t("ui.topbar.follow_turn")}</label>`}
+        <button data-action="new-game">${t(store.online ? "ui.topbar.menu" : "ui.topbar.new_game")}</button>
       </span>
     </div>`;
 }

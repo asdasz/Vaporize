@@ -293,3 +293,31 @@ button.stored-badge:hover { background: var(--gold); color: #fff; }
 .label.tax.has { color: var(--gold); font-weight: 600; }
 .prompt.bank { border-color: var(--gold); background: var(--gold-bg); }
 .class-name { cursor: help; text-decoration: underline dotted; text-underline-offset: 2px; }
+
+/* Start screen, host / join forms, room lobby */
+.lobby button.big { padding: 12px 22px; font-size: 16px; }
+.lobby button.primary, .lobby-form button.primary { border: 2px solid var(--accent); background: var(--accent); color: #fff; }
+.lobby button.primary:disabled { opacity: 0.45; cursor: default; }
+.lobby button.link { border: none; background: none; color: var(--text-2); text-decoration: underline; padding: 4px; font-size: 13px; }
+.lobby-notice { margin: 10px 0; }
+.lobby-form { display: flex; flex-direction: column; gap: 12px; text-align: left; }
+.lobby-form h1 { text-align: center; }
+.lobby-form label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--text-2); }
+.lobby-form input, .lobby-form select, .share-row input { font: inherit; padding: 8px 10px; border-radius: var(--radius); border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); }
+.code-input { text-transform: uppercase; letter-spacing: 3px; font-family: var(--mono); }
+.error-line { color: var(--danger); font-weight: 600; min-height: 20px; }
+.lobby-room { max-width: 520px; text-align: left; }
+.lobby-room h1 { text-align: center; font-size: 26px; }
+.lobby-room .code { font-family: var(--mono); letter-spacing: 3px; }
+.share { margin: 14px 0 18px; }
+.share-row { display: flex; gap: 6px; margin-top: 4px; }
+.share-row input { flex: 1; min-width: 0; font-size: 13px; }
+.seat-list { list-style: none; margin: 6px 0 16px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.seat-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.seat-row.empty { border-style: dashed; color: var(--text-3); background: transparent; }
+.seat-row.you { border: 2px solid var(--accent); }
+.seat-row .badge { font-size: 11px; padding: 0 6px; border-radius: 8px; background: var(--gold-bg); color: var(--gold); font-weight: 600; }
+.seat-row .badge.you { background: #e6f0fb; color: var(--accent); }
+.seat-class { margin-left: auto; }
+.lobby-footer { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-bottom: 10px; text-align: center; }
+.lobby-room > button.link { display: block; margin: 0 auto; }

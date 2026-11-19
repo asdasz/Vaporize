@@ -29,16 +29,15 @@ memory, so run **exactly one instance**. Market statistics go to Turso (see `doc
 The first build starts right away. When it's running, the service header shows the public address
 (`https://….code.run`). Open it on both computers.
 
-## Playing on two computers
+## Playing online
 
-The online lobby isn't built yet, so for now:
+1. Open the address and click **Host game**: enter your name, pick a class, **Create game**.
+2. Click **Copy link** and send it to the other players (2–4 players in total).
+3. They open the link, enter a name, pick a class and click **Join**. A 5th player is told all seats are taken.
+4. When at least 2 players are in, the host clicks **Start game** (or waits for a 3rd and 4th).
 
-1. Computer A opens the address, picks the classes and starts a game.
-2. Computer A copies the address bar (it contains `?game=XXXXXX`) and sends it to computer B.
-3. Each player turns off *Follow current player* and picks their own seat under *Viewing as*.
-   Each window refreshes itself within a second when the other player acts.
-
-Anyone with the link can play any seat: fine for testing, not for public games (the lobby will fix that).
+Everyone sees only their own hand; the screen updates by itself within a second after anyone acts.
+Reloading the page keeps your seat (in the same browser tab).
 
 ## Updates
 

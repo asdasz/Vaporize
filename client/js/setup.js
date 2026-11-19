@@ -46,6 +46,7 @@ export async function renderSetup(root, { onCreate, loadClasses, noticeKey = nul
       root.querySelector("#setup-error").textContent = t("ui.setup.error");
     }
   };
+  root.onsubmit = null;
   root.onchange = (event) => {
     const select = event.target.closest("[data-seat]");
     if (select) chosen[Number(select.dataset.seat)] = select.value;

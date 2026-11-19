@@ -16,7 +16,9 @@
     "turn": "Turn:",
     "viewing_as": "Viewing as",
     "follow_turn": "Follow current player",
-    "new_game": "New game"
+    "new_game": "New game",
+    "online": "Online game",
+    "menu": "Main menu"
   },
   "tiers": {
     "tier": "T{tier}",
@@ -225,5 +227,33 @@
     "take": "Take {resource_name} back:",
     "all": "all ({amount})",
     "done": "Done"
+  },
+  "lobby": {
+    "heading": "Play with friends online",
+    "host": "Host game",
+    "join": "Join game",
+    "local": "Local test game (hot-seat on this computer)",
+    "code": "Game code",
+    "name": "Your name",
+    "name_placeholder": "e.g. Jan",
+    "class": "Class",
+    "back": "Back",
+    "host_button": "Create game",
+    "join_button": "Join",
+    "room_title": "Game",
+    "share": "Send this link to the other players:",
+    "copy": "Copy link",
+    "copied": "Copied!",
+    "players": "Players ({count}/{max})",
+    "empty_seat": "Waiting for a player…",
+    "host_badge": "Host",
+    "you": "You",
+    "start": "Start game ({count} players)",
+    "start_hint": "You can start now or wait for more players (up to 4).",
+    "need_players": "Waiting for at least one more player…",
+    "waiting_host": "Waiting for {name} to start the game…",
+    "leave": "Leave game",
+    "close": "Close game",
+    "room_gone": "That game no longer exists. Host a new one or join another."
   }
 }

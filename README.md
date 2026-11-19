@@ -16,7 +16,7 @@ uvicorn server.app:app --reload --reload-dir engine --reload-dir server --reload
 
 `--reload-dir` limits auto-restarts to Python code and game data (not tests or the client, which is served as static files). Dev games are saved to `.devgames.pkl`, so they survive restarts.
 
-Open http://127.0.0.1:8000, pick 2, 3 or 4 players and play hot-seat. "Follow current player" switches the view to whoever's turn it is, and "Viewing as" lets you look at the board from any seat.
+Open http://127.0.0.1:8000 and click **Host game** (send the link to the others, or open it in a second tab), or use **Local test game** to pick 2, 3 or 4 players and play hot-seat. "Follow current player" switches the view to whoever's turn it is, and "Viewing as" lets you look at the board from any seat.
 
 ## Market statistics
 
@@ -65,4 +65,5 @@ mypy
 - [x] Mage element swap passive (free, once per turn)
 - [x] Monarch class (cards 101–112, 131–145)
 - [x] Market statistics database (SQLite locally, Turso on the server)
-- [ ] Online lobby with 6-character join codes over WebSockets
+- [x] Online lobby: host / join with a link or 6-character code, 2–4 players, host starts
+- [ ] WebSockets instead of polling

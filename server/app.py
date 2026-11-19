@@ -9,13 +9,14 @@ from pathlib import Path
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, Header, HTTPException, Request, Response
 from fastapi.staticfiles import StaticFiles
 
 from engine.loader import load_catalog
 from server.dev_service import DevGames, GameNotFound
 from server.stats import MarketRecorder, Writer, store_from_env
-from server.protocol import ActionRequest, CreateGameRequest
+from server.protocol import ActionRequest, CreateGameRequest, RoomActionRequest, RoomPlayerRequest
+from server.rooms import RoomError, Rooms
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -23,6 +24,7 @@ catalog = load_catalog(ROOT / "data")
 _store = store_from_env(ROOT)  # Turso if TURSO_DATABASE_URL + TURSO_AUTH_TOKEN are set, else .stats.db (SQLite)
 recorder = MarketRecorder(catalog, Writer(_store) if _store else None)
 games = DevGames(catalog, save_path=ROOT / ".devgames.pkl", recorder=recorder)  # survives --reload restarts
+rooms = Rooms(games)
 app = FastAPI(title="Vaporize")
 
 
@@ -79,6 +81,65 @@ def post_action(game_id: str, req: ActionRequest) -> dict[str, Any]:
         return games.act(game_id, req.model_dump())
     except GameNotFound as exc:
         raise HTTPException(status_code=404, detail="game_not_found") from exc
+
+
+# --- online rooms: the player's token travels in the X-Player-Token header -----------------------
+
+
+def _room_call(fn: Callable[..., Any], *args: Any) -> Any:
+    try:
+        return fn(*args)
+    except RoomError as exc:
+        raise HTTPException(status_code=exc.status, detail=exc.key) from exc
+
+
+Token = Header(default=None, alias="X-Player-Token")
+
+
+@app.post("/api/rooms", response_model=None)
+def host_room(req: RoomPlayerRequest) -> dict[str, Any]:
+    return _room_call(rooms.create, req.name, req.class_id)
+
+
+@app.post("/api/rooms/{code}/join", response_model=None)
+def join_room(code: str, req: RoomPlayerRequest) -> dict[str, Any]:
+    return _room_call(rooms.join, code, req.name, req.class_id)
+
+
+@app.get("/api/rooms/{code}", response_model=None)
+def room_view(code: str, token: str | None = Token) -> dict[str, Any]:
+    return _room_call(rooms.view, code, token)
+
+
+@app.post("/api/rooms/{code}/player", response_model=None)
+def room_update(code: str, req: RoomPlayerRequest, token: str | None = Token) -> dict[str, Any]:
+    return _room_call(rooms.update, code, token, req.name, req.class_id)
+
+
+@app.post("/api/rooms/{code}/leave", response_model=None)
+def room_leave(code: str, token: str | None = Token) -> dict[str, Any]:
+    _room_call(rooms.leave, code, token)
+    return {"ok": True}
+
+
+@app.post("/api/rooms/{code}/start", response_model=None)
+def room_start(code: str, token: str | None = Token) -> dict[str, Any]:
+    return _room_call(rooms.start, code, token)
+
+
+@app.get("/api/rooms/{code}/version", response_model=None)
+def room_version(code: str, token: str | None = Token) -> dict[str, Any]:
+    return _room_call(rooms.version, code, token)
+
+
+@app.get("/api/rooms/{code}/game", response_model=None)
+def room_game(code: str, token: str | None = Token) -> dict[str, Any]:
+    return _room_call(rooms.game_view, code, token)
+
+
+@app.post("/api/rooms/{code}/actions", response_model=None)
+def room_action(code: str, req: RoomActionRequest, token: str | None = Token) -> dict[str, Any]:
+    return _room_call(rooms.act, code, token, req.model_dump())
 
 
 app.mount("/locales", StaticFiles(directory=ROOT / "data" / "locales"), name="locales")

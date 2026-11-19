@@ -26,6 +26,7 @@ export function sharedMarket(view) {
       marketCard(entry, {
         affordable: myTurn && entry ? entry.price <= me.inf : null,
         showModifier: true,
+        slot,
         buy: buyable.has(slot) ? { market: "shared", slot } : null,
         altBuy: altFor(legal, "shared", slot),
       }),
@@ -78,6 +79,7 @@ export function privateMarkets(view, store) {
           marketCard(entry, {
             affordable: myTurn && entry ? entry.price <= p.inf : null,
             ownerSeat: p.seat,
+            slot,
             buy: mine && (view.legal.market?.private_buy || []).includes(slot) ? { market: "private", slot } : null,
             altBuy: mine ? altFor(view.legal.market || {}, "private", slot) : null,
           }),

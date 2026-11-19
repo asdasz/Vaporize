@@ -44,6 +44,8 @@ function unitHtml(card, info) {
 }
 
 const place = (html, attrs) => `<div class="place" ${attrs}>${html}</div>`;
+// What the animations compare between renders (animate.js): which unit, its HP, tier and owner.
+const unitAttrs = (u, tier) => (u ? ` data-uid="${u.uid}" data-hp="${u.hp}" data-tier="${tier}" data-owner="${u.owner}"` : "");
 
 function tierLabel(tier, rules) {
   const r = rules[String(tier)] || {};
@@ -60,13 +62,14 @@ export function tableHtml(view, store) {
   for (const p of view.players) {
     const angle = ANGLES[n][relativeSeat(view, p.seat)];
     for (const tier of [1, 2, 3]) {
-      const cells = (p.tiers[String(tier)] || []).map((u) => (u ? unitHtml(u, info) : emptySlot()));
-      if (tier === 1) p.tokens.forEach((u) => cells.push(unitHtml(u, info)));
-      cells.forEach((html, i) => items.push(place(html, `data-ring="${tier}" data-angle="${angle}" data-i="${i}" data-n="${cells.length}"`)));
+      const units = [...(p.tiers[String(tier)] || []), ...(tier === 1 ? p.tokens : [])];
+      units.forEach((u, i) =>
+        items.push(place(u ? unitHtml(u, info) : emptySlot(), `data-ring="${tier}" data-angle="${angle}" data-i="${i}" data-n="${units.length}"${unitAttrs(u, tier)}`)),
+      );
     }
   }
   view.tier4.forEach((u, i) =>
-    items.push(place(u ? unitHtml(u, info) : emptySlot(), `data-ring="4" data-i="${i}" data-n="${view.tier4.length}"`)),
+    items.push(place(u ? unitHtml(u, info) : emptySlot(), `data-ring="4" data-i="${i}" data-n="${view.tier4.length}"${unitAttrs(u, 4)}`)),
   );
   const rings = [1, 2, 3, 4].map((k) => `<div class="ring t${k}" data-ring-edge="${k}"></div>`).join("");
   return `

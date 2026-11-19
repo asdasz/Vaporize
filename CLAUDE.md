@@ -490,7 +490,15 @@ The approved layout is the **seated table** ("table v2" sketch). Keep it unless 
 **Seats.** Every player sits around the table, relative to the viewer: you at the bottom, the others clockwise (`client/js/board/seats.js`). 2 players: opponent on top. 3 players: both opponents on top (left and right). 4 players: left, top, right. Each seat has:
 
 - a **plate outside the table**: colour, name, class, VP, "EOT +N VP" preview, hand size as card backs + count, class resource, removed-card count (click to view). The current player's plate is highlighted with a "Turn" badge.
-- a **card row**: face-down **deck** on the left, the cards **played this turn** laid out left → right in play order (public, so everyone sees them), the face-up **discard pile** on the right (top card + count; click to see the whole pile). At end of turn all played cards fly to the discard pile together. Side seats (4 players) show the row vertically.
+- a **card row**: face-down **deck** on the left, the cards **played this turn** laid out left → right in play order as whole cards (name, type, rules text, stats; public, so everyone sees them), the face-up **discard pile** on the right (top card + count; click to see the whole pile). At end of turn all played cards fly to the discard pile together. Side seats (4 players) show the row vertically.
+
+**Animations** (`client/js/board/animate.js`, compares the board before and after every render; off with *prefers-reduced-motion*):
+
+- Another player's card or unit: shown big in the middle of the screen (spotlight, queued one after another), then it flies to its place in their played row or on the table.
+- Your own card: slides from the hand into your played row; your unit slides from the hand onto the table.
+- Units: pop in when they enter, slide to the new ring with a gold glow on tier up, shake with a red flash and a floating "−N" when damaged, "+N" when healed, fly to the owner's discard pile when destroyed.
+- Hand: drawn cards come out of your deck pile one after another; cards taken back (undo) slide back into the hand.
+- Markets: a bought card (shared, private or basic supply) is shown big in the middle of the screen (shorter for your own buys), then flies to the buyer's discard pile, which pulses; the new card appears in the **same slot** (the other cards don't move); on refresh the cards slide down, the bottom card flies to the removed pile and the new card comes out of the deck.
 
 **Table** (`client/js/board/table.js`): tiers are concentric ellipses, T1 outside, then T2, T3 and the shared T4 in the middle (gold, `players − 1` spots). Each player's units sit on the rings in their seat's direction (index 0 on the owner's left), empty spots are dashed outlines (spot counts come from the class), tokens sit on T1. Ring labels show tier, VP per unit and develop cost. The layout is computed after render from the table's real size (`fitLayout`): radii follow the card size and cards shrink (down to 0.6×) only when they wouldn't fit.
 

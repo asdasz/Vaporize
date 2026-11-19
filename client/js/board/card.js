@@ -85,7 +85,7 @@ export const emptySlot = (label = "") => `<div class="slot">${esc(label)}</div>`
 // Full market card (name, type, price, whole rules text) for the vertical market columns.
 // opts.buy: {market, slot} when the viewer can buy this card now (click to buy);
 // opts.altBuy: {market, slot, vp} when it can be bought by losing VP instead
-export function marketCard(entry, { affordable = null, showModifier = false, ownerSeat = null, buy = null, altBuy = null } = {}) {
+export function marketCard(entry, { affordable = null, showModifier = false, ownerSeat = null, buy = null, altBuy = null, slot = null } = {}) {
   if (!entry) return `<div class="mcard empty">${t("ui.market.empty")}</div>`;
   const { card, price, modifier } = entry;
   const priceClass = affordable === true ? "ok" : "";
@@ -99,7 +99,7 @@ export function marketCard(entry, { affordable = null, showModifier = false, own
       ? `<span class="mstats">${icon("attack")}${statText(card.attack)} ${icon("health")}${statText(card.health)}</span>`
       : "";
   return `
-    <div class="mcard ${dim} ${buy ? "buyable" : ""}" data-mcard="${card.uid}" ${border} title="${buy ? t("ui.market.buy_hint", { price }) : ""}"
+    <div class="mcard ${dim} ${buy ? "buyable" : ""}" data-mcard="${card.uid}" ${slot !== null ? `data-slot="${slot}"` : ""} ${border} title="${buy ? t("ui.market.buy_hint", { price }) : ""}"
       ${buy ? `data-action="buy" data-market="${buy.market}" data-slot="${buy.slot}"` : ""}>
       <div class="mhead">${elementIcons(card.elements)}<span class="mname">${esc(cardName(card.id))}</span>
         <span class="price ${priceClass}">${card.cost}${mod}</span></div>
@@ -109,15 +109,21 @@ export function marketCard(entry, { affordable = null, showModifier = false, own
     </div>`;
 }
 
-// A card played this turn, laid out left to right next to its owner's deck.
-// size "sm": opponents (icons + number, text on hover); "md": the viewer's own row (name, type, short text).
+// A card played this turn, laid out left to right next to its owner's deck: the whole card (name, type,
+// rules text, stats). "md": your own row; "sm": the other players' rows (a little smaller). Hover for full text.
 export function playedCard(card, size = "md") {
-  const num = card.number ? String(card.number).padStart(3, "0") : "";
-  const body =
-    size === "sm"
-      ? `<b>${num}</b>`
-      : `<span class="pname">${esc(cardName(card.id))}</span><span class="ptext">${rulesText(card.id)}</span>`;
-  return `<div class="pcard ${size}" data-played="${card.uid}" title="${fullTooltip(card)}">${elementIcons(card.elements)}${body}</div>`;
+  const stats =
+    card.type === "unit"
+      ? `<span class="pstats"><span>${icon("attack")}${statText(card.attack)}</span><span>${icon("health")}${statText(card.health)}</span></span>`
+      : "";
+  return `
+    <div class="pcard ${size}" data-played="${card.uid}" title="${fullTooltip(card)}">
+      <span class="phead">${elementIcons(card.elements)}<span class="pcost">${card.cost}</span></span>
+      <span class="pname">${esc(cardName(card.id))}</span>
+      <span class="ptype">${t(`ui.card.types.${card.type}`)}</span>
+      <span class="ptext">${rulesText(card.id)}</span>
+      ${stats}
+    </div>`;
 }
 
 // opts.choose: clickable in a prompt; opts.still: display only (no drag, no click), e.g. in the removal overlay;

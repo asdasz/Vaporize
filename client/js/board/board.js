@@ -39,7 +39,7 @@ export function renderBoard(root, view, store, handlers) {
     ${pileOverlay(view, store)}`;
   layoutTable(root);
   window.onresize = () => layoutTable(root);
-  animateBoard(root, before);
+  animateBoard(root, before, view);
 
   root.onclick = (event) => {
     const el = event.target.closest("[data-action]");

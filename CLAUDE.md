@@ -56,9 +56,13 @@ vaporize/
 │   │   ├── mage/
 │   │   │   ├── starter/         # MAG-S001 … MAG-S012
 │   │   │   └── private/         # MAG-P031 … MAG-P045 (private market)
+│   │   ├── monarch/
+│   │   │   ├── starter/         # MON-S101 … MON-S112
+│   │   │   └── private/         # MON-P131 … MON-P145
 │   │   └── robot/ …
 │   ├── classes/
-│   │   └── mage.yaml            # character board: tiers, resource, passives, prepare, invoke
+│   │   ├── mage.yaml            # character board: tiers, resource, passives, prepare, invoke
+│   │   └── monarch.yaml
 │   └── locales/
 │       └── en/
 │           ├── ui.json          # UI strings
@@ -84,6 +88,7 @@ vaporize/
 │   ├── attacks.py               # unit attacks (range, tap, kill rewards)
 │   ├── market.py                # buy / refresh, price modifiers, market reveal + reshuffle
 │   ├── removal.py               # removing cards from the game (cost track)
+│   ├── bank.py                  # keeping class resource on a unit (143)
 │   ├── development.py           # develop (tier up) rules, legal develops, end-of-turn VP preview
 │   ├── errors.py                # IllegalAction (translation key + params)
 │   ├── invoke.py                # class invoke modes + spell bonus
@@ -103,6 +108,7 @@ vaporize/
 │   │   ├── status.py            # shield, stun, freeze tokens
 │   │   ├── movement.py          # develop (effect, e.g. free), degrade (optional refund)
 │   │   ├── market_effects.py    # refresh_market (free, up to N, every market), discard_from_market
+│   │   ├── economy.py           # pay_tax, skip_tax, convert_inf_eot, paid_damage, pay_resource_times
 │   │   └── …                    # units.py (summon) to come
 │   ├── conditions.py            # played_this_turn, in_discard, has_unit_on_tier, …
 │   ├── targeting.py             # target selectors (ally/enemy/any, tier ranges)
@@ -124,7 +130,7 @@ vaporize/
 │       ├── net.js               # WebSocket wrapper
 │       ├── i18n.js              # t(key, params)
 │       ├── lobby.js             # create / join screen
-│       └── board/               # one module per UI region (see UI design)
+│       └── board/               # one module per UI region (see UI design): table, seats, markets, panel, log, …
 └── tests/
     ├── effects/                 # one test file per effect module
     ├── cards/                   # data validation for every card file
@@ -179,6 +185,7 @@ Rule notes the engine must respect:
 - Tokens can develop too: they leave `player.tokens` and take a normal spot on the next tier, but stay tokens (deleted when destroyed).
 - End of turn: every unit scores its tier's `vp` (T1 0, T2 1, T3 2, T4 3), tokens included. `eot_vp()` gives the same number as a preview for the UI.
 - The view lists legal develops as `legal.develop = {uid: {cost, to}}`. The UI shows a green "↑ T2 · 3" button on those units.
+- `Develop(seat, unit_uid, pay)`: `pay="resource"` pays the class resource instead of inf, only for units with the `develop_with_resource` modifier (145); listed in `legal.develop_resource` and shown as a second, gold "↑" button. Develop-only inf (`player.develop_inf`, 132) is spent before normal inf.
 
 ## Attacks
 
@@ -186,6 +193,8 @@ Rule notes the engine must respect:
 - If the target is destroyed: `vp_per_attack_kill` turn modifiers pay VP and the attacker's `on_kill` trigger runs.
 - A unit attacks once per turn, plus static `extra_attacks` modifiers and `temp_extra_attacks` granted this turn (`boost_units`). `attacks_made` counts; the unit is tapped when it runs out. Both reset at its owner's end of turn.
 - `taunt` units (set from the modifier when they enter): enemies can't target that player's other units, by attacks or by effects, while they could target the taunting unit instead (`error.must_target_taunt`).
+- Classes with the `any_tier_attack_once_per_turn` modifier (Monarch) get `player.any_tier_attacks = 1` at start of turn: one attack that ignores the tier range. It's used only when an attack needs it.
+- `on_attack` unit triggers resolve before the damage and may ask (142 "pay 2 gold for +2 attack"). The attack is then replayed like a card: `state.pending.kind == "attack"` (`card_uid` = attacker, `target_uid`), `Respond` continues, `CancelChoice` drops the attack.
 - Undoable. The view lists `legal.attacks = {attacker_uid: [target uids]}`. UI: click a green-outlined own unit to select it (blue), then click a red-tinted enemy to attack. Clicking anywhere else drops the selection.
 
 ## Markets
@@ -195,7 +204,12 @@ Rule notes the engine must respect:
 - When a market deck is empty, its removed pile is shuffled into a new deck.
 - Revealing a market card is hidden information, so a buy or refresh that reveals a card becomes a new undo checkpoint.
 - The view lists `legal.market = {shared_buy: [slots], private_buy: [slots], shared_refresh: cost|null, private_refresh: cost|null}`. UI: buyable cards get a green outline (click to buy). Green refresh buttons sit next to the markets.
-- Each market row starts with two piles on the left: the face-down **deck** and the face-up **removed** pile. Market changes are animated (`client/js/board/animate.js`, FLIP): on refresh the cards slide right, the rightmost card flies to the removed pile and the new card comes out of the deck. A bought card flies to the buyer's panel.
+- Each market column has the face-down **deck** above its cards and the face-up **removed** pile below them. Market changes are animated (`client/js/board/animate.js`, FLIP): on refresh the cards slide down, the bottom (rightmost) card flies to the removed pile and the new card comes out of the deck. A bought card flies to the buyer's discard pile.
+
+## Gold on units (143)
+
+- `Bank(seat, unit_uid, amount)`: during your turn, move class resource onto (`amount > 0`) or off (`amount < 0`) one of your units with the `resource_bank` modifier. Stored in `CardInstance.stored`, not taxed, doubled at your end of turn (after tax), lost when the unit leaves the board (`reset_runtime`). Taking can't push you past the class `hard_max`. Undoable.
+- The view lists `legal.bank = {uid: {put, take, stored}}` and every unit view has `stored`. UI: a gold coin badge on the unit (green-outlined when you can use it) opens an inline panel above the hand with Put / Take amount buttons.
 
 ## Element swap (Mage passive)
 
@@ -237,6 +251,7 @@ Some effects need a decision: how much to invoke, which unit to hit, which scout
 - `Respond(seat, answer)` replays the whole card from that state with all answers so far. Replay is deterministic because the RNG lives in the state. It either resolves completely (and pushes one undo entry) or stops at the next prompt.
 - `CancelChoice` drops the pending card. It isn't allowed once hidden cards were shown during this card (scout, draw, market reveal): `ctx.ask` then marks the prompt `cancellable: false`.
 - While a choice is pending, every other action is rejected with `error.choice_pending`.
+- `pending.kind` is `play` (a card), `end_turn` or `attack` (on-attack abilities); each replays from the state before it.
 - Prompt kinds: `number` (min..max), `choose_unit` (uids), `choose_card` (card views), `choose_cards` (list of uids, min..max), `split_damage` ({uid: amount}, optional `same_tier`), `order_cards` (all options in a new order, first = top), `choose_option` (index into `choose_one`), `choose_tier`. Optional (positive) effects set `allow_skip`, and the answer `null` skips them.
 - `params.skip_key` names the skip button (e.g. `ui.prompt.skip_damage` = "Deal no damage"), so a player can play a damage spell just to get rid of it without hurting their own units.
 - Only the acting player sees the prompt in their view. The others only see who is choosing and for which card.
@@ -289,6 +304,8 @@ triggers:                # units: ongoing abilities
   on_kill: []
   on_card_played: []     # after each card its owner plays (while this unit is on the board)
   on_develop: []         # after this unit is developed (action or effect)
+  on_attack: []          # when this unit attacks, before damage (may ask; e.g. 142)
+  on_other_buy: []       # whenever another player buys a card (e.g. 137)
 
 pre_effects: []          # units: resolved before invoke-based stats are set (e.g. 779)
 
@@ -296,11 +313,13 @@ modifiers:               # units: static, while on the board
   - spell_invoke_bonus: 1        # also: extra_attacks, develop_discount, thorns (damage to attackers),
                                  # stun_on_attack, freeze_on_attack, max_damage_per_hit, prepare_before_invoke,
                                  # taunt, cleave {freeze_if}, ally_thorns, ally_damage_reduction,
-                                 # cheat_death {element, min}, shuffle_on_death
+                                 # cheat_death {element, min}, shuffle_on_death,
+                                 # vp_per_tax (144), resource_bank (143), develop_with_resource (145)
 
 alt_cost: {lose_vp: 3}   # optional: the card may also be bought by losing VP (Buy with pay: vp)
 hand_eot: {discard_for_vp: 1}   # optional: at your end of turn, may discard it from hand for VP
 in_discard: {vp_per_kill: 1}    # optional: while in your discard pile (played cards count), VP per unit you kill
+invoke: {free: true, max: 8}    # optional: how this card invokes (134: doesn't spend the resource, value at most 8)
 ```
 
 Choice text for `choose_one` lives in the locale too: `"options": ["Gain 4 inf", "Draw 2 cards", …]` next to `name` and `text`.
@@ -333,7 +352,7 @@ Initial primitive list (extend as cards require):
 
 | Name | Params |
 |---|---|
-| `gain_inf` | `amount` |
+| `gain_inf` | `amount`, optional `develop_only` (132: only for developing units, this turn) |
 | `gain_resource` / `lose_resource` | `amount` (class resource: mana, heat, …) |
 | `gain_vp` | `amount` |
 | `prepare` | optional `times`, `exceed_limit` (resource may go past the class limit, up to `hard_max`) |
@@ -378,6 +397,11 @@ Initial primitive list (extend as cards require):
 | `influence_bonus` | `amount`: each other influence card played later this turn gives extra inf |
 | `summon` | `attack`, `health`, `count` |
 | `grant_keyword` | `keyword`, optional `scope` (e.g. `split` with `scope: same_tier`, for the rest of this card) |
+| `pay_tax` | optional `per` (4): class EOT, pay 1 resource per `per` you have; skipped by `skip_tax`; `vp_per_tax` units give VP |
+| `skip_tax` | — : you pay no tax at the end of this turn (135) |
+| `convert_inf_eot` | — : at end of turn, unspent inf becomes class resource, before tax (133) |
+| `paid_damage` | `amount`, `target`, optional `cost` (1): pay resource per hit, pick a target each time or stop (139) |
+| `pay_resource_times` | `cost`, `times`, `effects`: choose 0..times to pay `cost` resource and resolve `effects` each time (142) |
 
 Invoke isn't an effect: it's a value. `{invoke: N}` asks the class's invoke once per card (Mage: choose mana to spend; spells +1) and adds N (never below 0).
 
@@ -387,9 +411,9 @@ Control structures, handled by the resolver rather than registered as effects: `
 
 Turn modifiers (`player.turn_modifiers`) hold "this turn" effects such as "your next spell…". They're consumed by the next spell (`engine/playing.py`) or cleared at the end of the turn. Temporary attack bonuses live on the unit (`temp_attack`) and reset at its owner's end of turn.
 
-**Values** (`values.py`): an int, `{invoke: N}`, `{count: {played: {element, other}}}`, `{count: {unique_played_elements: {other}}}`, `{count: {ally_units: {min_tier}}}`, `{count: {ally_tiers: {}}}`, `{count: {prepares_this_turn: {}}}`, `{count: {enemy_kills_this_turn: {}}}`, `{count: {opponents: {}}}` (players − 1), `{count: {discard_cards: {}}}`, `{count: {discard_element: {element}}}`, `{count: {vp: {}}}`, `{count: {elements_at_least_twice: {other}}}`, `{sum: […]}`, `{mul: […]}`, `{max: […]}`, `{div_ceil: [a, b]}`, `{div_floor: [a, b]}` or `{min: [values…]}` ("max. 4" = `{min: [value, 4]}`). Unit `attack`/`health` may be values too (resolved once when the unit enters).
+**Values** (`values.py`): an int, `{invoke: N}`, `{count: {played: {element, other}}}`, `{count: {unique_played_elements: {other}}}`, `{count: {ally_units: {min_tier}}}`, `{count: {ally_tiers: {}}}`, `{count: {prepares_this_turn: {}}}`, `{count: {enemy_kills_this_turn: {}}}`, `{count: {opponents: {}}}` (players − 1), `{count: {discard_cards: {}}}`, `{count: {discard_element: {element}}}`, `{count: {vp: {}}}`, `{count: {elements_at_least_twice: {other}}}`, `{count: {resource: {}}}` (your class resource on the track), `{count: {ally_units: {same_tier: true}}}` (your units on this unit's tier), `{count: {units_on_source_tier: {}}}` (every player's units on this unit's tier), `{sum: […]}`, `{mul: […]}`, `{max: […]}`, `{div_ceil: [a, b]}`, `{div_floor: [a, b]}` or `{min: [values…]}` ("max. 4" = `{min: [value, 4]}`). Unit `attack`/`health` may be values too (resolved once when the unit enters).
 
-**Targets** (`targeting.py`): `{side: any | ally | enemy, tiers: [1, 2, 3, 4] | with_ally_units}`. Tokens count as tier 1. Allies and enemies alike unless `side` says otherwise.
+**Targets** (`targeting.py`): `{side: any | ally | enemy, tiers: [1, 2, 3, 4] | with_ally_units | with_ally_units_or_above}`. Tokens count as tier 1. Allies and enemies alike unless `side` says otherwise.
 
 **Conditions** (`conditions.py`): `played_this_turn {element | elements, min, other}`, `in_discard {element, min, other}`, `value_at_least {value, min}` (e.g. "invoke for 4"), `ally_tiers_at_least {min}`, `unique_played_elements_at_least {min, other}`, `played_matching {filter: non_primary | primary, min}`, `discard_count_at_least {min}`, `card_kills_at_least {min}` (units killed by this card so far), `source_on_tier {tier}`, `removed_this_turn {min}`.
 
@@ -423,6 +447,10 @@ prepare: [{do: gain_resource, amount: 1, up_to_limit: true}]
 invoke: {mode: spend_resource_any}       # value = amount spent
 ```
 
+Class modifiers: `spell_invoke_bonus`, `element_swap_once_per_turn` (Mage), `unit_health_bonus {amount}` (units enter with +N HP) and `any_tier_attack_once_per_turn` (Monarch). `invoke` may carry `max` (Monarch: spend up to 10 gold at once). Class EOT passives run after unit EOT triggers.
+
+The **Monarch** (`monarch.yaml`): primary water + wind; gold 0–20 (`limit`/`hard_max` 20), kept between turns; EOT `pay_tax` (1 per 4 gold); units +1 HP; one any-tier attack per turn; prepare = gain 2 gold; invoke = spend up to 10 gold. Tiers 2 / 2 / 3 spots, develop 3 / 4 / 5.
+
 Class-specific rules that don't fit the generic primitives go in `engine/classes/<class>.py` as small hook functions referenced from the YAML.
 
 ## Internationalisation
@@ -439,31 +467,31 @@ Class-specific rules that don't fit the generic primitives go in `engine/classes
 - 2–4 players. The host chooses when to start. Classes are picked in the lobby, and each class can be picked once.
 - Rooms live in memory. A player who reconnects with the same session token gets their seat back.
 - One WebSocket per player. After each action the server broadcasts a fresh `PlayerView` to every player, plus the new `Event`s for animation and the log.
+- The dev start screen picks a class per seat (`GET /api/dev/classes`, `POST /api/dev/games {players, classes}`); classes may repeat there.
+- Until the WebSocket lobby exists, dev games (`server/dev_service.py`) carry a `version` that goes up after every successful action. Each window polls `GET /api/dev/games/{id}/version` once a second and reloads its view when it changed (not while its own action is in flight, a card is being dragged or the tab is hidden).
 
 ## UI design (approved)
 
-The approved mockup is "board v2". Keep this layout unless told otherwise.
+The approved layout is the **seated table** ("table v2" sketch). Keep it unless told otherwise. Three columns: shared market | seats around the table + your panel | private markets + log.
 
-**Top bar.** Room code, round number, whose turn it is, and the player list with colour dots and VP.
+**Top.** Top bar (room code, round, whose turn, players with colour dots and VP) and a thin VP track: cells 0–30 (30 gold) with one pawn per player.
 
-**VP track.** A row of cells 0–30 (30 highlighted gold as the goal) with one coloured pawn per player on their current VP.
+**Seats.** Every player sits around the table, relative to the viewer: you at the bottom, the others clockwise (`client/js/board/seats.js`). 2 players: opponent on top. 3 players: both opponents on top (left and right). 4 players: left, top, right. Each seat has:
 
-**Tier table** (centre of the screen):
+- a **plate outside the table**: colour, name, class, VP, "EOT +N VP" preview, hand size as card backs + count, class resource, removed-card count (click to view). The current player's plate is highlighted with a "Turn" badge.
+- a **card row**: face-down **deck** on the left, the cards **played this turn** laid out left → right in play order (public, so everyone sees them), the face-up **discard pile** on the right (top card + count; click to see the whole pile). At end of turn all played cards fly to the discard pile together. Side seats (4 players) show the row vertically.
 
-- Columns: one per player (2–4). Column header shows the player colour, name and class.
-- Rows from top to bottom: T4 (shared, spans all player columns, tinted gold, shows `players − 1` slots), then T3, T2, T1.
-- Row label column shows the tier, VP per unit and develop cost.
-- Empty spots are dashed outlines. The number of spots per player comes from their class.
-- Each unit is a mini card. **Its border colour is the owner's player colour.** It shows the element icon(s), name, attack and current HP, and status icons with counts (shield, stun, freeze).
+**Table** (`client/js/board/table.js`): tiers are concentric ellipses, T1 outside, then T2, T3 and the shared T4 in the middle (gold, `players − 1` spots). Each player's units sit on the rings in their seat's direction (index 0 on the owner's left), empty spots are dashed outlines (spot counts come from the class), tokens sit on T1. Ring labels show tier, VP per unit and develop cost. The layout is computed after render from the table's real size (`fitLayout`): radii follow the card size and cards shrink (down to 0.6×) only when they wouldn't fit.
+
+- Each unit is a mini card. **Its border colour is the owner's player colour.** It shows element icon(s), name, its ability text (2 lines; full text on hover), attack and current HP, and status icons with counts (shield, stun, freeze).
 - Units the viewer can develop right now get a green outline and a green "↑ T{n} · {cost}" button. Clicking it develops the unit.
-- Column headers show each player's end-of-turn VP preview ("EOT +N VP").
 - Tapped units are slightly rotated and dimmed.
 
 **Colour semantics** (keep these exclusive):
 
 | Meaning | Colour |
 |---|---|
-| Player identity | one fixed colour per seat (blue, coral, purple, teal) on card borders, pawns, headers |
+| Player identity | one fixed colour per seat (blue, coral, purple, teal) on card borders, pawns, plates, market buttons |
 | Available, not yet used action | **green** outline (`--fill-success`) |
 | Valid attack / effect target | red tint (`--bg-danger`) |
 | Selected | accent blue outline |
@@ -471,13 +499,15 @@ The approved mockup is "board v2". Keep this layout unless told otherwise.
 
 Elements are shown as **icons**, never as colours, so they don't clash with player colours: fire = flame, water = droplet, wind = wind, lightning = bolt, shadow = moon.
 
-**Shared market.** A row of 6 cards left → right. The price badge shows the adjusted price (`5+1` leftmost, `4−1` rightmost). Affordable cards get a green price badge. Cards the player can't afford are dimmed. Deck and removed counts are shown next to it. The free refresh is a green-outlined button until used.
+**Shared market** (left column). Whole cards (name, type, price, full text) stacked top → bottom: the top card is the leftmost slot (`+1`), the bottom card the rightmost (`−1`). The price badge keeps the printed cost and shows the slot modifier next to it (`5 (−1)`), while affordability uses the real price (that card is green at 4 inf). The deck pile sits above the cards and the removed pile below them; a refresh slides the cards down. Affordable cards get a green price badge, unaffordable ones are dimmed. The free refresh is a green button until used. The basic supply sits under the market.
 
-**Private markets.** A tab per player in seat colour. Clicking a tab reveals that player's 3 private-market cards, and clicking it again hides them. The current player's own market is open by default and buyable. Other players' markets are view-only.
+**Private markets** (right column). One button per player, side by side, in seat colour; clicking one switches to that player's 3 cards (whole cards, same layout as the shared market). Your own market is shown by default and buyable; the others are view-only.
+
+**Log** (right column, under the private markets): newest first, can be hidden.
 
 **Player panel** (bottom):
 
-- Stats: **inf** (large, prominent), class resource with limit, current removal cost, elements played this turn (counts per element icon), deck / discard counts.
+- Your card row (deck | played this turn | discard), then stats: name, class and VP, **inf** (large, prominent), class resource with limit (plus the end-of-turn tax for classes that pay one), develop-only inf next to inf when you have some, current removal cost, elements played this turn (counts per element icon).
 - Available-actions chips with a green outline (e.g. free refresh, Mage element swap, "N units can attack", affordable develops). Used ones turn grey and get a strikethrough.
 - Hand as cards. The 2-card minimum is shown as a reminder slot.
 - Turn buttons next to the hand: **Undo** (take back the last card played), **Cancel** (take back the whole turn so far) and **End turn** (commits the turn; can't be undone).

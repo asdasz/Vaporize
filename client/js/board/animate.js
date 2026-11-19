@@ -1,11 +1,14 @@
-// Market animations (FLIP): cards slide to their new slot, new cards come out of the deck pile,
-// cards that left the row fly to the removed pile (refresh) or to the buyer's panel (buy).
+// Board animations (FLIP).
+// Markets: cards slide to their new slot, new cards come out of the deck pile, cards that left the row
+// fly to the removed pile (refresh) or to the buyer's discard pile (buy).
+// Played cards: a played hand card slides into the played row; at end of turn the played cards fly
+// to their owner's discard pile together.
 const DURATION = 380;
 
 const reducedMotion = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // Call before the board is re-rendered.
-export function snapshotMarkets(root) {
+export function snapshotBoard(root) {
   if (!root.querySelectorAll) return null;
   const cards = new Map();
   root.querySelectorAll("[data-mcard]").forEach((el) => {
@@ -15,7 +18,13 @@ export function snapshotMarkets(root) {
   root.querySelectorAll("[data-pile]").forEach((el) =>
     piles.set(el.dataset.pile, { rect: el.getBoundingClientRect(), count: Number(el.querySelector("b")?.textContent || 0) }),
   );
-  return { cards, piles };
+  const played = new Map();
+  root.querySelectorAll("[data-played]").forEach((el) =>
+    played.set(el.dataset.played, { rect: el.getBoundingClientRect(), html: el.outerHTML, seat: el.closest("[data-played-row]")?.dataset.playedRow }),
+  );
+  const hand = new Map();
+  root.querySelectorAll("[data-hand-uid]").forEach((el) => hand.set(el.dataset.handUid, el.getBoundingClientRect()));
+  return { cards, piles, played, hand };
 }
 
 function rowKey(el) {
@@ -53,8 +62,32 @@ function ghost(html, from, to) {
 }
 
 // Call right after the board is re-rendered, with the snapshot taken before.
-export function animateMarkets(root, before) {
+export function animateBoard(root, before) {
   if (!before || reducedMotion()) return;
+  animatePlayed(root, before);
+  animateMarkets(root, before);
+}
+
+const pileCount = (root, key) => Number(root.querySelector(`[data-pile="${key}"] b`)?.textContent || 0);
+
+function animatePlayed(root, before) {
+  const seen = new Set();
+  root.querySelectorAll("[data-played]").forEach((el) => {
+    const uid = el.dataset.played;
+    seen.add(uid);
+    const from = before.hand.get(uid);
+    if (from && !before.played.has(uid)) flyFrom(el, from); // just played from the hand
+  });
+  for (const [uid, old] of before.played) {
+    if (seen.has(uid) || old.seat === undefined) continue;
+    const key = `seat${old.seat}-discard`;
+    const target = root.querySelector(`[data-pile="${key}"]`);
+    const grew = before.piles.has(key) && pileCount(root, key) > before.piles.get(key).count;
+    if (target && grew) ghost(old.html, old.rect, target.getBoundingClientRect()); // end of turn: to the discard pile
+  }
+}
+
+function animateMarkets(root, before) {
   const seen = new Set();
   root.querySelectorAll("[data-mcard]").forEach((el) => {
     const uid = el.dataset.mcard;
@@ -81,9 +114,11 @@ export function animateMarkets(root, before) {
     const removedNow = root.querySelector(`[data-pile="${key}-removed"] b`);
     const removedBefore = before.piles.get(`${key}-removed`);
     const wentToRemoved = removedNow && removedBefore && Number(removedNow.textContent) > removedBefore.count;
-    const target = wentToRemoved
-      ? root.querySelector(`[data-pile="${key}-removed"]`)
-      : root.querySelector(".panel .stats-row") || root.querySelector(".panel");
+    // Bought: to the discard pile that grew (the buyer's), else the bottom panel.
+    const discard = [...root.querySelectorAll("[data-pile$='-discard']")].find(
+      (el) => before.piles.has(el.dataset.pile) && pileCount(root, el.dataset.pile) > before.piles.get(el.dataset.pile).count,
+    );
+    const target = wentToRemoved ? root.querySelector(`[data-pile="${key}-removed"]`) : discard || root.querySelector(".panel");
     if (target) ghost(old.html, old.rect, target.getBoundingClientRect());
   }
 }

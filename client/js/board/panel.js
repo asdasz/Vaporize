@@ -3,8 +3,11 @@ import { t } from "../i18n.js";
 import { icon } from "../icons.js";
 import { handCard, hiddenCard } from "./card.js";
 import { promptPanel } from "./prompt.js";
+import { mySeatCards } from "./seats.js";
 import { swapPanel } from "./swap.js";
-import { cardName, findUnit, playerName, resourceName, seatColor, winnerNames } from "./util.js";
+import { bankPanel } from "./bank.js";
+import { classTooltip } from "./seats.js";
+import { cardName, esc, findUnit, playerName, resourceName, seatColor, winnerNames } from "./util.js";
 
 const ELEMENTS = ["fire", "water", "wind", "lightning", "shadow"];
 
@@ -15,13 +18,19 @@ function stats(me) {
   ).join("");
   return `
     <div class="stats-row">
-      <div class="stat"><div class="label">${t("ui.panel.inf")}</div><div class="big inf">${me.inf}</div></div>
+      <div class="stat me-plate"><div class="label"><span class="dot" style="background:${seatColor(me.seat)}"></span>
+        <b>${esc(me.name)}</b> · <span class="class-name" title="${classTooltip(me.class_id)}">${t(`classes.${me.class_id}.name`)}</span></div>
+        <div class="big">${icon("star")}${me.vp}<small> VP</small></div></div>
+      <div class="stat"><div class="label">${t("ui.panel.inf")}</div><div class="big inf">${me.inf}${
+        me.develop_inf ? `<small class="dev-inf" title="${t("ui.panel.develop_inf_hint")}"> ${t("ui.panel.develop_inf", { amount: me.develop_inf })}</small>` : ""
+      }</div></div>
       <div class="stat"><div class="label">${t("ui.panel.resource", { resource_name: resourceName(res.key), limit: res.limit ?? "–" })}</div>
-        <div class="big">${res.value}<small> / ${res.limit ?? "–"}</small></div></div>
+        <div class="big">${res.value}<small> / ${res.limit ?? "–"}</small></div>
+        ${me.tax !== null && me.tax !== undefined ? `<div class="label tax ${me.tax ? "has" : ""}">${t("ui.panel.tax", { amount: me.tax, resource_name: resourceName(res.key) })}</div>` : ""}</div>
       <div class="stat"><div class="label">${t("ui.panel.removal")}</div><div class="big">${me.removal_cost ?? "–"}<small> inf</small></div></div>
       <div class="stat"><div class="label">${t("ui.panel.played_elements")}</div><div class="els-count">${els}</div></div>
-      <div class="stat" style="margin-left:auto;text-align:right"><div class="label">${t("ui.panel.piles")}</div>
-        <div class="big" style="font-size:16px">${me.deck_count} / ${me.discard.length}</div></div>
+      ${me.removed_count ? `<div class="stat"><div class="label">${t("ui.panel.removed")}</div>
+        <button class="mini-link" data-action="view-pile" data-seat="${me.seat}" data-which="removed">${icon("trash")}${me.removed_count}</button></div>` : ""}
     </div>`;
 }
 
@@ -48,6 +57,7 @@ function chips(view, store) {
           : `<span class="chip done">⇄ ${t("ui.swap.chip_used")}</span>`,
       );
     }
+    if (view.players[view.you].any_tier_attacks > 0) out.push(`<span class="chip">${icon("attack")}${t("ui.panel.any_tier")}</span>`);
     const attackers = Object.keys(view.legal.attacks || {}).length;
     if (attackers) out.push(`<span class="chip">${icon("attack")}${t("ui.panel.attacks", { count: attackers })}</span>`);
     if (view.legal.market?.shared_refresh === 0) out.push(`<span class="chip">${icon("refresh")}${t("ui.panel.free_refresh")}</span>`);
@@ -59,7 +69,7 @@ function chips(view, store) {
       const unit = findUnit(view, store.attacker);
       if (unit) out.push(`<span class="chip info">${icon("attack")}${t("ui.panel.select_target", { card_name: cardName(unit.unit.id) })}</span>`);
     }
-    const develops = Object.keys(view.legal.develop || {}).length;
+    const develops = new Set([...Object.keys(view.legal.develop || {}), ...Object.keys(view.legal.develop_resource || {})]).size;
     const removable = (view.legal.removable || []).length;
     if (removable) {
       out.push(`<button class="chip chip-btn" data-action="open-remove">${icon("trash")}${t("ui.panel.remove_chip", { cost: view.players[view.you].removal_cost })}</button>`);
@@ -69,6 +79,7 @@ function chips(view, store) {
   }
   if (store.error) {
     const params = { ...store.error.params };
+    if (params.resource) params.resource_name = resourceName(params.resource);
     out.push(`<span class="chip error">${t(store.error.key, params)}</span>`);
   }
   return `<div class="chips">${out.join("")}</div>`;
@@ -106,10 +117,12 @@ export function playerPanel(view, store) {
   const filler = me.hand ? "" : Array.from({ length: me.hand_count }, hiddenCard).join("");
   return `
     <div class="panel" style="--seat-color:${seatColor(me.seat)}">
+      ${mySeatCards(view)}
       ${stats(me)}
       ${chips(view, store)}
       ${promptPanel(view, store)}
       ${swapPanel(view, store)}
+      ${bankPanel(view, store)}
       ${eotPanel(view, store)}
       <div class="hand-row">
         <div class="hand">${hand}${filler}</div>

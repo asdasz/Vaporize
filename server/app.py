@@ -36,9 +36,14 @@ async def no_stale_files(request: Request, call_next: Callable[[Request], Awaita
 @app.post("/api/dev/games", response_model=None)
 def create_game(req: CreateGameRequest) -> dict[str, Any]:
     try:
-        return {"game_id": games.create(req.players, req.seed)}
+        return {"game_id": games.create(req.players, req.seed, req.classes)}
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/api/dev/classes", response_model=None)
+def list_classes() -> dict[str, Any]:
+    return {"classes": games.class_ids()}
 
 
 @app.get("/api/dev/games/{game_id}/view", response_model=None)
@@ -49,6 +54,14 @@ def get_view(game_id: str, seat: int) -> dict[str, Any]:
         raise HTTPException(status_code=404, detail="game_not_found") from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/api/dev/games/{game_id}/version", response_model=None)
+def get_version(game_id: str) -> dict[str, Any]:
+    try:
+        return {"version": games.version(game_id)}
+    except GameNotFound as exc:
+        raise HTTPException(status_code=404, detail="game_not_found") from exc
 
 
 @app.post("/api/dev/games/{game_id}/actions", response_model=None)

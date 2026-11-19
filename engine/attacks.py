@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from engine.cards import CardInstance
 from engine.cardview import attacks_allowed
 from engine.catalog import Catalog
@@ -39,10 +41,15 @@ def check_attack(state: GameState, seat: int, attacker_uid: str, target_uid: str
     target = _tier_of(state, target_uid)
     if target is None or target[0] == seat:
         raise IllegalAction("error.invalid_target")
-    if target[1] not in (tier, tier + 1) and not unit.temp_any_tier:
+    if target[1] not in (tier, tier + 1) and not _ignores_tiers(state, seat, unit):
         raise IllegalAction("error.out_of_range")
     if target_uid not in attack_targets(state, seat, attacker_uid):
         raise IllegalAction("error.must_target_taunt")
+
+
+def _ignores_tiers(state: GameState, seat: int, unit: CardInstance) -> bool:
+    """This turn's "may attack any tier" boost, or the Monarch passive (once per turn, any of your units)."""
+    return unit.temp_any_tier or state.players[seat].any_tier_attacks > 0
 
 
 def attack_targets(state: GameState, seat: int, attacker_uid: str) -> list[str]:
@@ -58,7 +65,7 @@ def attack_targets(state: GameState, seat: int, attacker_uid: str) -> list[str]:
     for player in state.players:
         if player.seat == seat:
             continue
-        reachable = [(t, u) for t, u in state.units_of(player.seat) if t in (tier, tier + 1) or attacker.temp_any_tier]
+        reachable = [(t, u) for t, u in state.units_of(player.seat) if t in (tier, tier + 1) or _ignores_tiers(state, seat, attacker)]
         targets += [u.uid for _, u in apply_taunt(reachable)]
     return targets
 
@@ -72,15 +79,31 @@ def legal_attacks(state: GameState, seat: int) -> dict[str, list[str]]:
     return result
 
 
-def attack(state: GameState, catalog: Catalog, seat: int, attacker_uid: str, target_uid: str, events: list[Event]) -> None:
+def attack(
+    state: GameState,
+    catalog: Catalog,
+    seat: int,
+    attacker_uid: str,
+    target_uid: str,
+    events: list[Event],
+    answers: list[Any] | None = None,
+) -> None:
+    """Resolve an attack. On-attack abilities may ask questions (NeedChoice); the caller replays with `answers`."""
     check_attack(state, seat, attacker_uid, target_uid)
     attacker = find_unit(state, attacker_uid)
     target = find_unit(state, target_uid)
     assert attacker is not None and target is not None
-    ctx = EffectContext(state, catalog, seat, attacker, events)
+    ctx = EffectContext(state, catalog, seat, attacker, events, answers=list(answers or []))
+    attacker_tier, target_tier = _tier_of(state, attacker_uid)[1], _tier_of(state, target_uid)[1]
+    if target_tier not in (attacker_tier, attacker_tier + 1) and not attacker.temp_any_tier:
+        state.players[seat].any_tier_attacks -= 1  # used the Monarch "attack without tier restrictions"
+        events.append(Event("log.any_tier_attack", {"seat": seat, "card": attacker.def_id}))
     events.append(
         Event("log.attack", {"seat": seat, "attacker": attacker.def_id, "target": target.def_id, "owner": target.owner})
     )
+    on_attack = catalog.card(attacker.def_id).triggers.get("on_attack", ())
+    if on_attack:  # e.g. 142 "when it attacks, you can pay 2 gold for +2 attack"
+        resolve_effects(ctx, on_attack)
     attacker.attacks_made += 1
     attacker.tapped = attacker.attacks_made >= attacks_allowed(attacker, catalog)  # tapped when out of attacks
     mods = catalog.card(attacker.def_id).modifiers

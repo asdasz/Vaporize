@@ -1,0 +1,12 @@
+# Monarch market card 134 (legacy card number: 47).
+id: MON-P134
+number: 134
+type: influence
+cost: 8
+elements: [water]
+class: monarch
+source: private
+invoke: {free: true, max: 8}   # this invoke does not spend your gold (max invoke value 8)
+effects:
+  - do: gain_inf
+    amount: {invoke: 0}

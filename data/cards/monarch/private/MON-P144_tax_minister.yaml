@@ -1,0 +1,12 @@
+# Monarch market card 144 (legacy card number: 57).
+id: MON-P144
+number: 144
+type: unit
+cost: 9
+elements: [water]
+class: monarch
+source: private
+attack: 0
+health: 6
+modifiers:
+  - vp_per_tax: 1          # whenever you pay tax, gain 1 VP for each tax paid

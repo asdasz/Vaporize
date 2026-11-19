@@ -1,0 +1,10 @@
+# Monarch starter card 112 (legacy card number: 28).
+id: MON-S112
+number: 112
+type: unit
+cost: 0
+elements: [lightning]
+class: monarch
+source: starter
+attack: 1
+health: {max: [{invoke: -1}, 1]}   # invoke - 1, at least 1

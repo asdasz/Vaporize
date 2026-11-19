@@ -7,7 +7,8 @@
     "hint": "Hot-seat mode for development. Online lobby with join codes comes next.",
     "players": "{count} players",
     "error": "Couldn't create the game. Is the server running?",
-    "game_lost": "That game no longer exists (the server was restarted). Start a new one."
+    "game_lost": "That game no longer exists (the server was restarted). Start a new one.",
+    "seat": "Seat {seat}"
   },
   "topbar": {
     "game": "Game",
@@ -19,17 +20,13 @@
   },
   "tiers": {
     "tier": "T{tier}",
-    "shared": "shared",
     "vp": "+{vp} VP",
     "no_vp": "0 VP",
-    "develop": "{cost} inf",
-    "slots_shared": "{count} spot(s) · players − 1",
-    "hand": "hand {count}",
-    "deck": "deck {count}",
-    "discard": "discard {count}",
     "eot_vp": "EOT +{vp} VP",
     "develop_button": "T{tier} · {cost}",
-    "develop_hint": "Develop to Tier {tier} for {cost} inf"
+    "develop_hint": "Develop to Tier {tier} for {cost} inf",
+    "develop_button_resource": "T{tier} · {cost} {resource_name}",
+    "develop_hint_resource": "Develop to Tier {tier} for {cost} {resource_name}"
   },
   "market": {
     "shared": "Shared market",
@@ -60,7 +57,6 @@
     "resource": "{resource_name} · limit {limit}",
     "removal": "Remove a card",
     "played_elements": "Played this turn",
-    "piles": "Deck / discard",
     "plays_left": "Play up to {count} more card(s)",
     "no_plays_left": "Keep {min} cards in hand",
     "end_turn": "End turn",
@@ -82,16 +78,17 @@
     "free_refresh": "Free refresh",
     "select_target": "Choose a target for {card_name}",
     "next_spell": "Next spell: +{amount} invoke",
-    "next_twice": "Next spell resolves twice"
+    "next_twice": "Next spell resolves twice",
+    "removed": "Removed",
+    "develop_inf": "+{amount} for developing",
+    "develop_inf_hint": "This inf can only be spent on developing units this turn.",
+    "tax": "End-of-turn tax: {amount} {resource_name}",
+    "any_tier": "One attack without tier restrictions"
   },
   "side": {
-    "in_play": "Played this turn",
-    "discard": "Discard pile ({count})",
     "log": "Log",
-    "nothing": "Nothing yet",
-    "removed": "Removed from the game ({count})",
-    "remove": "Remove · {cost}",
-    "remove_hint": "Remove this card from the game for {cost} inf"
+    "hide": "Hide",
+    "show": "Show"
   },
   "card": {
     "types": {
@@ -103,7 +100,8 @@
     "health": "Health",
     "invoke_stat": "INV+{n}",
     "invoke_stat0": "INV",
-    "locked": "Revealed: can't be played this turn"
+    "locked": "Revealed: can't be played this turn",
+    "stored": "{amount} {resource_name} on this unit"
   },
   "elements": {
     "fire": "Fire",
@@ -114,7 +112,8 @@
   },
   "resources": {
     "mana": "mana",
-    "heat": "heat"
+    "heat": "heat",
+    "gold": "gold"
   },
   "status": {
     "shield": "Shield",
@@ -158,7 +157,11 @@
     "reset_order": "Reset",
     "skip_kill": "Kill nothing",
     "skip_sacrifice": "Don't",
-    "skip_market_card": "Resolve nothing"
+    "skip_market_card": "Resolve nothing",
+    "stop": "Stop",
+    "attacking": "Attacking with {card_name}",
+    "pay_times": "×{times} (pay {total} {resource_name})",
+    "value_free": "Value {value} (no {resource_name} spent)"
   },
   "remove": {
     "title": "Remove a card from the game · {cost} inf",
@@ -198,5 +201,29 @@
   },
   "pending": {
     "end_turn": "End of turn"
+  },
+  "seat": {
+    "deck": "Deck: {count} cards",
+    "discard": "Discard pile: {count} cards",
+    "discard_pile": "Discard",
+    "played_empty": "Played this turn",
+    "turn": "Turn",
+    "hand": "{count} card(s) in hand",
+    "inf": "{inf} inf",
+    "discard_title": "{name} · discard pile ({count})",
+    "removed_title": "{name} · removed from the game ({count})",
+    "close": "Close",
+    "top_first": "Top card first.",
+    "tax": "tax {amount}",
+    "prepare": "Prepare",
+    "invoke": "Invoke"
+  },
+  "bank": {
+    "title": "{card_name}: {amount} {resource_name} on it",
+    "hint": "Doubles at the end of your turn and isn't taxed. Lost if the unit dies.",
+    "put": "Put {resource_name} on it:",
+    "take": "Take {resource_name} back:",
+    "all": "all ({amount})",
+    "done": "Done"
   }
 }

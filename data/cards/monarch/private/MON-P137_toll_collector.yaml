@@ -1,0 +1,14 @@
+# Monarch market card 137 (legacy card number: 50).
+id: MON-P137
+number: 137
+type: unit
+cost: 6
+elements: [wind]
+class: monarch
+source: private
+attack: 1
+health: 5
+triggers:
+  on_other_buy:            # each time another player buys a card
+    - do: gain_resource
+      amount: 1

@@ -8,5 +8,15 @@
     ],
     "prepare": "Refresh 1 spent mana, up to your mana limit.",
     "invoke": "Spend any amount of mana. The invoke value equals the mana spent."
+  },
+  "monarch": {
+    "name": "Monarch",
+    "passives": [
+      "**End of turn** Tax: pay 1 gold for every 4 gold you have. Keep the rest for your next turn.",
+      "Your units enter play with +1 HP.",
+      "Once per turn, one of your units can attack another unit without tier restrictions."
+    ],
+    "prepare": "Gain 2 gold.",
+    "invoke": "Spend up to 10 gold at once. The invoke value equals the gold spent."
   }
 }

@@ -1,0 +1,12 @@
+# Monarch market card 132 (legacy card number: 45).
+id: MON-P132
+number: 132
+type: influence
+cost: 3
+elements: [wind]
+class: monarch
+source: private
+effects:
+  - do: gain_inf
+    amount: 3
+    develop_only: true     # can only be spent on developing units

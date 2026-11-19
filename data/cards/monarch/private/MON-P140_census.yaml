@@ -1,0 +1,11 @@
+# Monarch market card 140 (legacy card number: 53).
+id: MON-P140
+number: 140
+type: spell
+cost: 11
+elements: [water]
+class: monarch
+source: private
+effects:
+  - do: gain_vp
+    amount: {sum: [1, {count: {ally_units: {}}}]}   # 1 + 1 for each of your units in play

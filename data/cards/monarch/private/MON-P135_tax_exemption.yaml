@@ -1,0 +1,12 @@
+# Monarch market card 135 (legacy card number: 48).
+id: MON-P135
+number: 135
+type: influence
+cost: 5
+elements: [lightning]
+class: monarch
+source: private
+effects:
+  - do: gain_inf
+    amount: 3
+  - do: skip_tax           # you pay no tax at the end of this turn

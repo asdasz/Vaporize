@@ -4,6 +4,7 @@ from engine.effects import (  # noqa: F401
     cards,
     class_hooks,
     damage,
+    economy,
     keywords,
     market_effects,
     modifiers,

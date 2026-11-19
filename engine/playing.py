@@ -49,6 +49,8 @@ def resolve_played_card(ctx: EffectContext, card: CardInstance) -> None:
         resolve_effects(ctx, cdef.pre_effects)  # e.g. 779 "prepare x2 before setting its HP"
         attack = resolve_value(ctx, cdef.attack if cdef.attack is not None else 0)
         health = resolve_value(ctx, cdef.health if cdef.health is not None else 1)
+        # Monarch passive: "your units enter play with +1 HP"
+        health += sum(int(p.get("amount", 0)) for p in ctx.class_def.passives if p.get("modifier") == "unit_health_bonus")
         card.fixed_attack, card.fixed_health, card.current_hp = attack, health, health
         card.taunt = any(m.get("taunt") for m in cdef.modifiers)
         ctx.emit("log.unit_played", seat=seat, card=cdef.id, tier=1)

@@ -17,6 +17,7 @@ from typing import Any
 from engine.actions import (
     Action,
     Attack,
+    Bank,
     Buy,
     CancelChoice,
     CancelTurn,
@@ -39,7 +40,7 @@ from server.codes import generate_code
 
 LOG_LIMIT = 60
 # Bump when engine state classes change, so old save files are ignored instead of half-loading.
-SAVE_VERSION = 9
+SAVE_VERSION = 10
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +53,7 @@ class GameNotFound(Exception):
 class DevGame:
     state: GameState
     log: list[dict[str, Any]] = field(default_factory=list)
+    version: int = 0  # bumped after every successful action; clients poll it to know when to reload
 
     def record(self, events: list[Event]) -> None:
         self.log.extend(e.to_dict() for e in events)
@@ -83,7 +85,9 @@ def parse_action(payload: dict[str, Any]) -> Action:
     if kind == "remove_card":
         return RemoveCard(seat=seat, card_uid=str(payload.get("card_uid")))
     if kind == "develop":
-        return Develop(seat=seat, unit_uid=str(payload.get("unit_uid")))
+        return Develop(seat=seat, unit_uid=str(payload.get("unit_uid")), pay=str(payload.get("pay") or "inf"))
+    if kind == "bank":
+        return Bank(seat=seat, unit_uid=str(payload.get("unit_uid")), amount=int(payload.get("amount") or 0))
     if kind == "respond":
         return Respond(seat=seat, answer=payload.get("answer"))
     if kind == "cancel_choice":
@@ -126,13 +130,19 @@ class DevGames:
             pickle.dump({"version": SAVE_VERSION, "games": self.games}, fh)
         tmp.replace(self.save_path)
 
-    def create(self, players: int, seed: int | None = None) -> str:
+    def create(self, players: int, seed: int | None = None, classes: list[str] | None = None) -> str:
         with self._lock:
-            return self._create(players, seed)
+            return self._create(players, seed, classes)
 
-    def _create(self, players: int, seed: int | None) -> str:
+    def class_ids(self) -> list[str]:
+        return sorted(self.catalog.classes)
+
+    def _create(self, players: int, seed: int | None, classes: list[str] | None = None) -> str:
         seed = seed if seed is not None else self._rng.randrange(2**31)
-        seats = [(f"Player {i + 1}", self.class_id) for i in range(players)]
+        classes = classes or [self.class_id] * players
+        if len(classes) != players or any(c not in self.catalog.classes for c in classes):
+            raise ValueError("classes must name one known class per seat")
+        seats = [(f"Player {i + 1}", classes[i]) for i in range(players)]
         state, events = new_game(self.catalog, seats, seed)
         game_id = generate_code(random.Random(seed), self.games)
         game = DevGame(state)
@@ -156,7 +166,13 @@ class DevGames:
         view = build_view(game.state, self.catalog, seat)
         view["game_id"] = game_id.upper()
         view["log"] = list(game.log)
+        view["version"] = game.version
         return view
+
+    def version(self, game_id: str) -> int:
+        """Cheap change marker: other windows poll this and reload their view when it changes."""
+        with self._lock:
+            return self._get(game_id).version
 
     def act(self, game_id: str, payload: dict[str, Any]) -> dict[str, Any]:
         with self._lock:
@@ -170,5 +186,6 @@ class DevGames:
         except IllegalAction as exc:
             return {"ok": False, "error": {"key": exc.key, "params": exc.params}}
         game.record(events)
+        game.version += 1
         self._save()
         return {"ok": True, "events": [e.to_dict() for e in events]}

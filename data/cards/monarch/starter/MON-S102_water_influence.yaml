@@ -1,0 +1,11 @@
+# Monarch starter card 102 (legacy card number: 17).
+id: MON-S102
+number: 102
+type: influence
+cost: 0
+elements: [water]
+class: monarch
+source: starter
+effects:
+  - do: gain_inf
+    amount: 1

@@ -20,6 +20,7 @@ class DevelopOption:
     from_tier: int
     to_tier: int
     cost: int
+    pay: str = "inf"  # inf (develop-only inf first, e.g. 132) | resource (145: "develop paying gold instead of inf")
 
 
 def unit_tier(state: GameState, seat: int, uid: str) -> tuple[int, CardInstance] | None:
@@ -41,9 +42,11 @@ def _container(state: GameState, seat: int, tier: int, unit: CardInstance) -> Sl
 
 
 def check_develop(
-    state: GameState, catalog: Catalog, seat: int, uid: str, cost_override: int | None = None
+    state: GameState, catalog: Catalog, seat: int, uid: str, cost_override: int | None = None, pay: str = "inf"
 ) -> DevelopOption:
     """Validate developing `uid` by one tier for `seat`. Raises IllegalAction."""
+    if pay not in ("inf", "resource"):
+        raise IllegalAction("error.unknown_payment")
     found = unit_tier(state, seat, uid)
     if found is None:
         raise IllegalAction("error.not_your_unit")
@@ -59,9 +62,15 @@ def check_develop(
     cost = rule_cost if cost_override is None else cost_override
     if cost_override is None:
         cost = max(0, cost - develop_discount(state, catalog, seat))
-    if state.players[seat].inf < cost:
+    player = state.players[seat]
+    if pay == "resource":
+        if not any(m.get("develop_with_resource") for m in catalog.card(unit.def_id).modifiers):
+            raise IllegalAction("error.unknown_payment")
+        if player.resource < cost:
+            raise IllegalAction("error.not_enough_resource", cost=cost, resource=catalog.cls(player.class_id).resource.key)
+    elif player.inf + player.develop_inf < cost:
         raise IllegalAction("error.not_enough_inf", cost=cost)
-    return DevelopOption(uid, tier, to_tier, cost)
+    return DevelopOption(uid, tier, to_tier, cost, pay)
 
 
 def develop_discount(state: GameState, catalog: Catalog, seat: int) -> int:
@@ -81,11 +90,20 @@ def develop_unit(state: GameState, catalog: Catalog, seat: int, option: DevelopO
     _container(state, seat, option.from_tier, card).take(card.uid)
     _row(state, seat, option.to_tier).place(card)
     player = state.players[seat]
-    player.inf -= option.cost
+    if option.pay == "resource":
+        player.resource -= option.cost
+    else:
+        from_develop = min(player.develop_inf, option.cost)  # develop-only inf goes first
+        player.develop_inf -= from_develop
+        player.inf -= option.cost - from_develop
     # "your next development costs less" is used up by this development
     player.turn_modifiers = [m for m in player.turn_modifiers if m["kind"] != "next_develop_discount_per_prepare"]
     events.append(
-        Event("log.unit_developed", {"seat": seat, "card": card.def_id, "tier": option.to_tier, "cost": option.cost})
+        Event(
+            "log.unit_developed_resource" if option.pay == "resource" else "log.unit_developed",
+            {"seat": seat, "card": card.def_id, "tier": option.to_tier, "cost": option.cost,
+             "resource": catalog.cls(player.class_id).resource.key},
+        )
     )
     nodes = catalog.card(card.def_id).triggers.get("on_develop", ())
     if nodes:  # e.g. 787 "when developed: deal 2 dmg to all units in the tier it enters"
@@ -95,11 +113,11 @@ def develop_unit(state: GameState, catalog: Catalog, seat: int, option: DevelopO
         resolve_effects(EffectContext(state, catalog, seat, card, events), nodes)
 
 
-def legal_develops(state: GameState, catalog: Catalog, seat: int) -> list[DevelopOption]:
+def legal_develops(state: GameState, catalog: Catalog, seat: int, pay: str = "inf") -> list[DevelopOption]:
     options = []
     for _, unit in state.units_of(seat):
         try:
-            options.append(check_develop(state, catalog, seat, unit.uid))
+            options.append(check_develop(state, catalog, seat, unit.uid, pay=pay))
         except IllegalAction:
             continue
     return options

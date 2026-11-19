@@ -1,0 +1,19 @@
+# Monarch market card 136 (legacy card number: 49).
+id: MON-P136
+number: 136
+type: influence
+cost: 10
+elements: [water, wind]
+class: monarch
+source: private
+effects:
+  - do: gain_inf
+    amount: 4
+  - if: {played_this_turn: {element: wind, min: 2, other: true}}
+    then:
+      - do: gain_inf
+        amount: 2
+  - if: {played_this_turn: {element: water, min: 2, other: true}}
+    then:
+      - do: prepare
+        times: 2

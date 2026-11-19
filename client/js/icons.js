@@ -18,6 +18,7 @@ const PATHS = {
   cancel: "M6 6l12 12M18 6 6 18",
   check: "M5 12l5 5L20 7",
   trash: "M4 7h16M10 11v6M14 11v6M5 7l1 13h12l1-13M9 7V4h6v3",
+  coin: "M12 3a9 9 0 1 0 .01 0M15 9h-4a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4H9M12 6v2M12 16v2",
 };
 
 export function icon(name, title = "") {

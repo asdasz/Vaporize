@@ -25,13 +25,25 @@ function tooltip(card) {
   return esc(`${cardName(card.id)} · ${t(`ui.card.types.${card.type}`)}`);
 }
 
+// Name, type and full rules text as plain text (title attribute).
+export function fullTooltip(card) {
+  const text = rulesText(card.id).replace(/<[^>]+>/g, "");
+  return `${tooltip(card)}${text ? `&#10;${text}` : ""}`;
+}
+
 // opts.target: valid target of the pending prompt (clickable, red tint); opts.assigned: split damage so far;
 // opts.develop: {cost, to} when the viewer can develop this unit right now (green button)
 // opts.canAttack: own unit with legal attacks (green, click to select); opts.selected: chosen attacker (blue);
 // opts.attackTarget: enemy the selected attacker can hit (red, click to attack)
-export function miniUnit(card, { target = false, assigned = 0, develop = null, canAttack = false, selected = false, attackTarget = false } = {}) {
+// opts.developResource: {cost, to, resource} when it can also be developed paying the class resource (145);
+// opts.bank: {put, take, resource} for your units that keep resource (143): shows a button opening the bank panel
+export function miniUnit(
+  card,
+  { target = false, assigned = 0, develop = null, developResource = null, bank = null, canAttack = false, selected = false, attackTarget = false } = {},
+) {
   const classes = [
-    "unit", card.tapped ? "tapped" : "", target || attackTarget ? "target" : "", develop || canAttack ? "can-develop" : "",
+    "unit", card.tapped ? "tapped" : "", target || attackTarget ? "target" : "",
+    develop || developResource || canAttack || (bank && (bank.put || bank.take)) ? "can-develop" : "",
     selected ? "selected" : "",
   ].join(" ");
   let action = `data-uid="${card.uid}"`;
@@ -39,14 +51,28 @@ export function miniUnit(card, { target = false, assigned = 0, develop = null, c
   else if (attackTarget) action = `data-action="attack-target" data-uid="${card.uid}"`;
   else if (canAttack) action = `data-action="select-attacker" data-uid="${card.uid}"`;
   let badge = assigned ? `<span class="assigned">−${assigned}</span>` : "";
+  const devButtons = [];
   if (develop && !target) {
     const hint = t("ui.tiers.develop_hint", { tier: develop.to, cost: develop.cost });
-    badge += `<button class="dev-btn" data-action="develop" data-uid="${card.uid}" title="${hint}">${icon("arrowUp")}${t("ui.tiers.develop_button", { tier: develop.to, cost: develop.cost })}</button>`;
+    devButtons.push(`<button class="dev-btn" data-action="develop" data-uid="${card.uid}" title="${hint}">${icon("arrowUp")}${t("ui.tiers.develop_button", { tier: develop.to, cost: develop.cost })}</button>`);
+  }
+  if (developResource && !target) {
+    const params = { tier: developResource.to, cost: developResource.cost, resource_name: t(`ui.resources.${developResource.resource}`) };
+    devButtons.push(`<button class="dev-btn gold" data-action="develop-resource" data-uid="${card.uid}" title="${t("ui.tiers.develop_hint_resource", params)}">${icon("arrowUp")}${t("ui.tiers.develop_button_resource", params)}</button>`);
+  }
+  if (devButtons.length) badge += `<span class="dev-btns">${devButtons.join("")}</span>`;
+  if (card.stored || bank) {
+    const resource = bank?.resource || "gold";
+    const title = t("ui.card.stored", { amount: card.stored || 0, resource_name: t(`ui.resources.${resource}`) });
+    badge += bank && !target
+      ? `<button class="stored-badge" data-action="bank-open" data-uid="${card.uid}" title="${title}">${icon("coin")}${card.stored || 0}</button>`
+      : `<span class="stored-badge" title="${title}">${icon("coin")}${card.stored}</span>`;
   }
   return `
-    <div class="${classes}" style="border-color:${seatColor(card.owner)}" title="${tooltip(card)}" ${action}>
+    <div class="${classes}" style="border-color:${seatColor(card.owner)}" title="${fullTooltip(card)}" ${action}>
       ${statusBadges(card.status)}${badge}
       <div class="name">${elementIcons(card.elements)}<span>${esc(cardName(card.id))}</span></div>
+      <div class="ability">${rulesText(card.id)}</div>
       <div class="stats">
         <span title="${t("ui.card.attack")}">${icon("attack")}${statText(card.attack)}</span>
         <span title="${t("ui.card.health")}">${icon("health")}${statText(card.hp)}</span>
@@ -56,6 +82,7 @@ export function miniUnit(card, { target = false, assigned = 0, develop = null, c
 
 export const emptySlot = (label = "") => `<div class="slot">${esc(label)}</div>`;
 
+// Full market card (name, type, price, whole rules text) for the vertical market columns.
 // opts.buy: {market, slot} when the viewer can buy this card now (click to buy);
 // opts.altBuy: {market, slot, vp} when it can be bought by losing VP instead
 export function marketCard(entry, { affordable = null, showModifier = false, ownerSeat = null, buy = null, altBuy = null } = {}) {
@@ -63,16 +90,34 @@ export function marketCard(entry, { affordable = null, showModifier = false, own
   const { card, price, modifier } = entry;
   const priceClass = affordable === true ? "ok" : "";
   const dim = affordable === false ? "dim" : "";
-  const border = ownerSeat !== null ? `style="border:2px solid ${seatColor(ownerSeat)}"` : "";
-  const mod = showModifier && modifier ? `<span class="mod">${modifier > 0 ? `+${modifier}` : `−${-modifier}`}</span>` : "";
+  const border = ownerSeat !== null ? `style="border-left:3px solid ${seatColor(ownerSeat)}"` : "";
+  // Printed cost stays on the badge; the slot modifier is shown next to it, e.g. "5 (−1)".
+  // Affordability (green badge) uses the real price.
+  const mod = showModifier && modifier ? `<span class="mod">(${modifier > 0 ? `+${modifier}` : `−${-modifier}`})</span>` : "";
+  const stats =
+    card.type === "unit"
+      ? `<span class="mstats">${icon("attack")}${statText(card.attack)} ${icon("health")}${statText(card.health)}</span>`
+      : "";
   return `
-    <div class="mcard ${dim} ${buy ? "buyable" : ""}" data-mcard="${card.uid}" ${border} title="${buy ? t("ui.market.buy_hint", { price }) + " · " : ""}${tooltip(card)}"
+    <div class="mcard ${dim} ${buy ? "buyable" : ""}" data-mcard="${card.uid}" ${border} title="${buy ? t("ui.market.buy_hint", { price }) : ""}"
       ${buy ? `data-action="buy" data-market="${buy.market}" data-slot="${buy.slot}"` : ""}>
-      <div class="name">${elementIcons(card.elements)}<span>${esc(cardName(card.id))}</span></div>
+      <div class="mhead">${elementIcons(card.elements)}<span class="mname">${esc(cardName(card.id))}</span>
+        <span class="price ${priceClass}">${card.cost}${mod}</span></div>
+      <div class="mtype">${t(`ui.card.types.${card.type}`)}${stats}</div>
       <div class="mtext">${rulesText(card.id)}</div>
-      <span class="price ${priceClass}">${price} ${mod}</span>
       ${altBuy ? `<button class="alt-buy" data-action="buy-vp" data-market="${altBuy.market}" data-slot="${altBuy.slot}" title="${t("ui.market.buy_vp_hint", { vp: altBuy.vp })}">${t("ui.market.buy_vp", { vp: altBuy.vp })}</button>` : ""}
     </div>`;
+}
+
+// A card played this turn, laid out left to right next to its owner's deck.
+// size "sm": opponents (icons + number, text on hover); "md": the viewer's own row (name, type, short text).
+export function playedCard(card, size = "md") {
+  const num = card.number ? String(card.number).padStart(3, "0") : "";
+  const body =
+    size === "sm"
+      ? `<b>${num}</b>`
+      : `<span class="pname">${esc(cardName(card.id))}</span><span class="ptext">${rulesText(card.id)}</span>`;
+  return `<div class="pcard ${size}" data-played="${card.uid}" title="${fullTooltip(card)}">${elementIcons(card.elements)}${body}</div>`;
 }
 
 // opts.choose: clickable in a prompt; opts.still: display only (no drag, no click), e.g. in the removal overlay;

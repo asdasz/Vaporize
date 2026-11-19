@@ -34,5 +34,8 @@
   "not_enough_vp": "You need {vp} VP for that.",
   "unknown_payment": "Unknown way to pay.",
   "card_locked": "You revealed this card: it can't be played this turn.",
-  "must_target_taunt": "You must target the unit that protects the others."
+  "must_target_taunt": "You must target the unit that protects the others.",
+  "not_enough_resource": "You need {cost} {resource_name} for that.",
+  "not_a_bank": "You can't keep anything on that unit.",
+  "invalid_amount": "That amount isn't possible."
 }

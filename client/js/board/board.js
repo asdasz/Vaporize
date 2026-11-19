@@ -1,51 +1,73 @@
 // Composes the whole board from region modules and wires up events (delegated on the root).
+// Layout: shared market | seats around the table + your panel | private markets + log.
 import { t } from "../i18n.js";
-import { animateMarkets, snapshotMarkets } from "./animate.js";
+import { animateBoard, snapshotBoard } from "./animate.js";
+import { logBox } from "./log.js";
 import { playerPanel } from "./panel.js";
+import { pileOverlay } from "./piles.js";
 import { removalOverlay } from "./removal.js";
 import { privateMarkets, sharedMarket } from "./markets.js";
-import { sidebar } from "./sidebar.js";
-import { tierTable } from "./tiers.js";
+import { seatsOn } from "./seats.js";
+import { layoutTable, tableHtml } from "./table.js";
 import { topbar } from "./topbar.js";
 import { vpTrack } from "./vptrack.js";
 
 let lastGame = null;
 
 export function renderBoard(root, view, store, handlers) {
-  const before = lastGame === `${view.game_id}:${view.you}` ? snapshotMarkets(root) : null;
+  const before = lastGame === `${view.game_id}:${view.you}` ? snapshotBoard(root) : null;
   lastGame = `${view.game_id}:${view.you}`;
+  const left = seatsOn(view, "left");
+  const right = seatsOn(view, "right");
   root.innerHTML = `
     <div class="layout">
-      <main class="main">
-        ${topbar(view, store)}
-        ${vpTrack(view)}
-        ${tierTable(view, store)}
-        ${sharedMarket(view)}
-        ${privateMarkets(view, store)}
+      <header class="head">${topbar(view, store)}${vpTrack(view)}</header>
+      <aside class="col-left">${sharedMarket(view)}</aside>
+      <main class="centre">
+        <div class="seats-top">${seatsOn(view, "top")}</div>
+        <div class="table-row">
+          ${left ? `<div class="seats-side">${left}</div>` : ""}
+          ${tableHtml(view, store)}
+          ${right ? `<div class="seats-side">${right}</div>` : ""}
+        </div>
         ${playerPanel(view, store)}
       </main>
-      <aside class="side">${sidebar(view)}</aside>
+      <aside class="col-right">${privateMarkets(view, store)}${logBox(view, store)}</aside>
     </div>
     <div class="play-zone" data-ok="${t("ui.panel.play_zone")}" data-blocked="${t("ui.panel.play_zone_blocked")}"></div>
-    ${removalOverlay(view, store)}`;
-  animateMarkets(root, before);
+    ${removalOverlay(view, store)}
+    ${pileOverlay(view, store)}`;
+  layoutTable(root);
+  window.onresize = () => layoutTable(root);
+  animateBoard(root, before);
 
   root.onclick = (event) => {
     const el = event.target.closest("[data-action]");
     if (!el && store.attacker) handlers.selectAttacker(null);  // click elsewhere: drop the attacker selection
     if (!el || el.disabled) return;
     const action = el.dataset.action;
+    if (action === "close-pile-backdrop") {
+      if (!event.target.closest("[data-stop]")) handlers.viewPile(null);
+      return;
+    }
     if (action === "close-remove-backdrop") {
       if (!event.target.closest("[data-stop]")) handlers.removal({ open: false }); // click outside the dialog
       return;
     }
     if (action === "end-turn") handlers.endTurn();
+    else if (action === "view-pile") handlers.viewPile({ seat: Number(el.dataset.seat), which: el.dataset.which });
+    else if (action === "close-pile") handlers.viewPile(null);
+    else if (action === "toggle-log") handlers.toggleLog();
     else if (action === "eot-confirm") handlers.endTurnConfirm();
     else if (action === "eot-cancel") handlers.endTurnCancel();
     else if (action === "reset-cards") handlers.resetCards();
     else if (action === "undo") handlers.undo();
     else if (action === "target") handlers.pickUnit(el.dataset.uid);
     else if (action === "develop") handlers.develop(el.dataset.uid);
+    else if (action === "develop-resource") handlers.develop(el.dataset.uid, "resource");
+    else if (action === "bank-open") handlers.bankOpen(el.dataset.uid);
+    else if (action === "bank-close") handlers.bankOpen(null);
+    else if (action === "bank") handlers.bank(el.dataset.uid, Number(el.dataset.amount));
     else if (action === "remove-card") handlers.removeCard(el.dataset.uid);
     else if (action === "open-remove") handlers.removal({ open: true });
     else if (action === "swap-open") handlers.swapOpen(el.dataset.uid);
@@ -73,12 +95,13 @@ export function renderBoard(root, view, store, handlers) {
     else if (action === "skip-choice") handlers.respond(null);
     else if (action === "cancel-choice") handlers.cancelChoice();
     else if (action === "cancel-turn") handlers.cancelTurn();
-    else if (action === "market") handlers.toggleMarket(Number(el.dataset.seat) === view.you ? "self" : Number(el.dataset.seat));
+    else if (action === "market") handlers.showMarket(Number(el.dataset.seat) === view.you ? "self" : Number(el.dataset.seat));
     else if (action === "new-game") handlers.newGame();
   };
   bindHandDrag(root, handlers);
   document.onkeydown = (event) => {
-    if (event.key === "Escape" && store.removal?.open) handlers.removal({ open: false });
+    if (event.key === "Escape" && store.pileView) handlers.viewPile(null);
+    else if (event.key === "Escape" && store.removal?.open) handlers.removal({ open: false });
   };
 
   root.oninput = (event) => {
@@ -160,6 +183,7 @@ function bindHandDrag(root, handlers) {
     if (!el) return;
     dragged = el;
     intent = null;
+    root.dataset.dragging = "1"; // pauses polling: a re-render would cancel the drag
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", el.dataset.handUid);
     requestAnimationFrame(() => {
@@ -194,6 +218,7 @@ function bindHandDrag(root, handlers) {
     const uid = dragged.dataset.handUid;
     const order = handCards().map((c) => c.dataset.handUid);
     dragged = null;
+    delete root.dataset.dragging;
     showZone(false);
     zoneEl()?.classList.remove("armed");
     if (intent === "play") handlers.playCard(uid);

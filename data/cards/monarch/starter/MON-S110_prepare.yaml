@@ -1,0 +1,10 @@
+# Monarch starter card 110 (legacy card number: 25).
+id: MON-S110
+number: 110
+type: spell
+cost: 0
+elements: [wind]
+class: monarch
+source: starter
+effects:
+  - do: prepare

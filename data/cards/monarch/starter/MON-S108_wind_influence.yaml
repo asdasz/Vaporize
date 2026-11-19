@@ -1,0 +1,11 @@
+# Monarch starter card 108 (legacy card number: 23).
+id: MON-S108
+number: 108
+type: influence
+cost: 0
+elements: [wind]
+class: monarch
+source: starter
+effects:
+  - do: gain_inf
+    amount: 1

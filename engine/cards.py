@@ -27,6 +27,8 @@ class CardDef:
     alt_cost: dict[str, int] | None = None  # alternative way to buy, e.g. {"lose_vp": 3}
     hand_eot: dict[str, int] | None = None  # in hand at your end of turn, e.g. {"discard_for_vp": 1} (optional)
     in_discard: dict[str, int] | None = None  # while in your discard pile, e.g. {"vp_per_kill": 1}
+    # How this card invokes, e.g. {"free": True, "max": 8} (134: "this invoke doesn't spend your gold, max 8").
+    invoke_rules: dict[str, Any] | None = None
 
     @property
     def is_unit(self) -> bool:
@@ -57,6 +59,7 @@ class CardInstance:
     temp_any_tier: bool = False  # may attack any tier this turn
     taunt: bool = False  # set from the `taunt` modifier when it enters: enemies must target it first
     temp_kill_vp: list[list[int]] = field(default_factory=list)  # [[seat, vp]]: VP to seat if its attack kills this turn
+    stored: int = 0  # class resource kept on this unit (`resource_bank`, e.g. 143); lost when it leaves the board
 
     @property
     def attack_value(self) -> int:
@@ -76,3 +79,4 @@ class CardInstance:
         self.temp_any_tier = False
         self.temp_kill_vp = []
         self.taunt = False
+        self.stored = 0

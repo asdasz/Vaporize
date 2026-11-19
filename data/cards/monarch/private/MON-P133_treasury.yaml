@@ -1,0 +1,12 @@
+# Monarch market card 133 (legacy card number: 46).
+id: MON-P133
+number: 133
+type: influence
+cost: 7
+elements: [water]
+class: monarch
+source: private
+effects:
+  - do: gain_inf
+    amount: 3
+  - do: convert_inf_eot    # at the end of the turn all inf left becomes gold (before tax)

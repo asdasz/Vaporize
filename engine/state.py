@@ -55,6 +55,8 @@ class PlayerState:
     removals_this_turn: int = 0  # cards removed from the game this turn
     free_refresh_used: bool = False
     element_swap_used: bool = False
+    develop_inf: int = 0  # inf that can only be spent on developing units (e.g. 132); lost at end of turn
+    any_tier_attacks: int = 0  # attacks left this turn that ignore tier restrictions (Monarch passive)
 
 
 @dataclass

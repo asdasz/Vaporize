@@ -32,5 +32,8 @@
   "resolve_market_card": "Choose a shared-market card (cost {max_cost} or less) to resolve.",
   "destroy": "Choose a unit of {player_name} to kill.",
   "destroy_tier": "Choose a tier: every unit there is killed.",
-  "sacrifice": "You may kill another of your units."
+  "sacrifice": "You may kill another of your units.",
+  "invoke_free": "Invoke: choose a value up to your {resource_name} (it isn't spent).",
+  "paid_damage": "Pay {cost} {resource_name} to deal {amount} damage to an enemy unit, or stop.",
+  "pay_resource_times": "{card_name}: how many times do you pay {cost} {resource_name}?"
 }

@@ -1,7 +1,8 @@
 import { api } from "./api.js";
-import { loadLocale, t } from "./i18n.js";
+import { loadLocale } from "./i18n.js";
 import { renderSetup } from "./setup.js";
 import { renderBoard } from "./board/board.js";
+import { numberLabel } from "./board/prompt.js";
 
 const app = document.getElementById("app");
 
@@ -11,13 +12,16 @@ const store = {
   follow: true, // auto-switch to the current player
   view: null,
   error: null, // last illegal-action error {key, params}
-  openMarket: "self", // "self" | seat number | null (all hidden)
+  openMarket: "self", // private market shown: "self" or a seat number
   draft: null, // local, unsent answer for the pending prompt: {key, value, split}
   attacker: null, // uid of the own unit selected to attack
   removal: { open: false, peek: false, confirm: null }, // card-removal overlay
   swap: null, // chosen element swap {uid, from, to}, sent with the next play of that card
   swapEdit: null, // uid of the hand card whose swap panel is open
   eot: null, // {discards: [uid]} while the "before you end your turn" panel is open
+  pileView: null, // {seat, which: "discard" | "removed"} while a pile overlay is open
+  logOpen: true, // game log expanded
+  bankEdit: null, // uid of the unit whose bank panel (143: keep gold on it) is open
 };
 
 // Reset the local draft whenever a new prompt appears.
@@ -80,6 +84,7 @@ async function refresh() {
   const swapOptions = view.legal.element_swap?.options || {};
   if (store.swap && !swapOptions[store.swap.uid]) store.swap = null;
   if (store.swapEdit && !swapOptions[store.swapEdit]) store.swapEdit = null;
+  if (store.bankEdit && !(view.legal.bank || {})[store.bankEdit]) store.bankEdit = null; // not your turn / unit gone
   store.view = view;
   setUrl();
   draw();
@@ -105,14 +110,45 @@ function handleFailure(err) {
 let actionQueue = Promise.resolve();
 const pendingPlays = new Set();
 
+let actionsInFlight = 0;
+
 function act(action) {
   if (action.type === "play_card") {
     if (pendingPlays.has(action.card_uid)) return actionQueue;
     pendingPlays.add(action.card_uid);
   }
-  actionQueue = actionQueue.then(() => sendAction(action)).finally(() => pendingPlays.delete(action.card_uid));
+  actionsInFlight += 1;
+  actionQueue = actionQueue
+    .then(() => sendAction(action))
+    .finally(() => {
+      pendingPlays.delete(action.card_uid);
+      actionsInFlight -= 1;
+    });
   return actionQueue;
 }
+
+// Other windows (other players) act too: poll the game's version and reload the view when it
+// changed. Skipped while our own action is on its way (it reloads anyway), while a card is being
+// dragged (a re-render would cancel the drag) and while the tab is hidden.
+const POLL_MS = 1000;
+let polling = false;
+const busy = () => actionsInFlight > 0 || app.dataset.dragging === "1";
+
+async function poll() {
+  if (polling || !store.gameId || !store.view || document.hidden || busy()) return;
+  polling = true;
+  try {
+    const { version } = await api.getVersion(store.gameId);
+    if (version !== store.view.version && !busy()) await refresh();
+  } catch (err) {
+    if (err.status === 404) handleFailure(err);
+  } finally {
+    polling = false;
+  }
+}
+
+setInterval(poll, POLL_MS);
+document.addEventListener("visibilitychange", poll);
 
 async function sendAction(action) {
   if (!store.gameId) return;
@@ -136,8 +172,9 @@ function showSetup(noticeKey = null) {
   setUrl();
   renderSetup(app, {
     noticeKey,
-    onCreate: async (players) => {
-      const { game_id: gameId } = await api.createGame(players);
+    loadClasses: () => api.listClasses().then((r) => r.classes),
+    onCreate: async (players, classes) => {
+      const { game_id: gameId } = await api.createGame(players, classes);
       store.gameId = gameId;
       store.follow = true;
       store.error = null;
@@ -200,7 +237,12 @@ const handlers = {
   undo: () => act({ type: "undo", seat: store.seat }),
   cancelTurn: () => act({ type: "cancel_turn", seat: store.seat }),
   respond: (answer) => act({ type: "respond", seat: store.seat, answer }),
-  develop: (uid) => act({ type: "develop", seat: store.seat, unit_uid: uid }),
+  develop: (uid, pay = "inf") => act({ type: "develop", seat: store.seat, unit_uid: uid, pay }),
+  bankOpen: (uid) => {
+    store.bankEdit = store.bankEdit === uid ? null : uid;
+    draw();
+  },
+  bank: (uid, amount) => act({ type: "bank", seat: store.seat, unit_uid: uid, amount }),
   removeCard: (uid) => {
     store.removal = { open: false, peek: false, confirm: null };
     return act({ type: "remove_card", seat: store.seat, card_uid: uid });
@@ -244,13 +286,7 @@ const handlers = {
     store.draft.value = value;
     const prompt = store.view.pending.prompt;
     const label = root.querySelector("[data-number-label]");
-    if (label) {
-      label.textContent = t("ui.prompt.spend", {
-        spent: value,
-        resource_name: t(`ui.resources.${prompt.params.resource}`),
-        value: value + (prompt.params.bonus || 0),
-      });
-    }
+    if (label) label.textContent = numberLabel(prompt, value);
   },
   confirmNumber: () => store.draft && handlers.respond(store.draft.value),
   splitAdjust: (uid, delta) => {
@@ -275,8 +311,16 @@ const handlers = {
     store.follow = on;
     await refresh().catch(handleFailure);
   },
-  toggleMarket: (key) => {
-    store.openMarket = String(store.openMarket) === String(key) ? null : key;
+  showMarket: (key) => {
+    store.openMarket = key; // buttons side by side: always switch, never hide
+    draw();
+  },
+  viewPile: (pile) => {
+    store.pileView = pile;
+    draw();
+  },
+  toggleLog: () => {
+    store.logOpen = !store.logOpen;
     draw();
   },
   setHandOrder: (uids) => {

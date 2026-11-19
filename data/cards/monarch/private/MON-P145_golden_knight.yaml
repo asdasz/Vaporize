@@ -1,0 +1,12 @@
+# Monarch market card 145 (legacy card number: 58).
+id: MON-P145
+number: 145
+type: unit
+cost: 10
+elements: [shadow]
+class: monarch
+source: private
+attack: 6
+health: 6
+modifiers:
+  - develop_with_resource: true   # can be developed paying gold instead of inf (same amounts)

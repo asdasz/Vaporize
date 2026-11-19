@@ -15,7 +15,9 @@ async function request(method, url, body) {
 }
 
 export const api = {
-  createGame: (players) => request("POST", "/api/dev/games", { players }),
+  createGame: (players, classes) => request("POST", "/api/dev/games", { players, classes }),
+  listClasses: () => request("GET", "/api/dev/classes"),
   getView: (gameId, seat) => request("GET", `/api/dev/games/${gameId}/view?seat=${seat}`),
+  getVersion: (gameId) => request("GET", `/api/dev/games/${gameId}/version`),
   act: (gameId, action) => request("POST", `/api/dev/games/${gameId}/actions`, action),
 };

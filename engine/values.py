@@ -12,6 +12,9 @@
 - {count: {ally_tiers: {}}}                         different tiers where you have a unit
 - {count: {enemy_kills_this_turn: {}}}              enemy units you destroyed this turn
 - {count: {opponents: {}}}                          number of other players (players - 1)
+- {count: {resource: {}}}                           your class resource (Monarch gold), not counting resource kept on units
+- {count: {ally_units: {same_tier: true}}}          your units on the same tier as this unit (itself included)
+- {count: {units_on_source_tier: {}}}               every player's units on this unit's tier (itself included)
 """
 
 from __future__ import annotations
@@ -25,7 +28,7 @@ from engine.rules import ELEMENTS
 COUNTERS = {
     "played": {"element", "other"},
     "unique_played_elements": {"other"},
-    "ally_units": {"min_tier"},
+    "ally_units": {"min_tier", "same_tier"},
     "ally_tiers": set(),
     "prepares_this_turn": set(),
     "enemy_kills_this_turn": set(),
@@ -34,6 +37,8 @@ COUNTERS = {
     "discard_element": {"element"},
     "vp": set(),
     "elements_at_least_twice": {"other"},
+    "resource": set(),
+    "units_on_source_tier": set(),
 }
 
 
@@ -71,7 +76,18 @@ def _count(ctx: EffectContext, counter: str, params: dict[str, Any]) -> int:
     if counter == "unique_played_elements":
         return len({e for els in _played(ctx, other) for e in els})
     if counter == "ally_units":
-        return sum(1 for tier, _ in ctx.state.units_of(ctx.seat) if tier >= params.get("min_tier", 1))
+        units = ctx.state.units_of(ctx.seat)
+        if params.get("same_tier"):  # 141: "each unit in this unit's row, including this unit"
+            source_tier = next((t for t, u in units if ctx.source is not None and u.uid == ctx.source.uid), None)
+            return sum(1 for tier, _ in units if tier == source_tier) if source_tier is not None else 0
+        return sum(1 for tier, _ in units if tier >= params.get("min_tier", 1))
+    if counter == "resource":
+        return ctx.player.resource
+    if counter == "units_on_source_tier":  # 141: "each unit in this unit's row" - everyone's units on that tier
+        mine = next((t for t, u in ctx.state.units_of(ctx.seat) if ctx.source is not None and u.uid == ctx.source.uid), None)
+        if mine is None:
+            return 0
+        return sum(1 for p in ctx.state.players for t, _ in ctx.state.units_of(p.seat) if t == mine)
     if counter == "ally_tiers":
         return len({tier for tier, _ in ctx.state.units_of(ctx.seat)})
     if counter == "prepares_this_turn":

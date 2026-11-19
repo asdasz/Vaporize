@@ -10,16 +10,18 @@ from pydantic import BaseModel, Field
 class CreateGameRequest(BaseModel):
     players: int = Field(ge=2, le=4)
     seed: Optional[int] = None
+    classes: Optional[list[str]] = None  # class id per seat (default: everyone plays the Mage)
 
 
 class ActionRequest(BaseModel):
-    type: Literal["play_card", "end_turn", "undo", "cancel_turn", "respond", "cancel_choice", "develop", "remove_card", "attack", "buy", "refresh"]
+    type: Literal["play_card", "end_turn", "undo", "cancel_turn", "respond", "cancel_choice", "develop", "remove_card", "attack", "buy", "refresh", "bank"]
     seat: int = Field(ge=0, le=3)
     card_uid: Optional[str] = None
-    unit_uid: Optional[str] = None  # develop, attack (attacker)
+    unit_uid: Optional[str] = None  # develop, attack (attacker), bank
     target_uid: Optional[str] = None  # attack
     market: Optional[Literal["shared", "private", "basic"]] = None  # buy, refresh
-    pay: Optional[Literal["inf", "vp"]] = None  # buy: pay the alternative VP cost
+    pay: Optional[Literal["inf", "vp", "resource"]] = None  # buy: vp (alternative cost); develop: resource (145)
+    amount: Optional[int] = None  # bank: + put resource on the unit, - take it back
     slot: Optional[int] = None  # buy
     swap: Optional[dict[str, str]] = None  # play_card: {"from": element, "to": element}
     hand_discards: Optional[list[str]] = None  # end_turn: hand cards to discard with their EOT ability

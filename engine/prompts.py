@@ -115,5 +115,6 @@ class PendingChoice:
     answers: list[Any]
     prompt: Prompt
     swap: tuple[str, str] | None = None  # element swap chosen when the card was played
-    kind: str = "play"  # "play" (a card) or "end_turn" (end-of-turn abilities)
+    kind: str = "play"  # "play" (a card), "end_turn" (end-of-turn abilities) or "attack" (on-attack abilities)
     hand_discards: tuple[str, ...] = ()  # end_turn: chosen hand-card discards
+    target_uid: str = ""  # attack: the attacked unit (card_uid holds the attacker)

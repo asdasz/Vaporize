@@ -39,8 +39,9 @@ def spell_def(card_id: str, effects: list[dict[str, Any]], elements: list[str] |
     }
 
 
-def make_game(players: int = 2, seed: int = 1) -> GameState:
-    state, _ = new_game(catalog(), [(f"P{i + 1}", "mage") for i in range(players)], seed)
+def make_game(players: int = 2, seed: int = 1, classes: list[str] | None = None) -> GameState:
+    classes = classes or ["mage"] * players
+    state, _ = new_game(catalog(), [(f"P{i + 1}", classes[i]) for i in range(players)], seed)
     return state
 
 

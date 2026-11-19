@@ -583,5 +583,113 @@
       "Gain 3 inf",
       "Gain 1 VP"
     ]
+  },
+  "MON-S101": {
+    "name": "MON 101 · Influence",
+    "text": "Gain 1 inf."
+  },
+  "MON-S102": {
+    "name": "MON 102 · Influence",
+    "text": "Gain 1 inf."
+  },
+  "MON-S103": {
+    "name": "MON 103 · Influence",
+    "text": "Gain 1 inf."
+  },
+  "MON-S104": {
+    "name": "MON 104 · Influence",
+    "text": "Gain 1 inf."
+  },
+  "MON-S105": {
+    "name": "MON 105 · Influence",
+    "text": "Gain 1 inf."
+  },
+  "MON-S106": {
+    "name": "MON 106 · Influence",
+    "text": "Gain 1 inf."
+  },
+  "MON-S107": {
+    "name": "MON 107 · Influence",
+    "text": "Gain 1 inf."
+  },
+  "MON-S108": {
+    "name": "MON 108 · Influence",
+    "text": "Gain 1 inf."
+  },
+  "MON-S109": {
+    "name": "MON 109 · Spell",
+    "text": "**Prepare**."
+  },
+  "MON-S110": {
+    "name": "MON 110 · Spell",
+    "text": "**Prepare**."
+  },
+  "MON-S111": {
+    "name": "MON 111 · Spell",
+    "text": "Deal [**invoke**]+1 damage to a unit on the same tier as any of your units, or 1 tier above it."
+  },
+  "MON-S112": {
+    "name": "MON 112 · Unit",
+    "text": ""
+  },
+  "MON-P131": {
+    "name": "MON 131 · Influence",
+    "text": "Gain 2 inf. If you played 2 water cards this turn, also **prepare**."
+  },
+  "MON-P132": {
+    "name": "MON 132 · Influence",
+    "text": "Gain 3 inf that can only be spent on developing units."
+  },
+  "MON-P133": {
+    "name": "MON 133 · Influence",
+    "text": "Gain 3 inf. At the end of the turn, turn all inf left into gold (before tax)."
+  },
+  "MON-P134": {
+    "name": "MON 134 · Influence",
+    "text": "Gain [**invoke**] inf. This invoke does not spend your gold (max. invoke value 8)."
+  },
+  "MON-P135": {
+    "name": "MON 135 · Influence",
+    "text": "Gain 3 inf. You pay no tax at the end of this turn."
+  },
+  "MON-P136": {
+    "name": "MON 136 · Influence",
+    "text": "Gain 4 inf. If you played 2 other wind cards, gain 2 more. If you played 2 other water cards, **prepare** ×2."
+  },
+  "MON-P137": {
+    "name": "MON 137 · Unit",
+    "text": "Gain 1 gold each time another player buys a card."
+  },
+  "MON-P138": {
+    "name": "MON 138 · Spell",
+    "text": "Gain 1 VP, +1 VP for each 4 gold you own."
+  },
+  "MON-P139": {
+    "name": "MON 139 · Spell",
+    "text": "Spend 1 gold to deal 1 damage to an enemy unit. Repeat as many times as you want. Gain 1 inf if you killed at least 1 unit this way."
+  },
+  "MON-P140": {
+    "name": "MON 140 · Spell",
+    "text": "Gain 1 VP, +1 VP for each of your units in play."
+  },
+  "MON-P141": {
+    "name": "MON 141 · Unit",
+    "text": "**End of turn**: gain 1 gold for each unit in this unit's row (every player's units, this one included), before tax."
+  },
+  "MON-P142": {
+    "name": "MON 142 · Unit",
+    "text": "When it attacks, you can pay 2 gold to give this unit +2 attack this turn, up to 2 times."
+  },
+  "MON-P143": {
+    "name": "MON 143 · Unit",
+    "text": "During your turns you can put gold on this unit and take it back. At the end of your turn, double the gold on it. You pay no tax on this gold. All gold on it is lost when this unit dies."
+  },
+  "MON-P144": {
+    "name": "MON 144 · Unit",
+    "text": "Whenever you pay tax, gain 1 VP for each tax paid."
+  },
+  "MON-P145": {
+    "name": "MON 145 · Unit",
+    "text": "You can develop this unit paying gold instead of inf (same amounts)."
   }
 }

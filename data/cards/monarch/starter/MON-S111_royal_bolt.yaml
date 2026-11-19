@@ -1,0 +1,12 @@
+# Monarch starter card 111 (legacy card number: 26).
+id: MON-S111
+number: 111
+type: spell
+cost: 0
+elements: [fire]
+class: monarch
+source: starter
+effects:
+  - do: deal_damage
+    amount: {invoke: 1}
+    target: {side: any, tiers: with_ally_units_or_above}   # same tier as any of your units, or 1 tier above it

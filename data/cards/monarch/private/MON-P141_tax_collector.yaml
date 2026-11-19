@@ -1,0 +1,14 @@
+# Monarch market card 141 (legacy card number: 54).
+id: MON-P141
+number: 141
+type: unit
+cost: 5
+elements: [water]
+class: monarch
+source: private
+attack: 1
+health: {invoke: 1}
+triggers:
+  eot:                     # before tax (unit abilities run before the class's end of turn)
+    - do: gain_resource
+      amount: {count: {units_on_source_tier: {}}}   # every unit on this unit's tier (all players), itself included

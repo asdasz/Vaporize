@@ -28,6 +28,19 @@ def test_create_view_and_play() -> None:
     assert games.view(gid, 0)["current"] == (seat + 1) % 3
 
 
+def test_version_changes_only_after_successful_actions() -> None:
+    """Other windows poll the version to know when to reload their view."""
+    games = DevGames(catalog())
+    gid = games.create(players=2, seed=7)
+    seat = _influence_hand(games, gid)
+    assert games.version(gid) == 0 and games.view(gid, 0)["version"] == 0
+    assert not games.act(gid, {"type": "end_turn", "seat": 1 - seat})["ok"]  # not their turn
+    assert games.version(gid) == 0
+    uid = games.view(gid, seat)["legal"]["playable"][0]
+    assert games.act(gid, {"type": "play_card", "seat": seat, "card_uid": uid})["ok"]
+    assert games.version(gid) == 1 and games.view(gid, 1 - seat)["version"] == 1
+
+
 def test_illegal_action_returns_error_key() -> None:
     games = DevGames(catalog())
     gid = games.create(players=2, seed=1)

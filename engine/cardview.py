@@ -33,6 +33,7 @@ def card_view(card: CardInstance, catalog: Catalog) -> dict[str, Any]:
             tapped=card.tapped,
             attacks_left=max(0, attacks_allowed(card, catalog) - card.attacks_made),
             token=card.is_token,
+            stored=card.stored,
         )
     return view
 

@@ -102,6 +102,7 @@ def buy(
         card.owner = seat
         _pay(state, catalog, seat, card, cost, pay, market, events)
         player.discard.put_bottom(card)
+        _other_buy_triggers(state, catalog, seat, events)
         return
     m = get_market(state, seat, market)
     card = m.row.slots[slot]
@@ -111,6 +112,21 @@ def buy(
     _pay(state, catalog, seat, card, cost, pay, market, events)
     player.discard.put_bottom(card)
     reveal(state, m, market, slot, events)
+    _other_buy_triggers(state, catalog, seat, events)
+
+
+def _other_buy_triggers(state: GameState, catalog: Catalog, buyer: int, events: list[Event]) -> None:
+    """Units with `on_other_buy` react whenever another player buys a card (e.g. 137 "gain 1 gold")."""
+    from engine.context import EffectContext  # local imports: resolver imports the effects package
+    from engine.resolver import resolve_effects
+
+    for player in state.players:
+        if player.seat == buyer:
+            continue
+        for _, unit in state.units_of(player.seat):
+            nodes = catalog.card(unit.def_id).triggers.get("on_other_buy", ())
+            if nodes and not unit.is_token:
+                resolve_effects(EffectContext(state, catalog, player.seat, unit, events), nodes)
 
 
 def refresh_cost(state: GameState, seat: int, market: str) -> int:

@@ -12,6 +12,9 @@ from engine.development import eot_vp, legal_develops
 from engine.element_swap import has_element_swap, swap_available, swap_options
 from engine.removal import removable_cards
 from engine.attacks import legal_attacks
+from engine.bank import legal_bank
+from engine.context import EffectContext
+from engine.effects.economy import tax_preview
 from engine.market import basic_price, legal_market, refresh_cost
 from engine.rules import ELEMENTS, MIN_HAND, SHARED_PRICE_MODIFIERS
 from engine.state import GameState, MarketState, PlayerState
@@ -50,6 +53,9 @@ def _player(state: GameState, catalog: Catalog, player: PlayerState, viewer: int
             "max": cdef.resource.hard_max,
         },
         "removal_cost": cdef.removal_cost(player.removal_index),
+        "develop_inf": player.develop_inf,
+        "any_tier_attacks": player.any_tier_attacks,
+        "tax": _tax(state, catalog, player),
         "hand_count": len(player.hand),
         "hand": [card_view(c, catalog) for c in player.hand] if player.seat == viewer else None,
         "locked_cards": list(player.locked_cards),  # revealed cards are public anyway
@@ -71,12 +77,23 @@ def _player(state: GameState, catalog: Catalog, player: PlayerState, viewer: int
     }
 
 
+def _tax(state: GameState, catalog: Catalog, player: PlayerState) -> int | None:
+    """End-of-turn tax the player would pay right now; None for classes without tax."""
+    cdef = catalog.cls(player.class_id)
+    taxes = [e for p in cdef.passives if p.get("trigger") == "eot" for e in p.get("effects", []) if e.get("do") == "pay_tax"]
+    if not taxes:
+        return None
+    return tax_preview(EffectContext(state, catalog, player.seat, None, []), int(taxes[0].get("per", 4)))
+
+
 def _pending(state: GameState, catalog: Catalog, viewer: int) -> dict[str, Any] | None:
     """The pending choice. Only the acting player sees the prompt (it may show hidden cards)."""
     pending = state.pending
     if pending is None:
         return None
     card = state.players[pending.seat].hand.find(pending.card_uid) if pending.card_uid else None
+    if card is None and pending.kind == "attack":  # the attacking unit
+        card = next((u for _, u in state.units_of(pending.seat) if u.uid == pending.card_uid), None)
     view: dict[str, Any] = {"seat": pending.seat, "card": card_view(card, catalog) if card else None, "kind": pending.kind}
     if viewer == pending.seat:
         view["prompt"] = pending.prompt.to_dict()
@@ -126,6 +143,12 @@ def build_view(state: GameState, catalog: Catalog, viewer: int) -> dict[str, Any
             "develop": {
                 o.uid: {"cost": o.cost, "to": o.to_tier} for o in (legal_develops(state, catalog, viewer) if free else [])
             },
+            # 145: units that can also be developed paying the class resource
+            "develop_resource": {
+                o.uid: {"cost": o.cost, "to": o.to_tier}
+                for o in (legal_develops(state, catalog, viewer, pay="resource") if free else [])
+            },
+            "bank": legal_bank(state, catalog, viewer) if free else {},
             "can_undo": free and bool(state.undo_stack),
             "undo_card": state.undo_stack[-1].card_id if free and state.undo_stack else None,
             "undo_count": len(state.undo_stack) if free else 0,

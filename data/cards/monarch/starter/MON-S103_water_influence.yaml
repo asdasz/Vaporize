@@ -1,0 +1,11 @@
+# Monarch starter card 103 (legacy card number: 18).
+id: MON-S103
+number: 103
+type: influence
+cost: 0
+elements: [water]
+class: monarch
+source: starter
+effects:
+  - do: gain_inf
+    amount: 1

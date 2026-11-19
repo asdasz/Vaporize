@@ -9,9 +9,14 @@ from engine.effects.registry import effect
 from engine.values import resolve_value
 
 
-@effect("gain_inf", required=("amount",))
+@effect("gain_inf", required=("amount",), optional=("develop_only",))
 def gain_inf(ctx: EffectContext, p: dict[str, Any]) -> None:
+    """With `develop_only` (132) the inf can only be spent on developing units this turn."""
     amount = resolve_value(ctx, p["amount"])
+    if p.get("develop_only"):
+        ctx.player.develop_inf += amount
+        ctx.emit("log.gain_develop_inf", seat=ctx.seat, amount=amount)
+        return
     ctx.player.inf += amount
     ctx.emit("log.gain_inf", seat=ctx.seat, amount=amount)
 

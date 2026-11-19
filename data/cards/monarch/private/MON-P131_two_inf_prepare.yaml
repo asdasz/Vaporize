@@ -1,0 +1,14 @@
+# Monarch market card 131 (legacy card number: 44).
+id: MON-P131
+number: 131
+type: influence
+cost: 3
+elements: [wind]
+class: monarch
+source: private
+effects:
+  - do: gain_inf
+    amount: 2
+  - if: {played_this_turn: {element: water, min: 2, other: true}}
+    then:
+      - do: prepare

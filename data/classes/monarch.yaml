@@ -1,0 +1,19 @@
+# Monarch character board (see the "Character boards design" sheet).
+id: monarch
+primary_elements: [water, wind]
+# Gold track 0-20. Gold is kept between turns; at the end of each turn you pay the tax.
+resource: {key: gold, start: 0, limit: 20, hard_max: 20}
+tiers:
+  1: {spots: 2, vp: 0}
+  2: {spots: 2, develop_cost: 3, vp: 1}
+  3: {spots: 3, develop_cost: 4, vp: 2}
+  4: {develop_cost: 5, vp: 3}            # spots = players - 1 (shared)
+removal_costs: [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7]
+passives:
+  - trigger: eot
+    effects: [{do: pay_tax, per: 4}]     # pay 1 gold for every 4 gold you have, keep the rest
+  - modifier: unit_health_bonus          # your units enter play with +1 HP
+    amount: 1
+  - modifier: any_tier_attack_once_per_turn   # once per turn, one of your units attacks without tier restrictions
+prepare: [{do: gain_resource, amount: 2}]
+invoke: {mode: spend_resource_any, max: 10}   # spend up to 10 gold at once; value = gold spent

@@ -12,14 +12,24 @@ function unitButton(view, uid, extra = "", action = "target") {
       ${esc(cardName(unit.id))} · T${tier} · ${esc(playerName(view, unit.owner))} · ${icon("health")}${unit.hp}${extra}</button>`;
 }
 
+// Label next to the slider: invoke ("Spend 3 gold → value 3"), free invoke (134) or "pay N times" (142).
+export function numberLabel(prompt, value) {
+  const resource_name = resourceName(prompt.params.resource);
+  if (prompt.key === "prompt.pay_resource_times") {
+    return t("ui.prompt.pay_times", { times: value, total: value * prompt.params.cost, resource_name });
+  }
+  const total = value + (prompt.params.bonus || 0);
+  if (prompt.params.free) return t("ui.prompt.value_free", { value: total, resource_name });
+  return t("ui.prompt.spend", { spent: value, resource_name, value: total });
+}
+
 function numberBody(prompt, draft) {
   const value = draft.value ?? prompt.max;
-  const res = resourceName(prompt.params.resource);
   const bonus = prompt.params.bonus ? ` ${t("ui.prompt.bonus", { bonus: prompt.params.bonus })}` : "";
   return `
     <div class="prompt-row">
       <input type="range" min="${prompt.min}" max="${prompt.max}" step="1" value="${value}" data-input="number">
-      <span class="prompt-value" data-number-label>${t("ui.prompt.spend", { spent: value, resource_name: res, value: value + (prompt.params.bonus || 0) })}</span>
+      <span class="prompt-value" data-number-label>${esc(numberLabel(prompt, value))}</span>
       <span class="muted">${bonus}</span>
     </div>
     <div class="prompt-row"><button class="primary" data-action="confirm-number">${icon("check")}${t("ui.prompt.confirm")}</button></div>`;
@@ -112,17 +122,19 @@ function chooseTierBody(prompt) {
 function promptText(view, prompt) {
   const params = { ...prompt.params };
   if (params.resource) params.resource_name = resourceName(params.resource);
+  if (params.card) params.card_name = cardName(params.card);
   if (params.position) params.position = t(`ui.positions.${params.position}`);
   if ("player_seat" in params) params.player_name = view.players[params.player_seat]?.name ?? "";
   if (params.element) params.element_name = t(`ui.elements.${params.element}`).toLowerCase();
   if (params.market) params.market_name = t(`ui.market.${params.market}_name`);
-  return t(prompt.key, params);
+  return t(prompt.key === "prompt.invoke" && params.free ? "prompt.invoke_free" : prompt.key, params);
 }
 
 export function promptPanel(view, store) {
   const pending = view.pending;
   if (!pending) return "";
   const cardLabel = pending.kind === "end_turn" ? t("ui.pending.end_turn") : pending.card ? cardName(pending.card.id) : "";
+  const headKey = pending.kind === "attack" ? "ui.prompt.attacking" : "ui.prompt.playing";
   if (!pending.prompt) {
     return `<div class="prompt waiting">${t("ui.prompt.waiting", { player: playerName(view, pending.seat), card_name: cardLabel })}</div>`;
   }
@@ -143,7 +155,7 @@ export function promptPanel(view, store) {
   return `
     <div class="prompt">
       <div class="prompt-head">
-        <span class="label">${t("ui.prompt.playing", { card_name: esc(cardLabel) })}</span>
+        <span class="label">${t(headKey, { card_name: esc(cardLabel) })}</span>
         <span class="prompt-actions">${skip}${cancel}</span>
       </div>
       <div class="prompt-title">${esc(promptText(view, prompt))}</div>

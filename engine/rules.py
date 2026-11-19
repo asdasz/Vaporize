@@ -18,7 +18,9 @@ ELEMENTS = ("fire", "water", "wind", "lightning", "shadow")
 CARD_TYPES = ("influence", "spell", "unit")
 SOURCES = ("starter", "private", "shared", "basic")  # basic = always-available supply pile
 STATUSES = ("shield", "stun", "freeze")
-UNIT_TRIGGERS = ("sot", "eot", "on_damage_taken", "on_kill", "on_card_played", "on_develop")
+# on_attack: when this unit attacks, before damage (may ask, e.g. 142 "pay 2 gold for +2 attack").
+# on_other_buy: whenever another player buys a card (e.g. 137).
+UNIT_TRIGGERS = ("sot", "eot", "on_damage_taken", "on_kill", "on_card_played", "on_develop", "on_attack", "on_other_buy")
 CLASS_TRIGGERS = ("sot", "eot")
 
 # Every keyword needs an entry in data/locales/<lang>/keywords.json.

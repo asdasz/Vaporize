@@ -24,13 +24,22 @@ CARD_ID_RE = re.compile(r"^[A-Z]{3}-[A-Z]?\d{2,3}$")
 CARD_KEYS = {
     "id", "number", "type", "cost", "elements", "class", "source", "copies",
     "attack", "health", "effects", "triggers", "modifiers", "alt_cost", "hand_eot", "in_discard", "pre_effects",
+    "invoke",
 }
 UNIT_MODIFIERS = {
     "spell_invoke_bonus", "extra_attacks", "develop_discount", "thorns", "stun_on_attack",
     "max_damage_per_hit", "prepare_before_invoke", "taunt", "cleave", "freeze_on_attack", "ally_thorns",
     "ally_damage_reduction", "cheat_death", "shuffle_on_death",
+    "vp_per_tax",  # 144: gain N VP for each tax you pay
+    "resource_bank",  # 143: you may keep class resource on this unit
+    "develop_with_resource",  # 145: may be developed paying the class resource instead of inf
 }
-CLASS_MODIFIERS = {"spell_invoke_bonus", "element_swap_once_per_turn"}
+CLASS_MODIFIERS = {
+    "spell_invoke_bonus", "element_swap_once_per_turn",
+    "unit_health_bonus",  # Monarch: your units enter play with +N HP
+    "any_tier_attack_once_per_turn",  # Monarch: once per turn a unit may attack without tier restrictions
+}
+CARD_INVOKE_KEYS = {"free", "max"}
 
 
 class DataValidationError(Exception):
@@ -126,6 +135,15 @@ def parse_card(raw: Any, where: str) -> tuple[CardDef | None, list[str]]:
     if in_discard is not None and (not isinstance(in_discard, dict) or in_discard.keys() != {"vp_per_kill"}):
         errors.append(f"{where}: in_discard must be {{vp_per_kill: N}}")
 
+    invoke_rules = raw.get("invoke")
+    if invoke_rules is not None and (
+        not isinstance(invoke_rules, dict)
+        or not invoke_rules.keys() <= CARD_INVOKE_KEYS
+        or not isinstance(invoke_rules.get("free", False), bool)
+        or not isinstance(invoke_rules.get("max", 0), int)
+    ):
+        errors.append(f"{where}: invoke must be {{free: true|false, max: N}}")
+
     if errors:
         return None, errors
     return (
@@ -147,6 +165,7 @@ def parse_card(raw: Any, where: str) -> tuple[CardDef | None, list[str]]:
             alt_cost=alt_cost,
             hand_eot=hand_eot,
             in_discard=in_discard,
+            invoke_rules=invoke_rules,
         ),
         [],
     )
@@ -191,6 +210,9 @@ def parse_class(raw: Any, where: str) -> tuple[ClassDef | None, list[str]]:
     invoke_mode = (raw.get("invoke") or {}).get("mode")
     if invoke_mode not in INVOKE_MODES:
         errors.append(f"{where}: invoke.mode must be one of {INVOKE_MODES}")
+    invoke_max = (raw.get("invoke") or {}).get("max")
+    if invoke_max is not None and (isinstance(invoke_max, bool) or not isinstance(invoke_max, int) or invoke_max < 1):
+        errors.append(f"{where}: invoke.max must be a positive integer")
 
     if errors:
         return None, errors

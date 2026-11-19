@@ -1,0 +1,17 @@
+# Monarch market card 139 (legacy card number: 52).
+id: MON-P139
+number: 139
+type: spell
+cost: 4
+elements: [fire]
+class: monarch
+source: private
+effects:
+  - do: paid_damage        # spend 1 gold: 1 dmg to an enemy unit, as many times as you want
+    cost: 1
+    amount: 1
+    target: {side: enemy}
+  - if: {card_kills_at_least: {min: 1}}
+    then:
+      - do: gain_inf
+        amount: 1

@@ -8,6 +8,7 @@ from engine.catalog import Catalog
 from engine.context import EffectContext
 from engine.development import eot_vp
 from engine.drawing import draw_up_to
+from engine.effects.economy import convert_unspent_inf
 from engine.events import Event
 from engine.resolver import resolve_effects
 from engine.rules import HAND_SIZE, VP_GOAL
@@ -67,6 +68,9 @@ def start_turn(state: GameState, catalog: Catalog, events: list[Event]) -> None:
     player.removals_this_turn = 0
     player.free_refresh_used = False
     player.element_swap_used = False
+    player.develop_inf = 0
+    cdef = catalog.cls(player.class_id)
+    player.any_tier_attacks = sum(1 for p in cdef.passives if p.get("modifier") == "any_tier_attack_once_per_turn")
     events.append(Event("log.turn_started", {"seat": player.seat, "round": state.round}))
     _run_class_trigger(state, catalog, player.seat, "sot", events)
     _run_unit_triggers(state, catalog, player.seat, "sot", events)
@@ -101,8 +105,10 @@ def end_turn(
         events.append(Event("log.hand_eot_discard", {"seat": seat, "card": card.def_id, "vp": vp}))
     # Unit EOT abilities go before the class's (so e.g. a unit can still invoke with mana the Mage loses at EOT).
     _run_unit_triggers(state, catalog, seat, "eot", events, shared)
+    convert_unspent_inf(EffectContext(state, catalog, seat, None, events))  # 133: before tax
     _run_class_trigger(state, catalog, seat, "eot", events, shared)
     score_units(state, catalog, seat, events)
+    _grow_banks(state, catalog, seat, events)
     # 2. Untap and remove one stun / freeze token.
     for _, unit in state.units_of(seat):
         unit.tapped = False
@@ -119,6 +125,8 @@ def end_turn(
         card.effective_elements = None  # an element swap only lasts while the card is in play
     player.discard.cards.extend(player.in_play.take_all())
     player.inf = 0
+    player.develop_inf = 0
+    player.any_tier_attacks = 0
     player.played_this_turn = []
     player.turn_modifiers = []
     player.turn_flags = []
@@ -130,6 +138,14 @@ def end_turn(
     draw_up_to(state, seat, HAND_SIZE, events)
     events.append(Event("log.turn_ended", {"seat": seat}))
     _advance(state, catalog, events)
+
+
+def _grow_banks(state: GameState, catalog: Catalog, seat: int, events: list[Event]) -> None:
+    """143: "at the end of your turn, double the gold on this card" (it isn't taxed)."""
+    for _, unit in state.units_of(seat):
+        if unit.stored > 0 and any(m.get("resource_bank") for m in catalog.card(unit.def_id).modifiers):
+            unit.stored *= 2
+            events.append(Event("log.bank_doubled", {"seat": seat, "card": unit.def_id, "amount": unit.stored}))
 
 
 def _advance(state: GameState, catalog: Catalog, events: list[Event]) -> None:

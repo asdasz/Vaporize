@@ -110,6 +110,30 @@ Rule interpretations and technical choices that aren't spelled out in `docs/RULE
 102. **807** counts 807 itself (it's fire and wind and in "played this turn"). Each point is a separate 1-damage / 1-HP choice.
 103. **810**: VP can't go below 0.
 
+### Monarch (board from "Character boards design", cards 101–112, 131–145)
+
+104. **Gold** starts at 0 (the board doesn't say; Mage mana and Robot heat start at 0) and can't go above 20 (the end of the gold track). Gains past 20 are lost.
+105. **Tax** = 1 gold per full 4 gold you have at the end of your turn (0–3: none, 4–7: 1, … 20: 5). It's paid after your units' end-of-turn abilities and after 133 turns inf into gold ("before tax"), then units score VP.
+106. **+1 HP** applies to every Monarch unit that enters play (also with invoke-based HP, e.g. 112 and 141).
+107. **Attack without tier restrictions**: once per turn, any one of your units may attack an enemy on any tier (taunt still applies). It's only used up when an attack actually needs it (a normal-range attack doesn't use it).
+108. **Invoke** asks how much gold to spend, at most 10 (and at most what you have). The Monarch has no spell bonus.
+109. **111** "same tier as any of your units or 1 tier above it": any unit (yours too) on a tier where you have a unit, or the tier above one of those. With no units of your own there's no target.
+110. **112**: HP = invoke − 1, at least 1, then +1 from the board (so 2 HP with no gold).
+111. **131 / 136** "played 2 water / wind cards" counts other cards played earlier this turn (not the card itself).
+112. **132**: develop-only inf is spent before normal inf when you develop (action or develop effect), can't buy, refresh or remove, and is lost at the end of the turn.
+113. **133**: all normal inf left at the end of the turn becomes gold (up to 20), before tax. Develop-only inf doesn't convert.
+114. **134**: you pick the invoke value (0 to min(gold, 8)) and no gold is spent.
+115. **137** triggers on every buy by another player: shared, private, basic, and VP-cost buys.
+116. **138** counts only the gold on your track (not gold kept on 143).
+117. **139**: each 1 gold = one 1-damage hit on an enemy unit you pick (any tier); you can switch targets and stop any time. +1 inf (once) if at least one unit died to it.
+118. **140** counts all your units in play, tokens included.
+119. **141** "this unit's row" = every unit on 141's tier, all players' units included (Jan: P1 has 1 unit on T1, P2 has 2, my 141 is there too → 4 gold).
+120. **142**: when it attacks, before damage, you choose 0, 1 or 2 times to pay 2 gold for +2 attack each (this turn). The attack can still be cancelled at that question.
+121. **143**: during your turn you can move any gold between your track and the unit, any number of times (undoable). At the end of your turn (after tax) the gold on it doubles. Taking gold back can't put you over 20. All of it is lost when the unit leaves the board (dies or returns to the hand).
+122. **144**: +1 VP for every gold paid as tax (0 tax = 0 VP; 135 means no tax and no VP).
+123. **145**: may be developed paying gold instead of inf, same cost (discounts apply); the UI shows a second, gold "↑" button.
+124. **Dev games**: each seat picks its class on the start screen. Classes may repeat in dev mode (the online lobby will enforce one of each).
+
 ## Technical
 
 1. **Engine models are stdlib dataclasses, not Pydantic.** This keeps `engine/` dependency-free and pure. Validation happens in `engine/loader.py`. Pydantic is used for HTTP/WebSocket schemas in `server/`.
@@ -122,3 +146,5 @@ Rule interpretations and technical choices that aren't spelled out in `docs/RULE
 8. **Card names.** The card table has no names yet. Names are `MAG 009 · Spell` (number + type) until real names arrive (add a Name column).
 9. **IDs use the printed card number.** "New card #" is unique across the whole game, so IDs are `<CLASS>-<SOURCE><NNN>` (e.g. `MAG-S001`, `MAG-P031`).
 10. **One way to remove cards.** Removal happens only through the overlay, opened from the "Remove a card" chip. The inline trash buttons on hand cards and in the sidebar are gone.
+11. **Seated table layout.** Jan approved the table sketch without answering the open layout questions, so these defaults apply until he says otherwise: the log sits under the private markets (can be hidden), the thin VP track stays at the top, and the shared market runs top → bottom (top = `+1` slot, bottom = `−1` slot, refresh slides cards down). With 3 players both opponents sit at the top (seat directions 240° and 300°, which avoid the diagonal overlaps of 210°/330°). Discard and removed piles open in an overlay when clicked; this replaces the old sidebar lists.
+12. **Polling until WebSockets.** Two browser windows on the same dev game didn't see each other's moves (and a window kept a stale "not your turn" view). Dev games now have a version counter that every window polls once a second. It goes away when rooms move to WebSockets.

@@ -38,20 +38,24 @@ def invoke(ctx: EffectContext) -> int:
             ctx.player.prepares_this_turn += 1
             resolve_effects(ctx, cdef.prepare)
     bonus = invoke_bonus(ctx)
+    rules = (ctx.catalog.card(ctx.source.def_id).invoke_rules if ctx.source else None) or {}
+    free = bool(rules.get("free"))  # 134: "this invoke does not spend your gold"
     if mode == "spend_resource_any":
-        spent = ctx.ask(
-            Prompt(
-                kind="number",
-                key="prompt.invoke",
-                params={"resource": cdef.resource.key, "bonus": bonus},
-                min=0,
-                max=ctx.player.resource,
-            )
-        )
-        ctx.player.resource -= spent
+        # Spend any amount of the class resource, up to the class cap (Monarch: 10 at once) and the card's cap.
+        caps = [ctx.player.resource]
+        if cdef.invoke.get("max") is not None:
+            caps.append(int(cdef.invoke["max"]))
+        if rules.get("max") is not None:
+            caps.append(int(rules["max"]))
+        params = {"resource": cdef.resource.key, "bonus": bonus}
+        if free:
+            params["free"] = True
+        spent = ctx.ask(Prompt(kind="number", key="prompt.invoke", params=params, min=0, max=max(0, min(caps))))
+        if not free:
+            ctx.player.resource -= spent
     else:
         raise ValueError(f"unknown invoke mode {mode!r} for class {cdef.id}")
     value = spent + bonus
     ctx.invoke_value = value
-    ctx.emit("log.invoke", seat=ctx.seat, spent=spent, value=value, resource=cdef.resource.key)
+    ctx.emit("log.invoke", seat=ctx.seat, spent=0 if free else spent, value=value, resource=cdef.resource.key)
     return value

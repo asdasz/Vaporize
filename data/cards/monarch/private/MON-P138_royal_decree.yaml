@@ -1,0 +1,11 @@
+# Monarch market card 138 (legacy card number: 51).
+id: MON-P138
+number: 138
+type: spell
+cost: 8
+elements: [wind]
+class: monarch
+source: private
+effects:
+  - do: gain_vp
+    amount: {sum: [1, {div_floor: [{count: {resource: {}}}, 4]}]}   # 1 + 1 for each 4 gold you own

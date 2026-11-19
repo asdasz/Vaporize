@@ -11,6 +11,7 @@ from typing import Any, Union
 from engine.cards import CardInstance
 from engine.catalog import Catalog
 from engine.attacks import attack
+from engine.bank import bank
 from engine.context import EffectContext
 from engine.development import check_develop, develop_unit
 from engine.element_swap import check_swap, swapped_elements
@@ -28,7 +29,7 @@ from engine.state import GameState, PlayedCard, UndoEntry
 from engine.turn import end_turn
 
 __all__ = [
-    "Action", "Attack", "Buy", "CancelChoice", "CancelTurn", "Develop", "EndTurn", "IllegalAction", "PlayCard",
+    "Action", "Attack", "Bank", "Buy", "CancelChoice", "CancelTurn", "Develop", "EndTurn", "IllegalAction", "PlayCard",
     "Refresh", "RemoveCard", "Respond", "Undo",
     "apply_action", "check_play", "legal_plays",
 ]
@@ -62,6 +63,16 @@ class Develop:
 
     seat: int
     unit_uid: str
+    pay: str = "inf"  # inf | resource (units with `develop_with_resource`, e.g. 145)
+
+
+@dataclass(frozen=True)
+class Bank:
+    """Move class resource onto (amount > 0) or off (amount < 0) one of your `resource_bank` units (143)."""
+
+    seat: int
+    unit_uid: str
+    amount: int
 
 
 @dataclass(frozen=True)
@@ -117,7 +128,7 @@ class CancelTurn:
     seat: int
 
 
-Action = Union[PlayCard, Respond, CancelChoice, Develop, RemoveCard, Attack, Buy, Refresh, EndTurn, Undo, CancelTurn]
+Action = Union[PlayCard, Respond, CancelChoice, Develop, Bank, RemoveCard, Attack, Buy, Refresh, EndTurn, Undo, CancelTurn]
 
 
 def _check_turn(state: GameState, seat: int) -> None:
@@ -262,6 +273,26 @@ def _resolve_end_turn(
     return new_state, events
 
 
+def _resolve_attack(
+    base: GameState, catalog: Catalog, seat: int, attacker_uid: str, target_uid: str, answers: list[Any]
+) -> tuple[GameState, list[Event]]:
+    """Attack; if an on-attack ability needs a choice (e.g. 142 "pay 2 gold for +2 attack"), wait for it."""
+    new_state = copy_state(base)
+    events: list[Event] = []
+    try:
+        attack(new_state, catalog, seat, attacker_uid, target_uid, events, answers)
+    except NeedChoice as need:
+        waiting = copy_state(base)
+        waiting.pending = PendingChoice(seat, attacker_uid, list(answers), need.prompt, None, "attack", (), target_uid)
+        return waiting, []
+    if reveals_information(events):
+        new_state.undo_stack = []  # e.g. an on-kill draw: checkpoint
+    else:
+        unit = next((u for _, u in base.units_of(seat) if u.uid == attacker_uid), None)
+        new_state.undo_stack.append(UndoEntry(snapshot(base), unit.def_id if unit else ""))
+    return new_state, events
+
+
 def _respond(state: GameState, catalog: Catalog, action: Respond) -> tuple[GameState, list[Event]]:
     _check_turn(state, action.seat)
     pending = state.pending
@@ -271,6 +302,8 @@ def _respond(state: GameState, catalog: Catalog, action: Respond) -> tuple[GameS
     base.pending = None
     if pending.kind == "end_turn":
         return _resolve_end_turn(base, catalog, pending.seat, pending.hand_discards, [*pending.answers, action.answer])
+    if pending.kind == "attack":
+        return _resolve_attack(base, catalog, pending.seat, pending.card_uid, pending.target_uid, [*pending.answers, action.answer])
     return _resolve_play(
         base, catalog, pending.seat, pending.card_uid, [*pending.answers, action.answer], pending.swap
     )
@@ -288,6 +321,8 @@ def _cancel_choice(state: GameState, action: CancelChoice) -> tuple[GameState, l
     card = state.players[pending.seat].hand.find(pending.card_uid)
     if pending.kind == "end_turn":
         return new_state, [Event("log.end_turn_cancelled", {"seat": pending.seat})]
+    if pending.kind == "attack":
+        return new_state, [Event("log.attack_cancelled", {"seat": pending.seat})]
     return new_state, [Event("log.play_cancelled", {"seat": pending.seat, "card": card.def_id if card else ""})]
 
 
@@ -330,29 +365,34 @@ def apply_action(state: GameState, catalog: Catalog, action: Action) -> tuple[Ga
         return _resolve_play(state, catalog, action.seat, action.card_uid, [], action.swap)
     if isinstance(action, Develop):
         _check_turn(state, action.seat)
-        option = check_develop(state, catalog, action.seat, action.unit_uid)
+        option = check_develop(state, catalog, action.seat, action.unit_uid, pay=action.pay)
         new_state = copy_state(state)
         develop_unit(new_state, catalog, action.seat, option, events)
         unit = next(u for _, u in state.units_of(action.seat) if u.uid == action.unit_uid)
         new_state.undo_stack.append(UndoEntry(snapshot(state), unit.def_id))
         return new_state, events
+    if isinstance(action, Bank):
+        _check_turn(state, action.seat)
+        new_state = copy_state(state)
+        unit = bank(new_state, catalog, action.seat, action.unit_uid, action.amount, events)
+        new_state.undo_stack.append(UndoEntry(snapshot(state), unit.def_id))
+        return new_state, events
+    if isinstance(action, Attack):
+        _check_turn(state, action.seat)
+        return _resolve_attack(state, catalog, action.seat, action.attacker_uid, action.target_uid, [])
     if isinstance(action, RemoveCard):
         _check_turn(state, action.seat)
         new_state = copy_state(state)
         card = remove_card(new_state, catalog, action.seat, action.card_uid, events)
         new_state.undo_stack.append(UndoEntry(snapshot(state), card.def_id))
         return new_state, events
-    if isinstance(action, (Attack, Buy, Refresh)):
+    if isinstance(action, (Buy, Refresh)):
         _check_turn(state, action.seat)
-        if isinstance(action, (Buy, Refresh)) and action.market not in MARKETS:
+        if action.market not in MARKETS:
             raise IllegalAction("error.unknown_market")
         new_state = copy_state(state)
         label = ""
-        if isinstance(action, Attack):
-            unit = next((u for _, u in state.units_of(action.seat) if u.uid == action.attacker_uid), None)
-            label = unit.def_id if unit else ""
-            attack(new_state, catalog, action.seat, action.attacker_uid, action.target_uid, events)
-        elif isinstance(action, Buy):
+        if isinstance(action, Buy):
             buy(new_state, catalog, action.seat, action.market, action.slot, events, action.pay)
         else:
             refresh(new_state, action.seat, action.market, events)

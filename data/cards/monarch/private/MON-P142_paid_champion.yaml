@@ -1,0 +1,18 @@
+# Monarch market card 142 (legacy card number: 55).
+id: MON-P142
+number: 142
+type: unit
+cost: 4
+elements: [fire]
+class: monarch
+source: private
+attack: 1
+health: 4
+triggers:
+  on_attack:               # when it attacks: pay 2 gold for +2 attack this turn, up to 2 times
+    - do: pay_resource_times
+      cost: 2
+      times: 2
+      effects:
+        - do: boost_self
+          attack: 2

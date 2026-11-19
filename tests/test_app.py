@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 
 import pytest
 
@@ -12,6 +13,7 @@ if not (importlib.util.find_spec("httpx2") or importlib.util.find_spec("httpx"))
 
 from fastapi.testclient import TestClient  # noqa: E402
 
+os.environ["VAPORIZE_STATS"] = "off"  # don't write statistics from tests
 from server.app import app  # noqa: E402
 
 
@@ -26,6 +28,7 @@ def test_http_flow() -> None:
     assert client.get(f"/api/dev/games/{gid}/version").json() == {"version": 1}
     assert client.get("/api/dev/games/NOPE00/version").status_code == 404
     assert client.get("/").status_code == 200
+    assert client.get("/api/health").json() == {"ok": True}
     locale = client.get("/locales/en/ui.json")
     assert locale.status_code == 200 and locale.headers["cache-control"] == "no-cache"
     assert client.post("/api/dev/games", json={"players": 5}).status_code == 422

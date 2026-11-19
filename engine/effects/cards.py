@@ -341,5 +341,5 @@ def resolve_market_card(ctx: EffectContext, p: dict[str, Any]) -> None:
     slot = next(i for i, c in enumerate(market.row.slots) if c is not None and c.uid == uid)
     market.row.take(uid)
     market.removed.put_bottom(card)
-    ctx.emit("log.market_card_resolved", seat=ctx.seat, card=card.def_id)
+    ctx.emit("log.market_card_resolved", seat=ctx.seat, card=card.def_id, market="shared", slot=slot)
     reveal(ctx.state, market, "shared", slot, ctx.events)

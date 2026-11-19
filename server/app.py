@@ -14,12 +14,15 @@ from fastapi.staticfiles import StaticFiles
 
 from engine.loader import load_catalog
 from server.dev_service import DevGames, GameNotFound
+from server.stats import MarketRecorder, Writer, store_from_env
 from server.protocol import ActionRequest, CreateGameRequest
 
 ROOT = Path(__file__).resolve().parent.parent
 
 catalog = load_catalog(ROOT / "data")
-games = DevGames(catalog, save_path=ROOT / ".devgames.pkl")  # survives --reload restarts
+_store = store_from_env(ROOT)  # Turso if TURSO_DATABASE_URL + TURSO_AUTH_TOKEN are set, else .stats.db (SQLite)
+recorder = MarketRecorder(catalog, Writer(_store) if _store else None)
+games = DevGames(catalog, save_path=ROOT / ".devgames.pkl", recorder=recorder)  # survives --reload restarts
 app = FastAPI(title="Vaporize")
 
 
@@ -39,6 +42,12 @@ def create_game(req: CreateGameRequest) -> dict[str, Any]:
         return {"game_id": games.create(req.players, req.seed, req.classes)}
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/api/health", response_model=None)
+def health() -> dict[str, Any]:
+    """For the hosting platform's health check."""
+    return {"ok": True}
 
 
 @app.get("/api/dev/classes", response_model=None)

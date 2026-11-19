@@ -24,7 +24,7 @@ Vaporize is an online deck-building card game for 2–4 players. Each player lea
 | Card / class data | YAML | One file per card, human-editable |
 | Client | Plain HTML + CSS + JavaScript (ES modules) | No build step, no framework, served by FastAPI as static files |
 | Tests | pytest | Engine is fully testable without a server or browser |
-| Hosting | Render / Railway / Fly.io (TBD) | Single process, in-memory game rooms for now |
+| Hosting | Northflank (Docker, `docs/DEPLOY.md`) + Turso for statistics | Single process / one instance: in-memory game rooms for now |
 
 ## Architecture
 
@@ -119,6 +119,7 @@ vaporize/
 ├── server/
 │   ├── app.py                   # FastAPI app, static files, API endpoints
 │   ├── dev_service.py           # temporary hot-seat dev games (HTTP)
+│   ├── stats.py                 # market statistics recorder (SQLite locally, Turso in production)
 │   ├── codes.py                 # 6-char join codes
 │   ├── rooms.py                 # (planned) lobby rooms over WebSockets
 │   └── protocol.py              # message schemas (client ⇄ server)
@@ -469,6 +470,13 @@ Class-specific rules that don't fit the generic primitives go in `engine/classes
 - One WebSocket per player. After each action the server broadcasts a fresh `PlayerView` to every player, plus the new `Event`s for animation and the log.
 - The dev start screen picks a class per seat (`GET /api/dev/classes`, `POST /api/dev/games {players, classes}`); classes may repeat there.
 - Until the WebSocket lobby exists, dev games (`server/dev_service.py`) carry a `version` that goes up after every successful action. Each window polls `GET /api/dev/games/{id}/version` once a second and reloads its view when it changed (not while its own action is in flight, a card is being dragged or the tab is hidden).
+
+## Market statistics
+
+- Every game played by people (started from the browser: dev hot-seat and online) is recorded by `server/stats.py`; automated tests and simulations never write to the real database (`tests/conftest.py` sets `VAPORIZE_STATS=off`): a `games` row and a `market_events` row for each card that is revealed in, bought from or leaves the shared market or a private market (the basic supply isn't tracked). Schema and example queries: `docs/STATS.md`.
+- The engine only emits events; market events carry `slot`, `owner` (private markets) and, for shared buys, `modifier` (+1 / 0 / −1). A refresh emits `log.market_card_left` for the card that drops out.
+- Writes go through a background `Writer` and never block or break a game (failures are logged). Rows of undoable actions are held back until a checkpoint or the end of the turn, so taken-back actions are never written.
+- Storage: `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` → Turso over HTTP (no extra package); otherwise a local SQLite file `.stats.db` (or `VAPORIZE_STATS_DB`); `VAPORIZE_STATS=off` disables it (tests do). Never commit tokens.
 
 ## UI design (approved)
 

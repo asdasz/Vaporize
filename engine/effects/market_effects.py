@@ -7,7 +7,7 @@ from typing import Any
 from engine.cardview import card_view
 from engine.context import EffectContext
 from engine.effects.registry import effect
-from engine.market import reveal, slide
+from engine.market import market_params, reveal, slide
 from engine.prompts import Prompt
 from engine.state import MarketState
 from engine.values import resolve_value
@@ -55,5 +55,5 @@ def discard_from_market(ctx: EffectContext, p: dict[str, Any]) -> None:
     slot = next(i for i, c in enumerate(market.row.slots) if c is not None and c.uid == uid)
     card = market.row.take(uid)
     market.removed.put_bottom(card)
-    ctx.emit("log.market_card_discarded", seat=ctx.seat, card=card.def_id, market=name)
+    ctx.emit("log.market_card_discarded", seat=ctx.seat, card=card.def_id, market=name, **market_params(ctx.state, market, slot))
     reveal(ctx.state, market, name, slot, ctx.events)

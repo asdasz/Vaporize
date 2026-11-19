@@ -37,10 +37,11 @@ from engine.setup import new_game
 from engine.state import GameState
 from engine.view import build_view
 from server.codes import generate_code
+from server.stats import MarketRecorder
 
 LOG_LIMIT = 60
 # Bump when engine state classes change, so old save files are ignored instead of half-loading.
-SAVE_VERSION = 10
+SAVE_VERSION = 11
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +55,7 @@ class DevGame:
     state: GameState
     log: list[dict[str, Any]] = field(default_factory=list)
     version: int = 0  # bumped after every successful action; clients poll it to know when to reload
+    record_id: str = ""  # id of this game in the statistics database (server/stats.py)
 
     def record(self, events: list[Event]) -> None:
         self.log.extend(e.to_dict() for e in events)
@@ -96,7 +98,10 @@ def parse_action(payload: dict[str, Any]) -> Action:
 
 
 class DevGames:
-    def __init__(self, catalog: Catalog, class_id: str = "mage", save_path: Path | None = None) -> None:
+    def __init__(
+        self, catalog: Catalog, class_id: str = "mage", save_path: Path | None = None, recorder: MarketRecorder | None = None
+    ) -> None:
+        self.recorder = recorder or MarketRecorder(catalog, None)  # default: no statistics
         self.catalog = catalog
         self.class_id = class_id
         self.save_path = save_path
@@ -145,9 +150,10 @@ class DevGames:
         seats = [(f"Player {i + 1}", classes[i]) for i in range(players)]
         state, events = new_game(self.catalog, seats, seed)
         game_id = generate_code(random.Random(seed), self.games)
-        game = DevGame(state)
+        game = DevGame(state, record_id=self.recorder.new_record_id())
         game.record(events)
         self.games[game_id] = game
+        self.recorder.game_created(game.record_id, game_id, state)
         self._save()
         return game_id
 
@@ -182,9 +188,12 @@ class DevGames:
         game = self._get(game_id)
         try:
             action = parse_action(payload)
+            before = game.state
             game.state, events = apply_action(game.state, self.catalog, action)
         except IllegalAction as exc:
             return {"ok": False, "error": {"key": exc.key, "params": exc.params}}
+        if game.record_id:
+            self.recorder.action_applied(game.record_id, type(action).__name__, before, game.state, events)
         game.record(events)
         game.version += 1
         self._save()

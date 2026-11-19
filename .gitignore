@@ -9,3 +9,5 @@ __pycache__/
 .idea/
 .devgames.pkl
 .devgames.tmp
+.stats.db
+.stats.db-journal

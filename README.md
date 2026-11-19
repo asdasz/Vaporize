@@ -18,6 +18,26 @@ uvicorn server.app:app --reload --reload-dir engine --reload-dir server --reload
 
 Open http://127.0.0.1:8000, pick 2, 3 or 4 players and play hot-seat. "Follow current player" switches the view to whoever's turn it is, and "Viewing as" lets you look at the board from any seat.
 
+## Market statistics
+
+Every game records which cards were revealed in, bought from (and at which price modifier) or left the shared
+and private markets. Locally they go to `.stats.db` (SQLite: `sqlite3 .stats.db`). Schema and example queries:
+[`docs/STATS.md`](docs/STATS.md).
+
+On the server, set these environment variables (as secrets, never in the repo) to write to Turso instead:
+
+```bash
+TURSO_DATABASE_URL=libsql://<database>-<org>.turso.io
+TURSO_AUTH_TOKEN=<token from `turso db tokens create <database>`>
+```
+
+`VAPORIZE_STATS=off` turns recording off.
+
+## Deploy
+
+One Docker container (`Dockerfile`) on Northflank, statistics in Turso: step-by-step guide in
+[`docs/DEPLOY.md`](docs/DEPLOY.md).
+
 ## Tests
 
 ```bash
@@ -43,4 +63,6 @@ mypy
 - [x] Units: attacks (same tier or one higher)
 - [x] Status effects from cards (shield, stun, freeze)
 - [x] Mage element swap passive (free, once per turn)
+- [x] Monarch class (cards 101–112, 131–145)
+- [x] Market statistics database (SQLite locally, Turso on the server)
 - [ ] Online lobby with 6-character join codes over WebSockets

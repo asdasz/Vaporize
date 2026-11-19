@@ -73,5 +73,6 @@
   "bank_put": "{player} puts {amount} {resource_name} on {card_name}.",
   "bank_take": "{player} takes {amount} {resource_name} from {card_name}.",
   "bank_doubled": "The {resource_name} on {card_name} doubles to {amount}.",
-  "unit_developed_resource": "{player} develops {card_name} to Tier {tier} for {cost} {resource_name}."
+  "unit_developed_resource": "{player} develops {card_name} to Tier {tier} for {cost} {resource_name}.",
+  "market_card_left": "{card_name} leaves the {market_name}."
 }

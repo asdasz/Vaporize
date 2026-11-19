@@ -39,6 +39,15 @@ def price(state: GameState, catalog: Catalog, seat: int, market: str, slot: int)
     return max(0, catalog.card(card.def_id).cost + mod)
 
 
+def market_params(state: GameState, market: MarketState, slot: int) -> dict[str, int]:
+    """`slot`, plus `owner` for a private market: lets the stats recorder (server/stats.py) place every market event."""
+    params = {"slot": slot}
+    owner = next((p.seat for p in state.players if p.private_market is market), None)
+    if owner is not None:
+        params["owner"] = owner
+    return params
+
+
 def reveal(state: GameState, market: MarketState, name: str, slot: int, events: list[Event]) -> None:
     """Fill an empty slot from the market deck (reshuffling the removed pile if the deck is empty)."""
     if market.deck.is_empty() and not market.removed.is_empty():
@@ -49,7 +58,7 @@ def reveal(state: GameState, market: MarketState, name: str, slot: int, events: 
         return
     card = market.deck.draw()
     market.row.place(card, slot)
-    events.append(Event("log.market_revealed", {"market": name, "card": card.def_id}))
+    events.append(Event("log.market_revealed", {"market": name, "card": card.def_id, **market_params(state, market, slot)}))
 
 
 def _card_at(state: GameState, seat: int, market: str, slot: int) -> CardInstance | None:
@@ -79,15 +88,23 @@ def check_buy(state: GameState, catalog: Catalog, seat: int, market: str, slot: 
     return cost
 
 
-def _pay(state: GameState, catalog: Catalog, seat: int, card: CardInstance, cost: int, pay: str, market: str, events: list[Event]) -> None:
+def _pay(
+    state: GameState, catalog: Catalog, seat: int, card: CardInstance, cost: int, pay: str, market: str, events: list[Event],
+    slot: int = 0,
+) -> None:
     player = state.players[seat]
+    where: dict[str, int] = {"slot": slot}
+    if market == "shared":
+        where["modifier"] = SHARED_PRICE_MODIFIERS[slot]
+    elif market == "private":
+        where["owner"] = seat
     if pay == "vp":
         lose = (catalog.card(card.def_id).alt_cost or {})["lose_vp"]
         player.vp -= lose
-        events.append(Event("log.card_bought_vp", {"seat": seat, "card": card.def_id, "vp": lose, "market": market}))
+        events.append(Event("log.card_bought_vp", {"seat": seat, "card": card.def_id, "vp": lose, "market": market, **where}))
     else:
         player.inf -= cost
-        events.append(Event("log.card_bought", {"seat": seat, "card": card.def_id, "price": cost, "market": market}))
+        events.append(Event("log.card_bought", {"seat": seat, "card": card.def_id, "price": cost, "market": market, **where}))
 
 
 def buy(
@@ -109,7 +126,7 @@ def buy(
     assert card is not None
     m.row.slots[slot] = None
     card.owner = seat
-    _pay(state, catalog, seat, card, cost, pay, market, events)
+    _pay(state, catalog, seat, card, cost, pay, market, events, slot)
     player.discard.put_bottom(card)
     reveal(state, m, market, slot, events)
     _other_buy_triggers(state, catalog, seat, events)
@@ -165,6 +182,8 @@ def slide(state: GameState, m: MarketState, name: str, events: list[Event]) -> N
     slots = m.row.slots
     if slots[-1] is not None:
         m.removed.put_bottom(slots[-1])
+        params = {"market": name, "card": slots[-1].def_id, "reason": "refresh", **market_params(state, m, len(slots) - 1)}
+        events.append(Event("log.market_card_left", params))
     for i in range(len(slots) - 1, 0, -1):
         slots[i] = slots[i - 1]
     slots[0] = None

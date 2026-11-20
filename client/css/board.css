@@ -344,3 +344,21 @@ button.stored-badge:hover { background: var(--gold); color: #fff; }
   40% { box-shadow: 0 0 0 8px rgba(133, 79, 11, 0.35); }
   100% { box-shadow: 0 0 0 0 rgba(133, 79, 11, 0); }
 }
+.preview-line { font-weight: 600; color: var(--success); background: var(--success-bg); border-radius: 6px; padding: 3px 8px; align-self: flex-start; }
+.burst { position: fixed; z-index: 75; width: 120px; height: 120px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, rgba(255, 236, 160, 0.95) 0%, rgba(255, 140, 40, 0.85) 35%, rgba(200, 40, 20, 0.5) 60%, rgba(200, 40, 20, 0) 72%); }
+.spotlight.burning { background: rgba(60, 20, 10, 0.25); }
+
+/* Hold a card to read it (zoom.js) */
+.zoom-overlay { position: fixed; inset: 0; z-index: 95; display: flex; align-items: center; justify-content: center; pointer-events: none; background: rgba(20, 20, 18, 0.35); }
+.hcard.zoomed { width: 240px; height: auto; min-height: 320px; padding: 14px 16px; gap: 6px; font-size: 16px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4); }
+.hcard.zoomed .name { font-size: 22px; }
+.hcard.zoomed .type { font-size: 13px; }
+.hcard.zoomed .cost { width: 30px; height: 30px; font-size: 16px; }
+.hcard.zoomed .text { font-size: 16px; line-height: 1.4; overflow: visible; }
+.hcard.zoomed .stats { font-size: 18px; }
+.hcard.zoomed .num { font-size: 12px; }
+.hcard.zoomed .ic { width: 20px; height: 20px; }
+[data-card], [data-mcard], [data-played], .place[data-uid] { -webkit-touch-callout: none; user-select: none; }
+.hcard .text, .mcard .mtext { position: relative; }
+.clipped::after { content: "…"; position: absolute; right: 0; bottom: 0; padding-left: 18px; font-weight: 800; color: var(--text); background: linear-gradient(to right, rgba(255, 255, 255, 0), var(--surface) 55%); }

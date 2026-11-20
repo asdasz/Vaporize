@@ -255,5 +255,16 @@
     "leave": "Leave game",
     "close": "Close game",
     "room_gone": "That game no longer exists. Host a new one or join another."
+  },
+  "preview": {
+    "result": "Result: {items}",
+    "nothing": "Result: no effect",
+    "vp": "+{n} VP",
+    "inf": "+{n} inf",
+    "draw": "draw {n}",
+    "damage": "{n} damage",
+    "kills": "{n} destroyed",
+    "unit": "unit {attack} / {hp} HP",
+    "next": "then: {text}"
   }
 }

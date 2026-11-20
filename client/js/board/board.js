@@ -2,6 +2,7 @@
 // Layout: shared market | seats around the table + your panel | private markets + log.
 import { t } from "../i18n.js";
 import { animateBoard, snapshotBoard } from "./animate.js";
+import { bindZoom, markClipped } from "./zoom.js";
 import { logBox } from "./log.js";
 import { playerPanel } from "./panel.js";
 import { pileOverlay } from "./piles.js";
@@ -38,7 +39,12 @@ export function renderBoard(root, view, store, handlers) {
     ${removalOverlay(view, store)}
     ${pileOverlay(view, store)}`;
   layoutTable(root);
-  window.onresize = () => layoutTable(root);
+  markClipped(root);
+  bindZoom(() => store.view);
+  window.onresize = () => {
+    layoutTable(root);
+    markClipped(root);
+  };
   animateBoard(root, before, view);
 
   root.onclick = (event) => {

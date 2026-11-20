@@ -139,7 +139,7 @@ export function handCard(card, { playable = false, blocked = false, choose = fal
       ? `<div class="stats"><span>${icon("attack")}${statText(card.attack)}</span><span>${icon("health")}${statText(card.health)}</span></div>`
       : "";
   return `
-    <div class="${classes}" ${attrs} title="${tooltip(card)}">
+    <div class="${classes}" ${attrs} data-card="${card.uid}" title="${tooltip(card)}">
       <div class="top">
         <span class="${swap ? "swapped" : ""}">${elementIcons(card.elements)}</span>
         ${canSwap ? `<button class="swap-btn ${swap ? "on" : ""}" data-action="swap-open" data-uid="${card.uid}" draggable="false" title="${t("ui.swap.button")}">⇄</button>` : ""}

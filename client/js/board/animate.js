@@ -8,6 +8,8 @@
 //   (shorter for your own buys); the new card appears in the same slot;
 //   on refresh the cards slide down, the bottom one flies to the removed pile, the new one comes from the deck
 // - end of turn: played cards fly to the discard pile
+// - destroyed unit: bursts in place (everyone sees it), then flies to the owner's discard pile
+// - card removed from the game: shown in the middle of the screen and burns away (everyone sees it)
 import { handCard } from "./card.js";
 import { boardUnits } from "./util.js";
 
@@ -106,6 +108,19 @@ function floatNumber(place, text, kind) {
   anim.onfinish = () => el.remove();
 }
 
+// An explosion where a unit was destroyed.
+function burst(rect) {
+  const el = document.createElement("div");
+  el.className = "burst";
+  Object.assign(el.style, { left: `${rect.left + rect.width / 2}px`, top: `${rect.top + rect.height / 2}px` });
+  document.body.appendChild(el);
+  const anim = el.animate(
+    [{ transform: "translate(-50%, -50%) scale(0.2)", opacity: 1 }, { transform: "translate(-50%, -50%) scale(1.6)", opacity: 0 }],
+    { duration: 600, easing: "ease-out", fill: "forwards" },
+  );
+  anim.onfinish = () => el.remove();
+}
+
 // --- spotlight: another player's card in the middle of the screen ---------------------------------
 
 const spotlightQueue = [];
@@ -113,8 +128,9 @@ let spotlightBusy = false;
 
 // `hold`: ms in the middle of the screen. `hideTarget`: hide the destination until the card lands
 // (a played card / unit); off for a pile, which just pulses when the card arrives.
-function enqueueSpotlight(card, selector, { hold = 900, hideTarget = true } = {}) {
-  spotlightQueue.push({ card, selector, hold, hideTarget });
+// `burn`: the card burns away in the middle of the screen instead of flying anywhere (removed from the game).
+function enqueueSpotlight(card, selector, { hold = 900, hideTarget = true, burn = false } = {}) {
+  spotlightQueue.push({ card, selector, hold, hideTarget, burn });
   const target = hideTarget ? document.querySelector(selector) : null;
   if (target) target.style.visibility = "hidden"; // shown when the card lands
   if (!spotlightBusy) nextSpotlight();
@@ -137,6 +153,26 @@ function nextSpotlight() {
     { duration: 260, easing: EASE, fill: "forwards" },
   );
   show.onfinish = () => {
+    if (item.burn) {
+      setTimeout(() => {
+        overlay.classList.add("burning");
+        const fire = cardEl.animate(
+          [
+            { transform: "scale(1.9)", opacity: 1, filter: "none" },
+            { transform: "scale(2) rotate(-2deg)", opacity: 1, filter: "sepia(1) saturate(4) hue-rotate(-20deg) brightness(1.2)", offset: 0.35 },
+            { transform: "scale(2.2) rotate(3deg)", opacity: 0, filter: "sepia(1) saturate(6) brightness(0.4) blur(6px)" },
+          ],
+          { duration: 900, easing: "ease-in", fill: "forwards" },
+        );
+        fire.onfinish = () => {
+          overlay.remove();
+          const pile = item.selector && document.querySelector(item.selector);
+          if (pile) pile.animate([{ transform: "scale(1)" }, { transform: "scale(1.25)" }, { transform: "scale(1)" }], { duration: 320 });
+          nextSpotlight();
+        };
+      }, item.hold);
+      return;
+    }
     setTimeout(() => {
       const target = document.querySelector(item.selector); // looked up now: the board may have re-rendered
       const from = cardEl.getBoundingClientRect();
@@ -169,12 +205,31 @@ function nextSpotlight() {
 // --- after render ---------------------------------------------------------------------------------
 
 // Call right after the board is re-rendered, with the snapshot taken before and the new view.
+const removedSeen = new Map(); // "game:viewer" → uids already removed from the game (to spot new removals)
+
 export function animateBoard(root, before, view) {
+  const key = `${view.game_id}:${view.you}`;
+  const removed = new Set(view.players.flatMap((p) => p.removed.map((c) => c.uid)));
+  const known = removedSeen.get(key);
+  removedSeen.set(key, removed);
   if (!before || reducedMotion()) return;
+  if (known) animateRemovals(view, known);
   const spotlights = animatePlayed(root, before, view);
   animateUnits(root, before, view, spotlights);
   animateHand(root, before, view);
   animateMarkets(root, before, view);
+}
+
+// Cards removed from the game (the "remove a card" action): burn in the middle of the screen.
+function animateRemovals(view, known) {
+  for (const p of view.players) {
+    for (const card of p.removed) {
+      if (known.has(card.uid)) continue;
+      enqueueSpotlight(card, `[data-action="view-pile"][data-seat="${p.seat}"][data-which="removed"]`, {
+        hold: p.seat === view.you ? 250 : 700, hideTarget: false, burn: true,
+      });
+    }
+  }
 }
 
 const pileCount = (root, key) => Number(root.querySelector(`[data-pile="${key}"] b`)?.textContent || 0);
@@ -248,8 +303,9 @@ function animateUnits(root, before, view, spotlights) {
   for (const [uid, old] of before.units) {
     if (seen.has(uid) || root.querySelector(`[data-hand-uid="${uid}"]`)) continue; // still here, or back in the hand
     const pile = root.querySelector(`[data-pile="seat${old.owner}-discard"]`);
-    const destroyed = pile && pileGrew(root, before, `seat${old.owner}-discard`);
-    ghost(old.html, old.rect, destroyed ? pile.getBoundingClientRect() : null, { tint: "var(--danger-bg)" });
+    const toDiscard = pile && pileGrew(root, before, `seat${old.owner}-discard`);
+    burst(old.rect); // destroyed: explodes where it stood, then (cards, not tokens) flies to the discard pile
+    ghost(old.html, old.rect, toDiscard ? pile.getBoundingClientRect() : null, { tint: "var(--danger-bg)", delay: 260 });
   }
 }
 

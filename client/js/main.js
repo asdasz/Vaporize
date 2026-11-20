@@ -3,7 +3,7 @@ import { loadLocale } from "./i18n.js";
 import { renderSetup } from "./setup.js";
 import { rememberName, renderLobby, renderPlayerForm, renderStart } from "./lobby.js";
 import { renderBoard } from "./board/board.js";
-import { numberLabel } from "./board/prompt.js";
+import { numberLabel, previewLine } from "./board/prompt.js";
 
 const app = document.getElementById("app");
 
@@ -457,6 +457,8 @@ const handlers = {
     const prompt = store.view.pending.prompt;
     const label = root.querySelector("[data-number-label]");
     if (label) label.textContent = numberLabel(prompt, value);
+    const preview = root.querySelector("[data-number-preview]");
+    if (preview) preview.textContent = previewLine(store.view, value);
   },
   confirmNumber: () => store.draft && handlers.respond(store.draft.value),
   splitAdjust: (uid, delta) => {

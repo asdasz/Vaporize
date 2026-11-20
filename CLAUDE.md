@@ -257,6 +257,7 @@ Some effects need a decision: how much to invoke, which unit to hit, which scout
 - `params.skip_key` names the skip button (e.g. `ui.prompt.skip_damage` = "Deal no damage"), so a player can play a damage spell just to get rid of it without hurting their own units.
 - Only the acting player sees the prompt in their view. The others only see who is choosing and for which card.
 - A `number` prompt with a single possible value (e.g. invoke with 0 mana) is answered automatically.
+- **Previews** (`engine/preview.py`): for a number prompt the acting player's view has `pending.previews = {value: summary}`. Each value is replayed on a throwaway copy of the state, like `Respond`, so class bonuses (Mage +1) and card conditions are included. The summary lists `vp`, `inf`, `draw`, `damage`, `kills`, `unit` ([attack, hp] of the unit it puts into play) and `next` (the next question's key + params). The UI shows it under the slider ("Result: +1 VP"), updated live while dragging. Only counts and prompt texts: nothing hidden is revealed.
 
 ## Cards
 
@@ -496,7 +497,8 @@ The approved layout is the **seated table** ("table v2" sketch). Keep it unless 
 
 - Another player's card or unit: shown big in the middle of the screen (spotlight, queued one after another), then it flies to its place in their played row or on the table.
 - Your own card: slides from the hand into your played row; your unit slides from the hand onto the table.
-- Units: pop in when they enter, slide to the new ring with a gold glow on tier up, shake with a red flash and a floating "−N" when damaged, "+N" when healed, fly to the owner's discard pile when destroyed.
+- Units: pop in when they enter, slide to the new ring with a gold glow on tier up, shake with a red flash and a floating "−N" when damaged, "+N" when healed; when destroyed they burst in place (every player sees it) and fly to the owner's discard pile.
+- A card removed from the game (remove action): shown big in the middle of the screen and burns away, for every player; the owner's removed-cards counter pulses.
 - Hand: drawn cards come out of your deck pile one after another; cards taken back (undo) slide back into the hand.
 - Markets: a bought card (shared, private or basic supply) is shown big in the middle of the screen (shorter for your own buys), then flies to the buyer's discard pile, which pulses; the new card appears in the **same slot** (the other cards don't move); on refresh the cards slide down, the bottom card flies to the removed pile and the new card comes out of the deck.
 
@@ -536,7 +538,7 @@ Elements are shown as **icons**, never as colours, so they don't clash with play
 - Clicking an own unit that can attack highlights valid targets: same tier or one higher, never lower. Clicking a target attacks.
 - Dragging a hand card **up** and releasing it anywhere on the screen above the hand plays the card. While dragging, a translucent drop zone covers the whole viewport above the hand (green if the card can be played, grey/red if not). Clicking a card doesn't play it.
 - Dragging a hand card left or right moves it to the drop position and the other cards shift to make room (live, animated; e.g. dragging card 1 between 3 and 4 gives 2, 3, 1, 4, …). Hand order is cosmetic and client-side only (kept per game and seat in `sessionStorage`). New cards are added on the right.
-- Hovering a card shows its full text. Hovering the class name shows passives, prepare and invoke.
+- Hovering a card shows its full text. **Holding** any card (hand, market, played row, table, piles, prompt choices) for ~0.45 s without moving shows it big in the middle of the screen with its whole text until you let go (`client/js/board/zoom.js`); the click after a hold is swallowed so it doesn't buy or select. Card texts that don't fit their box end with a "…" marker. Hovering the class name shows passives, prepare and invoke.
 - Prompts (targets, order of simultaneous effects, split damage) appear as an inline panel above the hand, not a blocking modal.
 
 ## Conventions

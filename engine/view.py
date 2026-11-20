@@ -15,6 +15,7 @@ from engine.attacks import legal_attacks
 from engine.bank import legal_bank
 from engine.context import EffectContext
 from engine.effects.economy import tax_preview
+from engine.preview import number_previews
 from engine.market import basic_price, legal_market, refresh_cost
 from engine.rules import ELEMENTS, MIN_HAND, SHARED_PRICE_MODIFIERS
 from engine.state import GameState, MarketState, PlayerState
@@ -98,6 +99,8 @@ def _pending(state: GameState, catalog: Catalog, viewer: int) -> dict[str, Any] 
     if viewer == pending.seat:
         view["prompt"] = pending.prompt.to_dict()
         view["step"] = len(pending.answers)
+        if pending.prompt.kind == "number":  # what each value would do, e.g. 3 mana → +1 VP
+            view["previews"] = number_previews(state, catalog)
     return view
 
 

@@ -23,15 +23,34 @@ export function numberLabel(prompt, value) {
   return t("ui.prompt.spend", { spent: value, resource_name, value: total });
 }
 
-function numberBody(prompt, draft) {
+// What this value would do, from the server's preview (engine/preview.py): "Result: +1 VP · draw 1 · …".
+export function previewLine(view, value) {
+  const previews = view.pending?.previews;
+  if (!previews) return "";
+  const p = previews[String(value)];
+  if (!p) return "";
+  const parts = [];
+  if (p.vp) parts.push(t("ui.preview.vp", { n: p.vp }));
+  if (p.inf) parts.push(t("ui.preview.inf", { n: p.inf }));
+  if (p.draw) parts.push(t("ui.preview.draw", { n: p.draw }));
+  if (p.damage) parts.push(t("ui.preview.damage", { n: p.damage }));
+  if (p.kills) parts.push(t("ui.preview.kills", { n: p.kills }));
+  if (p.unit) parts.push(t("ui.preview.unit", { attack: p.unit[0], hp: p.unit[1] }));
+  if (p.next) parts.push(t("ui.preview.next", { text: promptText(view, p.next) }));
+  return parts.length ? t("ui.preview.result", { items: parts.join(" · ") }) : t("ui.preview.nothing");
+}
+
+function numberBody(view, prompt, draft) {
   const value = draft.value ?? prompt.max;
   const bonus = prompt.params.bonus ? ` ${t("ui.prompt.bonus", { bonus: prompt.params.bonus })}` : "";
+  const preview = previewLine(view, value);
   return `
     <div class="prompt-row">
       <input type="range" min="${prompt.min}" max="${prompt.max}" step="1" value="${value}" data-input="number">
       <span class="prompt-value" data-number-label>${esc(numberLabel(prompt, value))}</span>
       <span class="muted">${bonus}</span>
     </div>
+    ${view.pending?.previews ? `<div class="preview-line" data-number-preview>${esc(preview)}</div>` : ""}
     <div class="prompt-row"><button class="primary" data-action="confirm-number">${icon("check")}${t("ui.prompt.confirm")}</button></div>`;
 }
 
@@ -141,7 +160,7 @@ export function promptPanel(view, store) {
   const prompt = pending.prompt;
   const draft = store.draft || {};
   let body = "";
-  if (prompt.kind === "number") body = numberBody(prompt, draft);
+  if (prompt.kind === "number") body = numberBody(view, prompt, draft);
   else if (prompt.kind === "choose_unit") body = chooseUnitBody(view, prompt);
   else if (prompt.kind === "split_damage") body = splitBody(view, prompt, draft);
   else if (prompt.kind === "choose_card") body = chooseCardBody(prompt);
